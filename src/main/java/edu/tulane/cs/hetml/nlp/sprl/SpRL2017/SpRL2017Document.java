@@ -1,7 +1,7 @@
 package edu.tulane.cs.hetml.nlp.sprl.SpRL2017;
 
-import edu.tulane.cs.hetml.nlp.sprl.SpRL2013.*;
-import edu.tulane.cs.hetml.nlp.sprl.SpRLXmlDocument;
+import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRL2013.*;
+import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRLXmlDocument;
 
 import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
@@ -114,19 +114,19 @@ public class SpRL2017Document implements SpRLXmlDocument {
         for (Scene s : getScenes()) {
             for (Sentence sentence : s.getSentences()) {
                 for (LANDMARK l : sentence.getLandmarks()) {
-                    if (l.getStart() > -1 && l.getEnd() > -1) {
+                    if (l.getStart().intValue() > -1 && l.getEnd().intValue() > -1) {
                         idToLandmark.put(l.getId(), l);
                         roleIdToSentence.put(l.getId(), sentence);
                     }
                 }
                 for (SPATIALINDICATOR sp : sentence.getSpatialindicators()) {
-                    if (sp.getStart() > -1 && sp.getEnd() > -1) {
+                    if (sp.getStart().intValue() > -1 && sp.getEnd().intValue() > -1) {
                         idToIndicator.put(sp.getId(), sp);
                         roleIdToSentence.put(sp.getId(), sentence);
                     }
                 }
                 for (TRAJECTOR t : sentence.getTrajectors()) {
-                    if (t.getStart() > -1 && t.getEnd() > -1) {
+                    if (t.getStart().intValue() > -1 && t.getEnd().intValue() > -1) {
                         idToTrajector.put(t.getId(), t);
                         roleIdToSentence.put(t.getId(), sentence);
                     }

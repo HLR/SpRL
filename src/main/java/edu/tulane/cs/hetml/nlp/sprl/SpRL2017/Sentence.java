@@ -1,6 +1,6 @@
 package edu.tulane.cs.hetml.nlp.sprl.SpRL2017;
 
-import edu.tulane.cs.hetml.nlp.sprl.SpRL2013.*;
+import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRL2013.*;
 
 import javax.xml.bind.annotation.*;
 import java.util.ArrayList;

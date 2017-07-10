@@ -1,8 +1,8 @@
 package edu.tulane.cs.hetml.nlp.sprl.Eval;
 
-import edu.tulane.cs.hetml.nlp.sprl.SpRL2013.*;
+import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRL2013.*;
+import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRLAnnotation;
 import edu.tulane.cs.hetml.nlp.sprl.SpRL2017.*;
-import edu.tulane.cs.hetml.nlp.sprl.SpRLAnnotation;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -73,12 +73,12 @@ public class XmlSpRLEvaluator {
                     SPATIALINDICATOR sp = doc.getIndicator(r.getSpatialIndicatorId());
 
                     int offset = sentence.getStart();
-                    int trStart = tr == null ? -1 : offset + tr.getStart();
-                    int trEnd = tr == null ? -1 : offset + tr.getEnd();
-                    int lmStart = lm == null ? -1 : offset + lm.getStart();
-                    int lmEnd = lm == null ? -1 : offset + lm.getEnd();
-                    int spStart = sp == null ? -1 : offset + sp.getStart();
-                    int spEnd = sp == null ? -1 : offset + sp.getEnd();
+                    int trStart = tr == null ? -1 : offset + tr.getStart().intValue();
+                    int trEnd = tr == null ? -1 : offset + tr.getEnd().intValue();
+                    int lmStart = lm == null ? -1 : offset + lm.getStart().intValue();
+                    int lmEnd = lm == null ? -1 : offset + lm.getEnd().intValue();
+                    int spStart = sp == null ? -1 : offset + sp.getStart().intValue();
+                    int spEnd = sp == null ? -1 : offset + sp.getEnd().intValue();
 
                     RelationEval eval = new RelationEval(trStart, trEnd, spStart, spEnd, lmStart, lmEnd);
                     eval.setFoR(r.getFoR());
@@ -94,7 +94,7 @@ public class XmlSpRLEvaluator {
         List<RoleEval> roles = new ArrayList<>();
         for (SpRLAnnotation a : annotations) {
             int offset = doc.getRoleSentence(a.getId()).getStart();
-            roles.add(new RoleEval(offset + a.getStart(), offset + a.getEnd()));
+            roles.add(new RoleEval(offset + a.getStart().intValue(), offset + a.getEnd().intValue()));
         }
         return roles;
     }
