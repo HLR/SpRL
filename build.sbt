@@ -2,9 +2,10 @@ name := "SpRL"
 
 version := "1.0"
 
-scalaVersion := "2.12.2"
+scalaVersion in ThisBuild := "2.11.7"
 
 resolvers += "CogcompSoftware" at "http://cogcomp.cs.illinois.edu/m2repo/"
+
 libraryDependencies ++= Seq(
   "edu.illinois.cs.cogcomp" % "saul_2.11" % "0.5.7",
   "edu.illinois.cs.cogcomp" % "saul-examples_2.11" % "0.5.7",
