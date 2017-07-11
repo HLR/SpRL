@@ -9,10 +9,10 @@ object mSpRLConfigurator {
   val resultsDir = "data/mSpRL/results/"
   val imageDataPath = "data/mSprl/saiapr_tc-12/"
   val modelDir = "models/mSpRL/"
-  val spatialIndicatorLex = "data/mSprl/spatialIndicator_fold1.lex"
-  val trainFile = "data/mSprl/saiapr_tc-12/fold1/train.xml"
-  val testFile = "data/mSprl/saiapr_tc-12/fold1/test.xml"
-  val suffix = "fold1"
+  val spatialIndicatorLex = "data/mSprl/spatialIndicator.lex"
+  val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"
+  val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"
+  val suffix = ""
   val model = FeatureSets.WordEmbedding
   val isTrain = true
   val jointTrain = false

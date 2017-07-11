@@ -23,7 +23,7 @@ object LanguageBaseTypeSensors extends Logging {
   private val parserView = ViewNames.PARSE_STANFORD
   private val sentenceById = mutable.HashMap[String, TextAnnotation]()
   private val settings = new Properties()
-  TextAnnotationFactory.disableSettings(settings, USE_SRL_NOM, USE_NER_ONTONOTES, USE_SRL_VERB)
+  TextAnnotationFactory.disableSettings(settings, USE_SRL_NOM, USE_NER_CONLL, USE_NER_ONTONOTES, USE_SRL_VERB)
   private val as = TextAnnotationFactory.createPipelineAnnotatorService(settings)
 
   def documentToSentenceMatching(d: Document, s: Sentence): Boolean = {

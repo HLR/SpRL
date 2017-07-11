@@ -1,5 +1,6 @@
 package edu.tulane.cs.hetml.nlp.sprl
 
+import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel.{triplets, _}
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.documentToSentenceGenerating
@@ -11,12 +12,13 @@ import scala.collection.JavaConversions._
 /** Created by Taher on 2017-02-12.
   */
 
-object MultiModalPopulateData {
+object MultiModalPopulateData extends Logging{
 
   lazy val xmlReader = new SpRLXmlReader(if (isTrain) trainFile else testFile)
   lazy val imageReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, isTrain)
 
   def populateRoleDataFromAnnotatedCorpus(populateNullPairs: Boolean = true): Unit = {
+    logger.info("Role population started ...")
     if (isTrain && onTheFlyLexicon) {
       LexiconHelper.createSpatialIndicatorLexicon(xmlReader)
     }
@@ -37,12 +39,14 @@ object MultiModalPopulateData {
       segments.populate(imageReader.getSegmentList, isTrain)
       segmentRelations.populate(imageReader.getImageRelationList, isTrain)
     }
+    logger.info("Role population finished.")
   }
 
   def populatePairDataFromAnnotatedCorpus(indicatorClassifier: Phrase => Boolean,
                                           populateNullPairs: Boolean = true
                                          ): Unit = {
 
+    logger.info("Pair population started ...")
     val phraseInstances = (if (isTrain) phrases.getTrainingInstances.toList else phrases.getTestingInstances.toList)
       .filter(_.getId != dummyPhrase.getId)
 
@@ -51,6 +55,8 @@ object MultiModalPopulateData {
 
     val relations = if (isTrain) pairs.getTrainingInstances.toList else pairs.getTestingInstances.toList
     xmlReader.setPairTypes(relations, populateNullPairs)
+
+    logger.info("Pair population finished.")
   }
 
   def populateTripletDataFromAnnotatedCorpus(
@@ -59,6 +65,7 @@ object MultiModalPopulateData {
                                               lmClassifier: (Relation) => String
                                             ): Unit = {
 
+    logger.info("Triplet population started ...")
     val candidateRelations = CandidateGenerator.generateTripletCandidates(
       trClassifier,
       spClassifier,
@@ -68,6 +75,8 @@ object MultiModalPopulateData {
     triplets.populate(candidateRelations, isTrain)
 
     xmlReader.setTripletRelationTypes(candidateRelations)
+
+    logger.info("Triplet population finished.")
   }
 
   def populateDataFromPlainTextDocuments(documentList: List[Document],
@@ -75,6 +84,7 @@ object MultiModalPopulateData {
                                          populateNullPairs: Boolean = true
                                         ): Unit = {
 
+    logger.info("Data population started ...")
     val isTrain = false
     documents.populate(documentList, isTrain)
     sentences.populate(documentList.flatMap(d => documentToSentenceGenerating(d)), isTrain)
@@ -83,6 +93,8 @@ object MultiModalPopulateData {
     }
     val candidateRelations = CandidateGenerator.generatePairCandidates(phrases().toList, populateNullPairs, indicatorClassifier)
     pairs.populate(candidateRelations, isTrain)
+
+    logger.info("Data population finished.")
   }
 }
 
