@@ -66,9 +66,9 @@ object SpRLApp extends App with Logging {
     MultiModalPopulateData.populateDataFromPlainTextDocuments(documentList, x=> IndicatorRoleClassifier(x) == "Indicator")
 
     val relationList = TripletClassifierUtils.predict(
-      x => TrajectorPairClassifier(x),
-      x => IndicatorRoleClassifier(x),
-      x => LandmarkPairClassifier(x)
+      x => TrajectorPairClassifier(x) == "TR-SP",
+      x => IndicatorRoleClassifier(x) == "Indicator",
+      x => LandmarkPairClassifier(x) == "LM-SP"
     )
     relationList.foreach(r => r.setParent(r.getArgument(1).asInstanceOf[Phrase].getSentence))
 

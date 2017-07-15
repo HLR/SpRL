@@ -15,20 +15,20 @@ import scala.io.Source
 object CandidateGenerator {
 
   def generateTripletCandidates(
-                                 trClassifier: (Relation) => String,
-                                 spClassifier: (Phrase) => String,
-                                 lmClassifier: (Relation) => String,
+                                 trSpFilter: (Relation) => Boolean,
+                                 spFilter: (Phrase) => Boolean,
+                                 lmSpFilter: (Relation) => Boolean,
                                  isTrain: Boolean
                                ): List[Relation] = {
     val instances = if (isTrain) phrases.getTrainingInstances else phrases.getTestingInstances
-    val indicators = instances.filter(t => t.getId != dummyPhrase.getId && spClassifier(t) == "Indicator").toList
+    val indicators = instances.filter(t => t.getId != dummyPhrase.getId && spFilter(t)).toList
       .sortBy(x => x.getSentence.getStart + x.getStart)
 
     indicators.flatMap(sp => {
       val pairs = phrases(sp) ~> -pairToSecondArg
-      val trajectorPairs = (pairs.filter(r => trClassifier(r) == "TR-SP") ~> pairToFirstArg).groupBy(x => x).keys
+      val trajectorPairs = (pairs.filter(r => trSpFilter(r)) ~> pairToFirstArg).groupBy(x => x).keys
       if (trajectorPairs.nonEmpty) {
-        val landmarkPairs = (pairs.filter(r => lmClassifier(r) == "LM-SP") ~> pairToFirstArg).groupBy(x => x).keys
+        val landmarkPairs = (pairs.filter(r => lmSpFilter(r)) ~> pairToFirstArg).groupBy(x => x).keys
         if (landmarkPairs.nonEmpty) {
           trajectorPairs.flatMap(tr => landmarkPairs.map(lm => createRelation(Some(tr), Some(sp), Some(lm))))
             .filter(r => r.getArgumentIds.toList.distinct.size == 3) // distinct arguments

@@ -15,9 +15,9 @@ object TripletClassifierUtils {
             resultsDir: String,
             resultsFilePrefix: String,
             isTrain: Boolean,
-            trClassifier: (Relation) => String,
-            spClassifier: (Phrase) => String,
-            lmClassifier: (Relation) => String
+            trClassifier: (Relation) => Boolean,
+            spClassifier: (Phrase) => Boolean,
+            lmClassifier: (Relation) => Boolean
           ): Seq[SpRLEvaluation] = {
 
     val predicted: List[Relation] = predict(trClassifier, spClassifier, lmClassifier, isTrain)
@@ -27,9 +27,9 @@ object TripletClassifierUtils {
   }
 
   def predict(
-               trClassifier: (Relation) => String,
-               spClassifier: (Phrase) => String,
-               lmClassifier: (Relation) => String,
+               trClassifier: (Relation) => Boolean,
+               spClassifier: (Phrase) => Boolean,
+               lmClassifier: (Relation) => Boolean,
                isTrain: Boolean = false
              ): List[Relation] = {
     CandidateGenerator.generateTripletCandidates(trClassifier, spClassifier, lmClassifier, isTrain)

@@ -88,9 +88,9 @@ object MultiModalSpRLApp extends App with Logging{
     LandmarkPairClassifier.save()
 
     populateTripletDataFromAnnotatedCorpus(
-      x => TrajectorPairClassifier(x),
-      x => IndicatorRoleClassifier(x),
-      x => LandmarkPairClassifier(x)
+      x => TrajectorPairClassifier(x) == "TR-SP",
+      x => IndicatorRoleClassifier(x) == "Indicator",
+      x => LandmarkPairClassifier(x) == "LM-SP"
     )
 
     val goldTriplets = triplets.getTrainingInstances.filter(_.containsProperty("ActualId"))
@@ -127,9 +127,9 @@ object MultiModalSpRLApp extends App with Logging{
     if (!useConstraints) {
 
       populateTripletDataFromAnnotatedCorpus(
-        x => TrajectorPairClassifier(x),
-        x => IndicatorRoleClassifier(x),
-        x => LandmarkPairClassifier(x)
+        x => TrajectorPairClassifier(x) == "TR-SP",
+        x => IndicatorRoleClassifier(x) == "Indicator",
+        x => LandmarkPairClassifier(x) == "LM-SP"
       )
 
       val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
@@ -148,9 +148,9 @@ object MultiModalSpRLApp extends App with Logging{
     else {
 
       populateTripletDataFromAnnotatedCorpus(
-        x => SentenceLevelConstraintClassifiers.TRPairConstraintClassifier(x),
-        x => SentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x),
-        x => SentenceLevelConstraintClassifiers.LMPairConstraintClassifier(x)
+        x => SentenceLevelConstraintClassifiers.TRPairConstraintClassifier(x) == "TR-SP",
+        x => SentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator",
+        x => SentenceLevelConstraintClassifiers.LMPairConstraintClassifier(x) == "LM-SP"
       )
 
       val trajectors = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.TRConstraintClassifier(x) == "Trajector").toList
