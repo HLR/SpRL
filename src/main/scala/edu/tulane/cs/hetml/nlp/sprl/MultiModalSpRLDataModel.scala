@@ -56,6 +56,9 @@ object MultiModalSpRLDataModel extends DataModel {
   val pairToSecondArg = edge(pairs, phrases)
   pairToSecondArg.addSensor(relationToSecondArgumentMatching _)
 
+  var sentenceToTriplets = edge(sentences, triplets)
+  sentenceToTriplets.addSensor(sentenceToRelationMatching _)
+
   val tripletToFirstArg = edge(triplets, phrases)
   tripletToFirstArg.addSensor(relationToFirstArgumentMatching _)
 
