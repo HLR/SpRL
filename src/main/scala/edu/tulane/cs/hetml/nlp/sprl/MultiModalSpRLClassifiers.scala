@@ -43,7 +43,7 @@ object MultiModalSpRLClassifiers {
   def tripletFeatures: List[Property[Relation]] = tripletFeatures(featureSet)
 
   def tripletFeatures(featureSet: FeatureSets): List[Property[Relation]] =
-    List(tripletWordForm, tripletHeadWordForm, tripletPos, tripletHeadWordPos, tripletPhrasePos,
+    List(tripletWordForm, tripletHeadWordForm, tripletPos, tripletHeadWordPos, tripletVisionMapping, tripletPhrasePos,
       tripletSemanticRole, tripletDependencyRelation, tripletSubCategorization, tripletSpatialContext, tripletHeadSpatialContext) ++
       (featureSet match {
         case FeatureSets.BaseLineWithImage => List()
@@ -157,6 +157,19 @@ object MultiModalSpRLClassifiers {
       .diff(List(pairIsImageConcept, pairNearestSegmentConceptToPhraseVector))
   }
 
+  object TripletRelationClassifier extends Learnable(triplets) {
+    def label = tripletIsRelation
+
+    override lazy val classifier = new SparseNetworkLearner {
+      val p = new SparseAveragedPerceptron.Parameters()
+      p.learningRate = .1
+      p.positiveThickness = 4
+      p.negativeThickness = 1
+      baseLTU = new SparseAveragedPerceptron(p)
+    }
+
+    override def feature = List(tripletVisionMapping)
+  }
 
   object TripletGeneralTypeClassifier extends Learnable(triplets) {
     def label = tripletGeneralType
