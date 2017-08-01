@@ -23,6 +23,21 @@ object SentenceLevelConstraints {
       a
   }
 
+/*  val integrityGeneralTriplets = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          a = a and (((TripletGeneralTypeClassifier on x) isNot "None") ==>
+              (TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector") and
+              (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "Indicator") and
+              (LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "Landmark")
+            )
+      }
+      a
+  }
+*/
   val integrityLM = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
@@ -94,4 +109,8 @@ object SentenceLevelConstraints {
     x: Sentence => integrityLM(x) and integrityTR(x) and multiLabelPair(x) and boostIndicator(x) and boostPairs(x)
   }
 
+/*  val allConstraintsWithTriplets = ConstrainedClassifier.constraint[Sentence] {
+
+    x: Sentence => integrityLM(x) and integrityTR(x) and multiLabelPair(x) and boostIndicator(x) and boostPairs(x) and integrityGeneralTriplets(x)
+  }*/
 }
