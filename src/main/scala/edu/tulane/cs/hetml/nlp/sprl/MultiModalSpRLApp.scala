@@ -34,10 +34,9 @@ object MultiModalSpRLApp extends App with Logging{
     TrajectorPairClassifier,
     LandmarkPairClassifier,
     TripletGeneralTypeClassifier,
-    TripletSpecificTypeClassifier,
-    TripletRCC8Classifier,
-    TripletFoRClassifier,
-    TripletRelationClassifier
+//    TripletSpecificTypeClassifier
+//    TripletRCC8Classifier,
+//    TripletFoRClassifier
   )
   classifiers.foreach(x => {
     x.modelDir = s"models/mSpRL/$featureSet/"
@@ -87,21 +86,28 @@ object MultiModalSpRLApp extends App with Logging{
     TrajectorPairClassifier.save()
     LandmarkPairClassifier.save()
 
+    if(!useCandidateTrLmTriplets) {
+      populateTripletDataFromAnnotatedCorpus(
+        x => TrajectorPairClassifier(x) == "TR-SP",
+        x => IndicatorRoleClassifier(x) == "Indicator",
+        x => LandmarkPairClassifier(x) == "LM-SP")
+    }
+    else
+    {
+      val trCandidates = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+      val lmCandidates = CandidateGenerator.getLandmarkCandidates(phrases().toList)
+      populateTripletDataFromAnnotatedCorpus(
+        x => trCandidates.exists(p=> p.getId == x.getArgumentId(0)),
+        x => IndicatorRoleClassifier(x) == "Indicator",
+        x => lmCandidates.exists(p=>p.getId == x.getArgumentId(0)))
+    }
 
-    val trCandidates = CandidateGenerator.getTrajectorCandidates(phrases().toList)
-    val lmCandidates = CandidateGenerator.getLandmarkCandidates(phrases().toList)
-    populateTripletDataFromAnnotatedCorpus(
-      x => trCandidates.exists(p=> p.getId == x.getArgumentId(0)),
-      //x => TrajectorPairClassifier(x) == "TR-SP",
-      x => IndicatorRoleClassifier(x) == "Indicator",
-      x => lmCandidates.exists(p=>p.getId == x.getArgumentId(2))
-      //x => LandmarkPairClassifier(x) == "LM-SP"
-    )
+    println("Train Triplets Size -> " + triplets.getTrainingInstances.size)
 
     val goldTriplets = triplets.getTrainingInstances.filter(_.containsProperty("ActualId"))
     TripletGeneralTypeClassifier.learn(iterations, goldTriplets)
     TripletGeneralTypeClassifier.save()
-
+/*
     TripletSpecificTypeClassifier.learn(iterations, goldTriplets)
     TripletSpecificTypeClassifier.save()
 
@@ -110,7 +116,7 @@ object MultiModalSpRLApp extends App with Logging{
 
     TripletFoRClassifier.learn(iterations, goldTriplets)
     TripletFoRClassifier.save()
-
+*/
   }
 
   if (!isTrain) {
@@ -123,63 +129,74 @@ object MultiModalSpRLApp extends App with Logging{
     TrajectorPairClassifier.load()
     LandmarkPairClassifier.load()
     TripletGeneralTypeClassifier.load()
-    TripletSpecificTypeClassifier.load()
-    TripletRCC8Classifier.load()
-    TripletFoRClassifier.load()
+  //  TripletSpecificTypeClassifier.load()
+  //  TripletRCC8Classifier.load()
+  //  TripletFoRClassifier.load()
     populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
     ReportHelper.saveCandidateList(false, pairs.getTestingInstances.toList)
 
     if (!useConstraints) {
 
-      val trCandidates = CandidateGenerator.getTrajectorCandidates(phrases().toList)
-      val lmCandidates = CandidateGenerator.getLandmarkCandidates(phrases().toList)
-      populateTripletDataFromAnnotatedCorpus(
-//        x => trCandidates.exists(p=> p.getId == x.getArgumentId(0)),
-        x => TrajectorPairClassifier(x) == "TR-SP",
-        x => IndicatorRoleClassifier(x) == "Indicator",
-        //x => lmCandidates.exists(p=>p.getId == x.getArgumentId(2))
-        x => LandmarkPairClassifier(x) == "LM-SP"
-      )
+      if(!useCandidateTrLmTriplets) {
+        populateTripletDataFromAnnotatedCorpus(
+          x => TrajectorPairClassifier(x) == "TR-SP",
+          x => IndicatorRoleClassifier(x) == "Indicator",
+          x => LandmarkPairClassifier(x) == "LM-SP")
+      }
+      else
+      {
+        val trCandidates = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+        val lmCandidates = CandidateGenerator.getLandmarkCandidates(phrases().toList)
+        populateTripletDataFromAnnotatedCorpus(
+          x => trCandidates.exists(p=> p.getId == x.getArgumentId(0)),
+          x => IndicatorRoleClassifier(x) == "Indicator",
+          x => lmCandidates.exists(p=>p.getId == x.getArgumentId(0)))
+      }
 
       val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
       val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
       val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
-      val tripletList = //triplets().filter(x=>TripletRelationClassifier(x) == "Relation").toList
-       triplets.getTestingInstances.toList
+      val tripletList = triplets.getTestingInstances.toList
+      println("Testing Triplets Size -> " + triplets.getTestingInstances.size)
 
       ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
         x => TripletGeneralTypeClassifier(x),
-        x => TripletSpecificTypeClassifier(x),
-        x => TripletRCC8Classifier(x),
-        x => TripletFoRClassifier(x),
+        x => "", //TripletSpecificTypeClassifier(x),
+        x => "", //TripletRCC8Classifier(x),
+        x => "", //TripletFoRClassifier(x),
         s"$resultsDir/${expName}${suffix}.xml")
-
     }
     else {
 
-      val trCandidates = CandidateGenerator.getTrajectorCandidates(phrases().toList)
-      val lmCandidates = CandidateGenerator.getLandmarkCandidates(phrases().toList)
-      populateTripletDataFromAnnotatedCorpus(
-//        x => trCandidates.exists(p=> p.getId == x.getArgumentId(0)),
-         x => SentenceLevelConstraintClassifiers.TRPairConstraintClassifier(x) == "TR-SP",
-        x => SentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator",
-        //x => lmCandidates.exists(p=>p.getId == x.getArgumentId(2))
-          x=> SentenceLevelConstraintClassifiers.LMPairConstraintClassifier(x) == "LM-SP"
-      )
+      if(!useCandidateTrLmTriplets) {
+        populateTripletDataFromAnnotatedCorpus(
+          x => TrajectorPairClassifier(x) == "TR-SP",
+          x => IndicatorRoleClassifier(x) == "Indicator",
+          x => LandmarkPairClassifier(x) == "LM-SP")
+      }
+      else
+      {
+        val trCandidates = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+        val lmCandidates = CandidateGenerator.getLandmarkCandidates(phrases().toList)
+        populateTripletDataFromAnnotatedCorpus(
+          x => trCandidates.exists(p=> p.getId == x.getArgumentId(0)),
+          x => IndicatorRoleClassifier(x) == "Indicator",
+          x => lmCandidates.exists(p=>p.getId == x.getArgumentId(0)))
+      }
 
       val trajectors = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.TRConstraintClassifier(x) == "Trajector").toList
       val landmarks = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.LMConstraintClassifier(x) == "Landmark").toList
       val indicators = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator").toList
       val tripletList = triplets.getTestingInstances.toList
-        //triplets().filter(x=>TripletRelationClassifier(x) == "Relation").toList
+      println("Testing Triplets Size -> " + triplets.getTestingInstances.size)
 
       ReportHelper.reportTripletResults(testFile, resultsDir, s"${expName}${suffix}_triplet", tripletList)
 
       ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
         x => TripletGeneralTypeClassifier(x),
-        x => TripletSpecificTypeClassifier(x),
-        x => TripletRCC8Classifier(x),
-        x => TripletFoRClassifier(x),
+        x => "", //TripletSpecificTypeClassifier(x),
+        x => "", //TripletRCC8Classifier(x),
+        x => "", //TripletFoRClassifier(x),
         s"$resultsDir/${expName}${suffix}.xml")
     }
 

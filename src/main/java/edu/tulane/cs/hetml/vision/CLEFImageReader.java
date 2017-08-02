@@ -83,7 +83,7 @@ public class CLEFImageReader {
         getallImages(directory);
 
         // Print Segments with x-align or y-align relations
-        printImageInformation();
+//        printImageInformation();
 
         System.out.println("Total Train Data " + trainingData.size());
 
@@ -196,25 +196,28 @@ public class CLEFImageReader {
 
         for (File f : d.listFiles()) {
             if (f.isDirectory()) {
-                ++length;
-                String mainFolder = directory + "/" + f.getName();
-                System.out.println(mainFolder);
-                //Load all images
-                String imageFolder = mainFolder + "/images";
-                getImages(imageFolder);
 
-                //Load all segments
-                String ontologyfile = mainFolder + "/ontology_path.txt";
-                getSegmentsOntology(ontologyfile);
+                if( !readFullData && (f.getName().contentEquals("00") || f.getName().contentEquals("01"))) {
 
-                //Load all segments
-                String file = mainFolder + "/features.txt";
-                getSegments(file);
+                    ++length;
+                    String mainFolder = directory + "/" + f.getName();
+                    System.out.println(mainFolder);
+                    //Load all images
+                    String imageFolder = mainFolder + "/images";
+                    getImages(imageFolder);
 
-                //Load all relations
-                String spatialRelations = mainFolder + "/spatial_rels";
-                getSegmentsRelations(spatialRelations);
+                    //Load all segments
+                    String ontologyfile = mainFolder + "/ontology_path.txt";
+                    getSegmentsOntology(ontologyfile);
 
+                    //Load all segments
+                    String file = mainFolder + "/features.txt";
+                    getSegments(file);
+
+                    //Load all relations
+                    String spatialRelations = mainFolder + "/spatial_rels";
+                    getSegmentsRelations(spatialRelations);
+                }
             }
             if (!readFullData && length == 2)
                 break;
@@ -435,6 +438,8 @@ public class CLEFImageReader {
             throw new IOException(file + " does not exist!");
         }
         NlpXmlReader reader = new NlpXmlReader(file, "SCENE", "SENTENCE", null, null);
+        reader.setIdUsingAnotherProperty("SCENE", "DOCNO");
+
         List<Document> documentList = reader.getDocuments();
 
         for (Document d : documentList) {
@@ -501,7 +506,7 @@ public class CLEFImageReader {
         }
     }
 
-    private void printImageInformation() throws IOException {
+/*    private void printImageInformation() throws IOException {
         // Test Images
         for (Image i : testImages) {
             String path = "data/mSpRL/results/imagetest/" + i.getId() + ".txt";
@@ -523,7 +528,7 @@ public class CLEFImageReader {
             printWriterTest.close();
         }
     }
-
+*/
     private String getTestSegmentConcept(String imageID, int segmentSeq) {
         String concept = null;
         for (int i = 0; i < testSegments.size(); i++) {

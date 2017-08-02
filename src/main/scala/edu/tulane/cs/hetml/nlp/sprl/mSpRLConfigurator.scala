@@ -15,6 +15,7 @@ object mSpRLConfigurator {
   val suffix = ""
   val model = FeatureSets.WordEmbeddingPlusImage
   val isTrain = true
+  val useCandidateTrLmTriplets = false
   val jointTrain = false
   val skipIndividualClassifiersTraining = false  /* When using joint train, it will ignore individual classifiers
                                                   * training and loads them from the disk*/

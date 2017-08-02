@@ -23,7 +23,7 @@ object SentenceLevelConstraints {
       a
   }
 
-/*  val integrityGeneralTriplets = ConstrainedClassifier.constraint[Sentence] {
+  val integrityGeneralTriplets = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
@@ -37,7 +37,7 @@ object SentenceLevelConstraints {
       }
       a
   }
-*/
+
   val integrityLM = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
@@ -109,8 +109,8 @@ object SentenceLevelConstraints {
     x: Sentence => integrityLM(x) and integrityTR(x) and multiLabelPair(x) and boostIndicator(x) and boostPairs(x)
   }
 
-/*  val allConstraintsWithTriplets = ConstrainedClassifier.constraint[Sentence] {
+  val allConstraintsWithTriplets = ConstrainedClassifier.constraint[Sentence] {
 
     x: Sentence => integrityLM(x) and integrityTR(x) and multiLabelPair(x) and boostIndicator(x) and boostPairs(x) and integrityGeneralTriplets(x)
-  }*/
+  }
 }
