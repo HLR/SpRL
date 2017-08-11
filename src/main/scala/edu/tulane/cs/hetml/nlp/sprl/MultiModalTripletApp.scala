@@ -8,7 +8,6 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
-import org.apache.commons.io.FileUtils
 
 object MultiModalTripletApp extends App with Logging{
 
@@ -26,25 +25,13 @@ object MultiModalTripletApp extends App with Logging{
   MultiModalSpRLClassifiers.featureSet = model
 
   val classifiers = List(
-    TrajectorRoleClassifier,
-    LandmarkRoleClassifier,
-    IndicatorRoleClassifier,
-    TripletRelationClassifier,
-    TripletGeneralTypeClassifier,
-    TripletSpecificTypeClassifier,
-    TripletRCC8Classifier,
-    TripletFoRClassifier
+    TripletRelationClassifier
   )
 
   populateRoleDataFromAnnotatedCorpus()
 
   if (isTrain) {
     println("training started ...")
-
-    IndicatorRoleClassifier.load()
-    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
-
-    IndicatorRoleClassifier.save()
 
     val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
     val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
@@ -53,7 +40,6 @@ object MultiModalTripletApp extends App with Logging{
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidates.exists(_.getId == x.getId),
       x => indicatorCandidates.exists(p=> p.getId == x.getId),
-      //x => IndicatorRoleClassifier(x) == "Indicator",
       x => lmCandidates.exists(_.getId == x.getId))
 
       println("Candidate Triplets Size -> " + triplets.getTrainingInstances.size)
@@ -62,19 +48,6 @@ object MultiModalTripletApp extends App with Logging{
 
     TripletRelationClassifier.learn(50)
     TripletRelationClassifier.save()
-/*
-    val goldTriplets = triplets.getTrainingInstances.filter(_.containsProperty("ActualId"))
-    TripletGeneralTypeClassifier.learn(iterations, goldTriplets)
-    TripletGeneralTypeClassifier.save()
-
-    TripletSpecificTypeClassifier.learn(iterations, goldTriplets)
-    TripletSpecificTypeClassifier.save()
-
-    TripletRCC8Classifier.learn(iterations, goldTriplets)
-    TripletRCC8Classifier.save()
-
-    TripletFoRClassifier.learn(iterations, goldTriplets)
-    TripletFoRClassifier.save()*/
 
   }
 
@@ -82,10 +55,7 @@ object MultiModalTripletApp extends App with Logging{
 
     println("testing started ...")
 
-    IndicatorRoleClassifier.load()
     TripletRelationClassifier.load()
-
-    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
 
     if (!useConstraints) {
 
