@@ -1,6 +1,5 @@
 package edu.tulane.cs.hetml.nlp.sprl
 
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers.{ImageClassifierWeka, ImageSVMClassifier}
 import edu.tulane.cs.hetml.vision.CLEFImageReader
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 
@@ -29,10 +28,5 @@ object ImageApp extends App {
   segments.populate(segementListTest, false)
   segmentRelations.populate(relationListTest, false)
 
-  ImageSVMClassifier.learn(5)
-  ImageSVMClassifier.test(segementListTest)
-
-  ImageClassifierWeka.learn(5)
-  ImageClassifierWeka.test(segementListTest)
 }
 

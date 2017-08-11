@@ -18,6 +18,7 @@ object MultiModalSpRLDataModel extends DataModel {
   dummyPhrase.setId("[[dummy]]")
   dummyPhrase.addPropertyValue("TRAJECTOR_id", dummyPhrase.getId)
   dummyPhrase.addPropertyValue("LANDMARK_id", dummyPhrase.getId)
+  val undefined = "[undefined]"
 
   var useVectorAverages = false
 
@@ -423,6 +424,142 @@ object MultiModalSpRLDataModel extends DataModel {
       wordForm(first) + "::" + wordForm(second) + "::" + wordForm(third)
   }
 
+  val JF2_1 = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      first.getText + "::" + second.getText + "::" + third.getText
+  }
+
+  val JF2_2 = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, _, third) = getTripletArguments(r)
+      if(third != dummyPhrase) {
+        (phrases(third) ~> phraseToToken)
+          .exists(p=>Dictionaries.spLexicon.exists(sp=> p.getText.toLowerCase.contains(sp)))
+      }
+      else {
+        false
+      }
+  }
+
+  val JF2_3 = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      val (start, end) = getStartAndEndArgs(r)
+
+      val toks = (triplets(r) ~> -sentenceToTriplets ~> sentenceToPhrase ~> phraseToToken)
+        .filter(x=> x.getStart >= start.getEnd && x.getEnd <= end.getStart)
+
+      val template = toks.foldLeft("")((str, token) =>{
+
+        if(first.contains(token) || second.contains(token) || third.contains(token))
+            str
+        else
+          str + "::" + token.getText
+      })
+      template
+  }
+
+  val JF2_5 = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, _, _) = getTripletArguments(r)
+      first.getText
+  }
+
+  val JF2_4 = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, second, third) = getTripletArguments(r)
+      second.getText + "::" + roleToSpDependencyPath(third, second)
+  }
+
+
+  val JF2_6 = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, second, third) = getTripletArguments(r)
+      roleToSpDependencyPath(second, third)
+  }
+
+  val JF2_7 = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, _) = getTripletArguments(r)
+      roleToSpDependencyPath(first, second) + "::" + second.getText
+  }
+
+  val JF2_8 = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, _, third) = getTripletArguments(r)
+      getWordnetHypernyms(getHeadword(third))
+  }
+
+  val JF2_9 = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, _, _) = getTripletArguments(r)
+      getWordnetHypernyms(getHeadword(first))
+  }
+
+  val JF2_10 = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      val (start, end) = getStartAndEndArgs(r)
+
+      val toks = (triplets(r) ~> -sentenceToTriplets ~> sentenceToPhrase ~> phraseToToken)
+        .filter(x=> x.getStart >= start.getStart && x.getEnd <= end.getEnd)
+
+      val template = toks.foldLeft("")((str, token) =>{
+
+        if(first.contains(token))
+          if(str.endsWith("[TR]"))
+            str + "[TR]"
+          else
+            str
+        else if(second.contains(token))
+          if(str.endsWith("[SP]"))
+            str + "[SP]"
+          else
+            str
+        else if(third.contains(token))
+          if(str.endsWith("[LM]"))
+            str + "[LM]"
+          else
+            str
+        else
+          str + "::" + token.getText
+      })
+      template
+  }
+
+  val JF2_11 = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, _) = getTripletArguments(r)
+      val tr = getHeadword(first)
+      val sp = getHeadword(second)
+      val preps = getDependencyRelationWith(tr, "PREP")
+      val otherPrep = preps.filterNot(p => p._1 == sp.getStart && p._2 == sp.getEnd).headOption
+      if(otherPrep.nonEmpty)
+        otherPrep.head._3
+      else
+        ""
+  }
+
+  val JF2_13 = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      if(third == dummyPhrase){
+        val phrases = (triplets(r) ~> -sentenceToTriplets ~> sentenceToPhrase).filterNot(_ == first)
+        phrases.exists(p=>getPos(p).exists(x=>x.startsWith("NN")))
+      }
+      else{
+        false
+      }
+  }
+
+
+  val JF2_14 = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      headWordLemma(first) + "::" + second.getText + "::" + headWordLemma(third)
+  }
+
   val tripletHeadWordForm = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
@@ -507,7 +644,11 @@ object MultiModalSpRLDataModel extends DataModel {
       headVector(first) ++ headVector(second) ++ headVector(third)
   }
 
-  val tripletVisionMapping = property(triplets) {
+  val tripletImageConfirms = property(triplets) {
+    r: Relation => isExistsSegmentRelations(r)
+  }
+
+  val tripletImageRelations = property(triplets) {
     r: Relation => getSegmentRelations(r)
   }
 
@@ -534,6 +675,20 @@ object MultiModalSpRLDataModel extends DataModel {
   ////////////////////////////////////////////////////////////////////
   /// Helper methods
   ////////////////////////////////////////////////////////////////////
+
+  private def getStartAndEndArgs(r: Relation):(Phrase, Phrase) = {
+    val (first, second, third) = getTripletArguments(r)
+
+    val start = if (isBefore(first, second))
+      if (third == dummyPhrase || isBefore(first, third)) first else third
+    else second
+
+    val end = if (isBefore(first, second))
+      if (third != dummyPhrase && isBefore(first, third)) third else second
+    else first
+
+    (start, end)
+  }
   private def getVector(w: String): List[Double] = {
     if (useVectorAverages) {
       getAverage(getGoogleWordVector(w), getClefWordVector(w))
@@ -622,10 +777,19 @@ object MultiModalSpRLDataModel extends DataModel {
     found
   }
 
-  private def getSegmentRelations(r: Relation) : Boolean = {
+  private def roleToSpDependencyPath(role: Phrase, sp: Phrase) = {
+    if (role != dummyPhrase) {
+      val first = getHeadword(role)
+      val second = getHeadword(sp)
+      getDependencyPath(first, second)
+    }
+    else
+      undefined
+  }
+
+  private def isExistsSegmentRelations(r: Relation) : Boolean = {
     val (first, second, third) = getTripletArguments(r)
     var found = false
-    var newImageRelations = new ArrayBuffer[String]()
 
     if(second.getId!=dummyPhrase.getId) {
       val firstConcept = headWordFrom(first)
@@ -633,15 +797,6 @@ object MultiModalSpRLDataModel extends DataModel {
       val img = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage
       val segs = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage ~> imageToSegment
       val rels = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage ~> imageToSegment ~> -segmentRelationsToSegments
-      /*
-            println("************************************")
-            println(firstConcept + "," + second + "," + thirdConcept)
-            println("------------------------------------")
-
-            writer.WriteTextln("************************************")
-            writer.WriteTextln(firstConcept + "," + second + "," + thirdConcept)
-            writer.WriteTextln("------------------------------------")
-      */
       for(ir <- rels) {
         var firstsegConcept = ""
         var firstsegOntology : List[String] = Nil
@@ -679,20 +834,64 @@ object MultiModalSpRLDataModel extends DataModel {
             secondsegMatch = getReferitConceptMatching(thirdConcept, secondsegReferit)
         }
         if(firstsegMatch && secondsegMatch) {
-          //          println(ir.getImageId + "-" + firstsegConcept + "," + secondsegConcept + "," + imageRelation)
-          //          writer.WriteTextln(ir.getImageId + "-" + firstsegConcept + "," + secondsegConcept + "," + imageRelation)
-          newImageRelations += firstsegConcept + "::" + secondsegConcept + "::" + imageRelation
           found = true
         }
       }
     }
-    if(found) {
-      newImageRelations += "true"
-    }
-    else {
-      newImageRelations += "false"
-    }
-    //newImageRelations.toList
     found
+  }
+
+  private def getSegmentRelations(r: Relation) : List[String] = {
+    val (first, second, third) = getTripletArguments(r)
+    var newImageRelations = new ArrayBuffer[String]()
+
+    if(second.getId!=dummyPhrase.getId) {
+      val firstConcept = headWordFrom(first)
+      val thirdConcept = headWordFrom(third)
+      val img = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage
+      val segs = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage ~> imageToSegment
+      val rels = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage ~> imageToSegment ~> -segmentRelationsToSegments
+      for(ir <- rels) {
+        var firstsegConcept = ""
+        var firstsegOntology : List[String] = Nil
+        var firstsegReferit : List[String] = Nil
+        var secondsegConcept = ""
+        var secondsegOntology : List[String] = Nil
+        var secondsegReferit : List[String] = Nil
+
+        var firstsegMatch = false
+        var secondsegMatch = false
+        val imageRelation = ir.getRelation
+        for(s <- segs) {
+          if(s.getSegmentId == ir.getFirstSegmentId) {
+            firstsegConcept = s.getSegmentConcept
+            firstsegOntology = s.ontologyConcepts.toList
+            firstsegReferit = s.referitText.toList
+          }
+          if(s.getSegmentId == ir.getSecondSegmentId) {
+            secondsegConcept = s.getSegmentConcept
+            secondsegOntology = s.ontologyConcepts.toList
+            secondsegReferit = s.referitText.toList
+          }
+        }
+
+        firstsegMatch = getImageConceptMatching(firstsegConcept, firstConcept)
+        if(!firstsegMatch) {
+          firstsegMatch = getOntologyConceptMatching(firstConcept, firstsegOntology)
+          if(!firstsegMatch)
+            firstsegMatch = getReferitConceptMatching(firstConcept, firstsegOntology)
+        }
+        secondsegMatch = getImageConceptMatching(secondsegConcept, thirdConcept)
+        if(!secondsegMatch) {
+          secondsegMatch = getOntologyConceptMatching(thirdConcept, secondsegOntology)
+          if(!secondsegMatch)
+            secondsegMatch = getReferitConceptMatching(thirdConcept, secondsegReferit)
+        }
+        if(firstsegMatch && secondsegMatch) {
+          newImageRelations += firstsegConcept + "::" + secondsegConcept + "::" + imageRelation
+        }
+      }
+    }
+    newImageRelations.toList
   }
 }

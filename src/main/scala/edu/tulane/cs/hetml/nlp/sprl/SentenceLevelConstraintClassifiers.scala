@@ -49,7 +49,14 @@ object SentenceLevelConstraintClassifiers {
   }
 
   object TripletGeneralTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletGeneralTypeClassifier) {
-    def subjectTo = allConstraintsWithTriplets
+    def subjectTo = allConstraintsGeneralTriplets
+
+    override val solver = erSolver
+    override val pathToHead = Some(-sentenceToPairs)
+  }
+
+  object TripletRelationTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletRelationClassifier) {
+    def subjectTo = allConstraintsRelationTriplets
 
     override val solver = erSolver
     override val pathToHead = Some(-sentenceToPairs)

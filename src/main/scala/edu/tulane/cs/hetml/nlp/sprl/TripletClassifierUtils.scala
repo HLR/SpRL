@@ -32,7 +32,7 @@ object TripletClassifierUtils {
                lmClassifier: (Relation) => Boolean,
                isTrain: Boolean = false
              ): List[Relation] = {
-    CandidateGenerator.generateTripletCandidates(trClassifier, spClassifier, lmClassifier, isTrain)
+    CandidateGenerator.generateTripletCandidatesFromPairs(trClassifier, spClassifier, lmClassifier, isTrain)
   }
 
 }

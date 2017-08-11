@@ -43,38 +43,14 @@ object MultiModalSpRLClassifiers {
   def tripletFeatures: List[Property[Relation]] = tripletFeatures(featureSet)
 
   def tripletFeatures(featureSet: FeatureSets): List[Property[Relation]] =
-    List(tripletWordForm, tripletHeadWordForm, tripletPos, tripletHeadWordPos, tripletVisionMapping, tripletPhrasePos,
+    List(tripletWordForm, tripletHeadWordForm, tripletPos, tripletHeadWordPos, tripletPhrasePos,
       tripletSemanticRole, tripletDependencyRelation, tripletSubCategorization, tripletSpatialContext, tripletHeadSpatialContext) ++
       (featureSet match {
         case FeatureSets.BaseLineWithImage => List()
         case FeatureSets.WordEmbedding => List(tripletTokensVector)
-        case FeatureSets.WordEmbeddingPlusImage => List(tripletTokensVector)
+        case FeatureSets.WordEmbeddingPlusImage => List(tripletTokensVector)//, tripletImageConfirms, JF2_1, JF2_2, JF2_5)
         case _ => List[Property[Relation]]()
       })
-
-  object ImageSVMClassifier extends Learnable(segments) {
-    def label = segmentLabel
-
-    override lazy val classifier = new SupportVectorMachine()
-
-    override def feature = using(segmentFeatures)
-  }
-
-  object ImageClassifierWeka extends Learnable(segments) {
-    def label = segmentLabel
-
-    override lazy val classifier = new SaulWekaWrapper(new NaiveBayes())
-
-    override def feature = using(segmentFeatures)
-  }
-
-  object ImageClassifierWekaIBK extends Learnable(segments) {
-    def label = segmentLabel
-
-    override lazy val classifier = new SaulWekaWrapper(new IBk())
-
-    override def feature = using(segmentFeatures)
-  }
 
   object SpatialRoleClassifier extends Learnable(phrases) {
     def label = spatialRole
@@ -168,7 +144,7 @@ object MultiModalSpRLClassifiers {
       baseLTU = new SparseAveragedPerceptron(p)
     }
 
-    override def feature = List(tripletVisionMapping)
+    override def feature = tripletFeatures
   }
 
   object TripletGeneralTypeClassifier extends Learnable(triplets) {

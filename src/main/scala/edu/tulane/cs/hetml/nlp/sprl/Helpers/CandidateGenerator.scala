@@ -14,7 +14,7 @@ import scala.io.Source
   */
 object CandidateGenerator {
 
-  def generateTripletCandidates(
+  def generateTripletCandidatesFromPairs(
                                  trSpFilter: (Relation) => Boolean,
                                  spFilter: (Phrase) => Boolean,
                                  lmSpFilter: (Relation) => Boolean,
@@ -42,25 +42,31 @@ object CandidateGenerator {
     })
   }
 
-  def generateAllTripletCandidate(): List[Relation] = {
+  def generateAllTripletCandidates(
+                                    trFilter: (Phrase) => Boolean,
+                                    spFilter: (Phrase) => Boolean,
+                                    lmFilter: (Phrase) => Boolean,
+                                    isTrain: Boolean
+                                  ): List[Relation] = {
 
     val instances = if (isTrain) phrases.getTrainingInstances else phrases.getTestingInstances
-    val indicators = instances.filter(t => t.getId != dummyPhrase.getId && t.containsProperty("SPATIALINDICATOR_id")).toList
-      .sortBy(x => x.getSentence.getStart + x.getStart)
-    val trajectors = instances.filter(t => t.getId != dummyPhrase.getId && t.containsProperty("TRAJECTOR_id")).toList
-      .sortBy(x => x.getSentence.getStart + x.getStart)
-    val landmarks = instances.filter(t => t.getId != dummyPhrase.getId && t.containsProperty("LANDMARK_id")).toList
+
+    val indicators = instances.filter(t => t.getId != dummyPhrase.getId && spFilter(t)).toList
       .sortBy(x => x.getSentence.getStart + x.getStart)
 
-    indicators.flatMap(sp => {
-      val pairs = phrases(sp) ~> -pairToSecondArg
-      val trajectorPairs = (pairs.filter(r => if((trajectors.find(t=> t.getId==r.getArgumentId(0))).nonEmpty) true else false) ~> pairToFirstArg).groupBy(x => x).keys
-      if (trajectorPairs.nonEmpty) {
-        val landmarkPairs = (pairs.filter(r => if((landmarks.find(l=> l.getId==r.getArgumentId(0))).nonEmpty) true else false) ~> pairToFirstArg).groupBy(x => x).keys
-        if (landmarkPairs.nonEmpty) {
-          trajectorPairs.flatMap(tr => landmarkPairs.map(lm => createRelation(Some(tr), Some(sp), Some(lm))))
+    val trajectors = instances.filter(t => t.getId != dummyPhrase.getId && trFilter(t)).toList
+      .sortBy(x => x.getSentence.getStart + x.getStart)
+
+    val landmarks = instances.filter(t =>  t.getId != dummyPhrase.getId && lmFilter(t)).toList
+      .sortBy(x => x.getSentence.getStart + x.getStart) ++ List(dummyPhrase)
+
+    val candidateRelations = indicators.flatMap(sp => {
+      val trList = trajectors.filter(t => sp.getSentence.getId == t.getSentence.getId)
+      if (trList.nonEmpty) {
+        val lmList = landmarks.filter(t => t.getId == dummyPhrase.getId || sp.getSentence.getId == t.getSentence.getId)
+        if (lmList.nonEmpty) {
+          trList.flatMap(tr => lmList.map(lm => createRelation(Some(tr), Some(sp), Some(lm))))
             .filter(r => r.getArgumentIds.toList.distinct.size == 3) // distinct arguments
-            .toList
         } else {
           List()
         }
@@ -68,6 +74,7 @@ object CandidateGenerator {
         List()
       }
     })
+    candidateRelations
   }
 
   def generatePairCandidates(
