@@ -418,12 +418,6 @@ object MultiModalSpRLDataModel extends DataModel {
     r: Relation => if (r.containsProperty("FoR")) r.getProperty("FoR") else "None"
   }
 
-  val tripletWordForm = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, second, third) = getTripletArguments(r)
-      wordForm(first) + "::" + wordForm(second) + "::" + wordForm(third)
-  }
-
   val JF2_1 = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
@@ -449,6 +443,7 @@ object MultiModalSpRLDataModel extends DataModel {
 
       val toks = (triplets(r) ~> -sentenceToTriplets ~> sentenceToPhrase ~> phraseToToken)
         .filter(x=> x.getStart >= start.getEnd && x.getEnd <= end.getStart)
+        .toList.sortBy(_.getStart)
 
       val template = toks.foldLeft("")((str, token) =>{
 
@@ -460,18 +455,17 @@ object MultiModalSpRLDataModel extends DataModel {
       template
   }
 
+  val JF2_4 = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, second, third) = getTripletArguments(r)
+      second.getText + "::" + roleToSpDependencyPath(second, third)
+  }
+
   val JF2_5 = property(triplets, cache = true) {
     r: Relation =>
       val (first, _, _) = getTripletArguments(r)
       first.getText
   }
-
-  val JF2_4 = property(triplets, cache = true) {
-    r: Relation =>
-      val (_, second, third) = getTripletArguments(r)
-      second.getText + "::" + roleToSpDependencyPath(third, second)
-  }
-
 
   val JF2_6 = property(triplets, cache = true) {
     r: Relation =>
@@ -488,7 +482,11 @@ object MultiModalSpRLDataModel extends DataModel {
   val JF2_8 = property(triplets, cache = true) {
     r: Relation =>
       val (_, _, third) = getTripletArguments(r)
-      getWordnetHypernyms(getHeadword(third))
+      if(third == dummyPhrase)
+        undefined
+      else {
+        getWordnetHypernyms(getHeadword(third))
+      }
   }
 
   val JF2_9 = property(triplets, cache = true) {
@@ -504,26 +502,31 @@ object MultiModalSpRLDataModel extends DataModel {
 
       val toks = (triplets(r) ~> -sentenceToTriplets ~> sentenceToPhrase ~> phraseToToken)
         .filter(x=> x.getStart >= start.getStart && x.getEnd <= end.getEnd)
+        .toList.sortBy(_.getStart)
 
       val template = toks.foldLeft("")((str, token) =>{
 
-        if(first.contains(token))
-          if(str.endsWith("[TR]"))
-            str + "[TR]"
-          else
+        if(first.contains(token)) {
+          if (str.endsWith("[TR]"))
             str
-        else if(second.contains(token))
-          if(str.endsWith("[SP]"))
-            str + "[SP]"
           else
+            str + "::[TR]"
+        }
+        else if(second.contains(token)) {
+          if (str.endsWith("[SP]"))
             str
-        else if(third.contains(token))
-          if(str.endsWith("[LM]"))
-            str + "[LM]"
           else
+            str + "::[SP]"
+        }
+        else if(third.contains(token)) {
+          if (str.endsWith("[LM]"))
             str
-        else
+          else
+            str + "::[LM]"
+        }
+        else {
           str + "::" + token.getText
+        }
       })
       template
   }
@@ -553,11 +556,23 @@ object MultiModalSpRLDataModel extends DataModel {
       }
   }
 
-
   val JF2_14 = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
       headWordLemma(first) + "::" + second.getText + "::" + headWordLemma(third)
+  }
+
+  val JF2_15 = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, _) = getTripletArguments(r)
+      val tr = getHeadword(first)
+      val sp = getHeadword(second)
+      val preps = getDependencyRelationWith(tr, "POBJ")
+      if(preps.nonEmpty){
+        preps.exists(p => p._1 != sp.getStart)
+      }
+      else
+        false
   }
 
   val tripletHeadWordForm = property(triplets, cache = true) {
@@ -594,12 +609,6 @@ object MultiModalSpRLDataModel extends DataModel {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
       phrasePos(first) + "::" + phrasePos(second) + "::" + phrasePos(third)
-  }
-
-  val tripletSemanticRole = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, second, third) = getTripletArguments(r)
-      semanticRole(first) + "::" + semanticRole(second) + "::" + semanticRole(third)
   }
 
   val tripletDependencyRelation = property(triplets, cache = true) {
@@ -681,11 +690,15 @@ object MultiModalSpRLDataModel extends DataModel {
 
     val start = if (isBefore(first, second))
       if (third == dummyPhrase || isBefore(first, third)) first else third
-    else second
+    else
+      if (third == dummyPhrase || isBefore(second, third)) second else third
+
 
     val end = if (isBefore(first, second))
-      if (third != dummyPhrase && isBefore(first, third)) third else second
-    else first
+      if (third != dummyPhrase && isBefore(second, third)) third else second
+    else
+      if (third != dummyPhrase && isBefore(first, third)) third else first
+
 
     (start, end)
   }
@@ -777,11 +790,11 @@ object MultiModalSpRLDataModel extends DataModel {
     found
   }
 
-  private def roleToSpDependencyPath(role: Phrase, sp: Phrase) = {
-    if (role != dummyPhrase) {
-      val first = getHeadword(role)
-      val second = getHeadword(sp)
-      getDependencyPath(first, second)
+  private def roleToSpDependencyPath(first: Phrase, second: Phrase) = {
+    if (first != dummyPhrase && second != dummyPhrase) {
+      val f = getHeadword(first)
+      val s = getHeadword(second)
+      getDependencyPath(f, s)
     }
     else
       undefined

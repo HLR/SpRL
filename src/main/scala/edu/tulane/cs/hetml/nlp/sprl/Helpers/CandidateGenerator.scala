@@ -140,11 +140,11 @@ object CandidateGenerator {
   private def createRelation(tr: Option[Phrase], sp: Option[Phrase], lm: Option[Phrase]): Relation = {
 
     val r = new Relation()
-    r.setArgument(0, if (tr.nonEmpty) tr.get else dummyPhrase)
+    r.setArgument(0, if (tr.nonEmpty && tr.get.getId != dummyPhrase.getId) tr.get else dummyPhrase)
     r.setArgumentId(0, r.getArgument(0).getId)
     r.setArgument(1, sp.get)
     r.setArgumentId(1, r.getArgument(1).getId)
-    r.setArgument(2, if (lm.nonEmpty) lm.get else dummyPhrase)
+    r.setArgument(2, if (lm.nonEmpty && lm.get.getId != dummyPhrase.getId) lm.get else dummyPhrase)
     r.setArgumentId(2, r.getArgument(2).getId)
 
     //set relation parent

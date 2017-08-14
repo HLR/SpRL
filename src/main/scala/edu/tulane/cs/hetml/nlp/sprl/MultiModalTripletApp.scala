@@ -46,7 +46,26 @@ object MultiModalTripletApp extends App with Logging{
       println("None:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") != "true"))
       println("Relation:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") == "true"))
 
-    TripletRelationClassifier.learn(50)
+/*    triplets().foreach(t => {
+      println("Triplet->" + t.getArgument(0) + "-" + t.getArgument(1) + "-" + t.getArgument(2))
+      println("Triplet parent->" + t.getParent.getId)
+      println("JF2_1->" + JF2_1(t))
+      println("JF2_2->" + JF2_2(t))
+      println("JF2_3->" + JF2_3(t))
+      println("JF2_4->" + JF2_4(t))
+      println("JF2_5->" + JF2_5(t))
+      println("JF2_6->" + JF2_6(t))
+      println("JF2_7->" + JF2_7(t))
+      println("JF2_8->" + JF2_8(t))
+      println("JF2_9->" + JF2_9(t))
+      println("JF2_10->" + JF2_10(t))
+      println("JF2_11->" + JF2_11(t))
+      println("JF2_13->" + JF2_13(t))
+      println("JF2_14->" + JF2_14(t))
+      println("JF2_15->" + JF2_15(t))
+    })*/
+
+    TripletRelationClassifier.learn(iterations)
     TripletRelationClassifier.save()
 
   }
