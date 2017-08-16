@@ -43,9 +43,11 @@ object MultiModalTripletApp extends App with Logging{
       x => lmCandidates.exists(_.getId == x.getId))
 
       println("Candidate Triplets Size -> " + triplets.getTrainingInstances.size)
-      println("None:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") != "true"))
       println("Relation:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") == "true"))
-
+      println("Relations Image Confirmed:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") == "true"
+        && tripletImageConfirms(x)=="true"))
+      println("Relations Image Wrongly Confirmed:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") != "true"
+      && tripletImageConfirms(x)=="true"))
 /*    triplets().foreach(t => {
       println("Triplet->" + t.getArgument(0) + "-" + t.getArgument(1) + "-" + t.getArgument(2))
       println("Triplet parent->" + t.getParent.getId)
