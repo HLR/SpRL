@@ -8,6 +8,7 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 
 object MultiModalTripletApp extends App with Logging{
 
@@ -25,6 +26,9 @@ object MultiModalTripletApp extends App with Logging{
   MultiModalSpRLClassifiers.featureSet = model
 
   val classifiers = List(
+    TrajectorRoleClassifier,
+    LandmarkRoleClassifier,
+    IndicatorRoleClassifier,
     TripletRelationClassifier
   )
 
@@ -33,21 +37,33 @@ object MultiModalTripletApp extends App with Logging{
   if (isTrain) {
     println("training started ...")
 
+  /*
+    TrajectorRoleClassifier.learn(iterations)
+    IndicatorRoleClassifier.learn(iterations)
+    LandmarkRoleClassifier.learn(iterations)
+
+    TrajectorRoleClassifier.save()
+    IndicatorRoleClassifier.save()
+    LandmarkRoleClassifier.save()
+*/
+
+
     val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
     val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
     val indicatorCandidates = (CandidateGenerator.getIndicatorCandidates(phrases().toList))
+
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidates.exists(_.getId == x.getId),
       x => indicatorCandidates.exists(p=> p.getId == x.getId),
       x => lmCandidates.exists(_.getId == x.getId))
 
-      println("Candidate Triplets Size -> " + triplets.getTrainingInstances.size)
+/*      println("Candidate Triplets Training Size -> " + triplets.getTrainingInstances.size)
       println("Relation:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") == "true"))
       println("Relations Image Confirmed:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") == "true"
         && tripletImageConfirms(x)=="true"))
       println("Relations Image Wrongly Confirmed:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") != "true"
-      && tripletImageConfirms(x)=="true"))
+      && tripletImageConfirms(x)=="true")) */
 /*    triplets().foreach(t => {
       println("Triplet->" + t.getArgument(0) + "-" + t.getArgument(1) + "-" + t.getArgument(2))
       println("Triplet parent->" + t.getParent.getId)
@@ -75,10 +91,12 @@ object MultiModalTripletApp extends App with Logging{
   if (!isTrain) {
 
     println("testing started ...")
-
+//    TrajectorRoleClassifier.load()
+//    LandmarkRoleClassifier.load()
+//    IndicatorRoleClassifier.load()
     TripletRelationClassifier.load()
 
-    if (!useConstraints) {
+    if (useConstraints) {
 
       val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
       val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
@@ -90,13 +108,16 @@ object MultiModalTripletApp extends App with Logging{
           //x => IndicatorRoleClassifier(x) == "Indicator",
           x => lmCandidates.exists(_.getId == x.getId))
 
-      println("Candidate Triplets Size -> " + triplets.getTestingInstances.size)
-      println("None:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") != "true"))
-      println("Relation:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") == "true"))
-
+/*      println("Candidate Triplets Testing Size -> " + triplets.getTestingInstances.size)
+            println("Relation:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") == "true"))
+            println("Relations Image Confirmed:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") == "true"
+              && tripletImageConfirms(x)=="true"))
+            println("Relations Image Wrongly Confirmed:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") != "true"
+              && tripletImageConfirms(x)=="true"))
+*/
+//      SentenceLevelConstraintClassifiers.TripletRelationTypeConstraintClassifier.test()
       TripletRelationClassifier.test()
     }
   }
-
 }
 

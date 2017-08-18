@@ -45,7 +45,7 @@ object SentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (((TripletRelationClassifier on x) is "Relation") ==>
-            (TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector") and
+//            (TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector") and
             (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "Indicator") and
             (LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "Landmark")
             )
@@ -131,6 +131,6 @@ object SentenceLevelConstraints {
 
   val allConstraintsRelationTriplets = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => integrityRelationTriplets(x)
+    x: Sentence => integrityRelationTriplets(x) and boostIndicator(x)
   }
 }

@@ -746,24 +746,35 @@ object MultiModalSpRLDataModel extends DataModel {
   }
   private def isExistsInSegmentRelations(r: Relation) : Boolean = {
     val (first, second, third) = getTripletArguments(r)
+      val firstConcept = headWordFrom(first)
+      val secondConcept = headWordFrom(second)
+      val thirdConcept = headWordFrom(third)
+        val img = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage head
+        val segs = (images(img) ~> imageToSegment).map(s=> s.getSegmentId -> s).toMap
+        val rels = images(img) ~> imageToSegment ~> -segmentRelationsToSegments
+      rels.exists(ir=>{
+        if(segs.contains(ir.getFirstSegmentId) && segs.contains(ir.getSecondSegmentId)) {
+          val firstSeg = segs(ir.getFirstSegmentId)
+          val secondSeg = segs(ir.getSecondSegmentId)
+          val relSeg = ir.getRelation
 
-    val firstConcept = headWordFrom(first)
-    val thirdConcept = headWordFrom(third)
-      val img = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage head
-      val segs = (images(img) ~> imageToSegment).map(s=> s.getSegmentId -> s).toMap
-      val rels = images(img) ~> imageToSegment ~> -segmentRelationsToSegments
-    rels.exists(ir=>{
-      val firstSeg = segs(ir.getFirstSegmentId)
-      val secondSeg = segs(ir.getSecondSegmentId)
-
-      isImageRelMatchesWithTextRel(firstSeg, secondSeg,  firstConcept, thirdConcept) ||
-      isImageRelMatchesWithTextRel(firstSeg,secondSeg,  thirdConcept, firstConcept)
-    })
+          isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, firstConcept, thirdConcept, second.getText) ||
+            isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, thirdConcept, firstConcept, second.getText)
+        }
+        else{
+          false
+        }
+      })
   }
 
-  private def isImageRelMatchesWithTextRel(seg1:Segment, seg2:Segment, tr:String, lm:String):Boolean = {
+  private def isImageRelMatchesWithTextRel(seg1:Segment, seg2:Segment, segRel: String,
+                                           tr:String, lm:String, sp:String):Boolean = {
     isSegmentMatchingWith(seg1, tr) &&
-      isSegmentMatchingWith(seg2, lm)
+      isSegmentMatchingWith(seg2, lm) &&
+      (if(SpToImageSp.contains(sp))
+        SpToImageSp(sp)==segRel.toLowerCase
+      else
+        false)
   }
   private  def isSegmentMatchingWith(segment: Segment, concept: String):Boolean = {
     isImageConceptMatchingWith(segment.getSegmentConcept, concept) ||

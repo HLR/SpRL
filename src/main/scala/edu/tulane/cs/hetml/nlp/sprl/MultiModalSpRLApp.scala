@@ -59,10 +59,10 @@ object MultiModalSpRLApp extends App with Logging{
       IndicatorRoleClassifier.learn(iterations)
       LandmarkRoleClassifier.learn(iterations)
     }
-    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
-    ReportHelper.saveCandidateList(true, pairs.getTrainingInstances.toList)
+//    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
+//    ReportHelper.saveCandidateList(true, pairs.getTrainingInstances.toList)
 
-
+/*
     if(skipIndividualClassifiersTraining) {
       TrajectorPairClassifier.load()
       LandmarkPairClassifier.load()
@@ -80,12 +80,12 @@ object MultiModalSpRLApp extends App with Logging{
         IndicatorConstraintClassifier :: TRPairConstraintClassifier ::
         LMPairConstraintClassifier :: Nil, init = false, it = 10)*/
     }
-
+*/
     TrajectorRoleClassifier.save()
     IndicatorRoleClassifier.save()
     LandmarkRoleClassifier.save()
-    TrajectorPairClassifier.save()
-    LandmarkPairClassifier.save()
+//    TrajectorPairClassifier.save()
+//    LandmarkPairClassifier.save()
 
     if(!useCandidateTrLmTriplets) {
       populateTripletDataFromAnnotatedCorpusFromPairs(
@@ -106,9 +106,9 @@ object MultiModalSpRLApp extends App with Logging{
         x => lmCandidates.exists(_.getId == x.getId))
     }
 
-    TripletRelationClassifier.learn(50)
+    TripletRelationClassifier.learn(iterations)
     TripletRelationClassifier.save()
-
+/*
     val goldTriplets = triplets.getTrainingInstances.filter(_.containsProperty("ActualId"))
     TripletGeneralTypeClassifier.learn(iterations, goldTriplets)
     TripletGeneralTypeClassifier.save()
@@ -120,7 +120,7 @@ object MultiModalSpRLApp extends App with Logging{
     TripletRCC8Classifier.save()
 
     TripletFoRClassifier.learn(iterations, goldTriplets)
-    TripletFoRClassifier.save()
+    TripletFoRClassifier.save() */
   }
 
   if (!isTrain) {
@@ -130,16 +130,16 @@ object MultiModalSpRLApp extends App with Logging{
     TrajectorRoleClassifier.load()
     LandmarkRoleClassifier.load()
     IndicatorRoleClassifier.load()
-    TrajectorPairClassifier.load()
+/*    TrajectorPairClassifier.load()
     LandmarkPairClassifier.load()
     TripletGeneralTypeClassifier.load()
     TripletSpecificTypeClassifier.load()
     TripletRCC8Classifier.load()
-    TripletFoRClassifier.load()
+    TripletFoRClassifier.load()*/
     TripletRelationClassifier.load()
 
-    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
-    ReportHelper.saveCandidateList(false, pairs.getTestingInstances.toList)
+//    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
+//    ReportHelper.saveCandidateList(false, pairs.getTestingInstances.toList)
 
     if (!useConstraints) {
 
@@ -151,6 +151,9 @@ object MultiModalSpRLApp extends App with Logging{
       }
       else
       {
+        println("testing Trajector ...")
+        TrajectorRoleClassifier.test()
+
         val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
         val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
         val indicatorCandidates = (CandidateGenerator.getIndicatorCandidates(phrases().toList))
@@ -205,7 +208,7 @@ object MultiModalSpRLApp extends App with Logging{
       }
 
       TripletRelationClassifier.test()
-
+/*
       val trajectors = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.TRConstraintClassifier(x) == "Trajector").toList
       val landmarks = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.LMConstraintClassifier(x) == "Landmark").toList
       val indicators = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator").toList
@@ -219,10 +222,10 @@ object MultiModalSpRLApp extends App with Logging{
         x => TripletSpecificTypeClassifier(x),
         x => TripletRCC8Classifier(x),
         x => TripletFoRClassifier(x),
-        s"$resultsDir/${expName}${suffix}.xml")
+        s"$resultsDir/${expName}${suffix}.xml")*/
     }
 
-    ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+//    ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
   }
 
 }

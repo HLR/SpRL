@@ -70,7 +70,7 @@ public class CLEFImageReader {
 
         path = directory;
         // Load redefined segment relations
-//        getRedefinedRelations(directory);
+        getRedefinedRelations(directory);
         // Load Concepts
         getConcepts(directory);
         //Load Referit Data
@@ -236,9 +236,10 @@ public class CLEFImageReader {
             for (File f : d.listFiles()) {
                 String label = f.getName();
                 String[] split = label.split("\\.");
+
                 if (trainingData.contains(split[0]))
                     trainingImages.add(new Image(label, split[0]));
-                else if (testData.contains(split[0]))
+                if (testData.contains(split[0]))
                     testImages.add(new Image(label, split[0]));
             }
         }
@@ -290,7 +291,8 @@ public class CLEFImageReader {
                         segmentFeatures = segmentFeatures.trim().replaceAll(" +", " ");
                         if (trainingData.contains(imageId)) {
                             trainingSegments.add(new Segment(imageId, segmentId, segmentCode, segmentFeatures, segmentConcept, ontologyConcepts, referitText));
-                        } else if (testData.contains(imageId)) {
+                        }
+                        if (testData.contains(imageId)) {
                             testSegments.add(new Segment(imageId, segmentId, segmentCode, segmentFeatures, segmentConcept, ontologyConcepts, referitText));
                         }
                     }
@@ -346,7 +348,8 @@ public class CLEFImageReader {
                                     if (trainingData.contains(imgId)) {
                                         //Creating new Relation between segments
                                         trainingRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
-                                    } else if (testData.contains(imgId)) {
+                                    }
+                                    if (testData.contains(imgId)) {
                                         testRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
                                     }
                                 }
@@ -355,16 +358,17 @@ public class CLEFImageReader {
                                     rel = "beside";
                                 else if (val == 4) {
                                     // Original "x-aligned"
-                                    rel = "x-aligned";
-                                    //String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
-                                    //rel = redefindedRelations.get(key);
+                                    //rel = "x-aligned";
+                                    String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
+                                    rel = redefindedRelations.get(key);
                                 }
 
                                 if (rel != null) {
                                     if (trainingData.contains(imgId)) {
                                         //Creating new Relation between segments
                                         trainingRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
-                                    } else if (testData.contains(imgId)) {
+                                    }
+                                    if (testData.contains(imgId)) {
                                         testRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
                                     }
                                 }
@@ -380,16 +384,17 @@ public class CLEFImageReader {
                                     rel = "below";
                                 else if (val == 7) {
                                     // Original "y-aligned"
-                                    rel= "y-aligned";
-                                    //String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
-                                    //rel = redefindedRelations.get(key);
+                                    //rel= "y-aligned";
+                                    String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
+                                    rel = redefindedRelations.get(key);
                                 }
 
                                 if (rel != null) {
                                     if (trainingData.contains(imgId)) {
                                         //Creating new Relation between segments
                                         trainingRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
-                                    } else if (testData.contains(imgId)) {
+                                    }
+                                    if (testData.contains(imgId)) {
                                         testRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
                                     }
                                 }
