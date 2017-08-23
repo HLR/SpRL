@@ -581,24 +581,6 @@ object MultiModalSpRLDataModel extends DataModel {
       headWordFrom(first) + "::" + headWordFrom(second) + "::" + headWordFrom(third)
   }
 
-  val tripletLemma = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, second, third) = getTripletArguments(r)
-      lemma(first) + "::" + lemma(second) + "::" + lemma(third)
-  }
-
-  val tripletHeadWordLemma = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, second, third) = getTripletArguments(r)
-      headWordLemma(first) + "::" + headWordLemma(second) + "::" + headWordLemma(third)
-  }
-
-  val tripletPos = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, second, third) = getTripletArguments(r)
-      pos(first) + "::" + pos(second) + "::" + pos(third)
-  }
-
   val tripletHeadWordPos = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
@@ -617,10 +599,54 @@ object MultiModalSpRLDataModel extends DataModel {
       dependencyRelation(first) + "::" + dependencyRelation(second) + "::" + dependencyRelation(third)
   }
 
+  val tripletHeadVector = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      headVector(first) ++ headVector(second) ++ headVector(third)
+  }
+
+  val tripletTrSpVector = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, _) = getTripletArguments(r)
+      headVector(first) ++ headVector(second)
+  }
+
+  val tripletSpLmVector = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, second, third) = getTripletArguments(r)
+      headVector(second) ++ headVector(third)
+  }
+
+  val tripletImageConfirms = property(triplets, cache = true) {
+    r: Relation => isExistsInSegmentRelations(r, false)
+  }
+
+  val tripletImageRelations = property(triplets, cache = true) {
+    r: Relation => "" //getSegmentRelations(r)
+  }
+
+  val tripletLemma = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      lemma(first) + "::" + lemma(second) + "::" + lemma(third)
+  }
+
+  val tripletHeadWordLemma = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      headWordLemma(first) + "::" + headWordLemma(second) + "::" + headWordLemma(third)
+  }
+
   val tripletHeadDependencyRelation = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
       headDependencyRelation(first) + "::" + headDependencyRelation(second) + "::" + headDependencyRelation(third)
+  }
+
+  val tripletPos = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      pos(first) + "::" + pos(second) + "::" + pos(third)
   }
 
   val tripletSubCategorization = property(triplets, cache = true) {
@@ -645,20 +671,6 @@ object MultiModalSpRLDataModel extends DataModel {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
       headSpatialContext(first) + "::" + headSpatialContext(second)
-  }
-
-  val tripletTokensVector = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, second, third) = getTripletArguments(r)
-      headVector(first) ++ headVector(second) ++ headVector(third)
-  }
-
-  val tripletImageConfirms = property(triplets, cache = true) {
-    r: Relation => isExistsInSegmentRelations(r)
-  }
-
-  val tripletImageRelations = property(triplets, cache = true) {
-    r: Relation => "" //getSegmentRelations(r)
   }
 
   val imageLabel = property(images, cache = true) {
@@ -744,7 +756,7 @@ object MultiModalSpRLDataModel extends DataModel {
     else
       undefined
   }
-  private def isExistsInSegmentRelations(r: Relation) : Boolean = {
+  private def isExistsInSegmentRelations(r: Relation, useSp: Boolean) : Boolean = {
     val (first, second, third) = getTripletArguments(r)
       val firstConcept = headWordFrom(first)
       val secondConcept = headWordFrom(second)
@@ -758,8 +770,8 @@ object MultiModalSpRLDataModel extends DataModel {
           val secondSeg = segs(ir.getSecondSegmentId)
           val relSeg = ir.getRelation
 
-          isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, firstConcept, thirdConcept, second.getText) ||
-            isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, thirdConcept, firstConcept, second.getText)
+          isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, firstConcept, thirdConcept, second.getText, useSp) ||
+            isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, thirdConcept, firstConcept, second.getText, useSp)
         }
         else{
           false
@@ -768,13 +780,16 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
   private def isImageRelMatchesWithTextRel(seg1:Segment, seg2:Segment, segRel: String,
-                                           tr:String, lm:String, sp:String):Boolean = {
+                                           tr:String, lm:String, sp:String, useSp:Boolean):Boolean = {
     isSegmentMatchingWith(seg1, tr) &&
       isSegmentMatchingWith(seg2, lm) &&
-      (if(SpToImageSp.contains(sp))
-        SpToImageSp(sp)==segRel.toLowerCase
-      else
-        false)
+      (if(useSp){
+        if(SpToImageSp.contains(sp))
+            SpToImageSp(sp)==segRel.toLowerCase
+          else
+            false
+      }
+      else {true})
   }
   private  def isSegmentMatchingWith(segment: Segment, concept: String):Boolean = {
     isImageConceptMatchingWith(segment.getSegmentConcept, concept) ||

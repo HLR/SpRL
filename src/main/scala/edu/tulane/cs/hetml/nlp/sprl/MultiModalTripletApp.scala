@@ -37,16 +37,13 @@ object MultiModalTripletApp extends App with Logging{
   if (isTrain) {
     println("training started ...")
 
-  /*
-    TrajectorRoleClassifier.learn(iterations)
+//    TrajectorRoleClassifier.learn(iterations)
     IndicatorRoleClassifier.learn(iterations)
     LandmarkRoleClassifier.learn(iterations)
 
-    TrajectorRoleClassifier.save()
+//    TrajectorRoleClassifier.save()
     IndicatorRoleClassifier.save()
     LandmarkRoleClassifier.save()
-*/
-
 
     val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
     val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
@@ -55,8 +52,11 @@ object MultiModalTripletApp extends App with Logging{
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidates.exists(_.getId == x.getId),
-      x => indicatorCandidates.exists(p=> p.getId == x.getId),
-      x => lmCandidates.exists(_.getId == x.getId))
+      x => IndicatorRoleClassifier(x) == "Indicator",
+//      x => indicatorCandidates.exists(p=> p.getId == x.getId),
+      x => LandmarkRoleClassifier(x) == "Landmark"
+      //x => lmCandidates.exists(_.getId == x.getId)
+        )
 
 /*      println("Candidate Triplets Training Size -> " + triplets.getTrainingInstances.size)
       println("Relation:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") == "true"))
@@ -92,8 +92,8 @@ object MultiModalTripletApp extends App with Logging{
 
     println("testing started ...")
 //    TrajectorRoleClassifier.load()
-//    LandmarkRoleClassifier.load()
-//    IndicatorRoleClassifier.load()
+    LandmarkRoleClassifier.load()
+    IndicatorRoleClassifier.load()
     TripletRelationClassifier.load()
 
     if (useConstraints) {
@@ -104,8 +104,8 @@ object MultiModalTripletApp extends App with Logging{
 
       populateTripletDataFromAnnotatedCorpus(
           x => trCandidates.exists(_.getId == x.getId),
-          x => indicatorCandidates.exists(p=> p.getId == x.getId),
-          //x => IndicatorRoleClassifier(x) == "Indicator",
+//          x => indicatorCandidates.exists(p=> p.getId == x.getId),
+          x => IndicatorRoleClassifier(x) == "Indicator",
           x => lmCandidates.exists(_.getId == x.getId))
 
 /*      println("Candidate Triplets Testing Size -> " + triplets.getTestingInstances.size)

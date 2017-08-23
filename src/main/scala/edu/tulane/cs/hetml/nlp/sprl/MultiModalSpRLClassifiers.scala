@@ -44,14 +44,15 @@ object MultiModalSpRLClassifiers {
 
   def tripletFeatures(featureSet: FeatureSets): List[Property[Relation]] =
     List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
-      tripletPos) ++
-      //, tripletHeadWordPos, tripletPhrasePos) ++
-      //tripletHeadWordForm
-  //      tripletDependencyRelation, tripletSubCategorization, tripletSpatialContext, tripletHeadSpatialContext) ++
+      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos, tripletHeadWordForm
+
+      //-tripletSpatialContext,-tripletSubCategorization, -tripletPos, -tripletHeadSpatialContext, -tripletHeadDependencyRelation, -tripletLemma, -tripletHeadWordLemma
+      ) ++
+      //) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List()
-        case FeatureSets.WordEmbedding => List(tripletTokensVector)
-        case FeatureSets.WordEmbeddingPlusImage => List(tripletTokensVector, tripletImageConfirms)
+        case FeatureSets.BaseLineWithImage => List(tripletImageConfirms)
+        case FeatureSets.WordEmbedding => List(tripletHeadVector)
+        case FeatureSets.WordEmbeddingPlusImage => List(tripletImageConfirms)
         case _ => List[Property[Relation]]()
       })
 
