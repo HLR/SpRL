@@ -8,12 +8,13 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
+import org.apache.commons.io.FileUtils
 
 object MultiModalTripletApp extends App with Logging{
 
   val expName = (model, useConstraints) match {
     case (FeatureSets.BaseLine, false) => "BM"
+    case (FeatureSets.BaseLineWithImage, false) => "BM+I"
     case (FeatureSets.BaseLine, true) => "BM+C"
     case (FeatureSets.WordEmbedding, false) => "BM+E"
     case (FeatureSets.WordEmbedding, true) => "BM+C+E"
@@ -29,8 +30,16 @@ object MultiModalTripletApp extends App with Logging{
     TrajectorRoleClassifier,
     LandmarkRoleClassifier,
     IndicatorRoleClassifier,
-    TripletRelationClassifier
+    TripletRelationClassifier,
+    TripletGeneralTypeClassifier,
+    TripletRCC8Classifier,
+    TripletRelationClassifierWithImage
   )
+  classifiers.foreach(x => {
+    x.modelDir = s"models/mSpRL/$featureSet/"
+    x.modelSuffix = suffix
+  })
+  FileUtils.forceMkdir(new File(resultsDir))
 
   populateRoleDataFromAnnotatedCorpus()
 
@@ -39,11 +48,11 @@ object MultiModalTripletApp extends App with Logging{
 
 //    TrajectorRoleClassifier.learn(iterations)
     IndicatorRoleClassifier.learn(iterations)
-    LandmarkRoleClassifier.learn(iterations)
+//    LandmarkRoleClassifier.learn(iterations)
 
 //    TrajectorRoleClassifier.save()
     IndicatorRoleClassifier.save()
-    LandmarkRoleClassifier.save()
+//    LandmarkRoleClassifier.save()
 
     val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
     val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
@@ -53,10 +62,21 @@ object MultiModalTripletApp extends App with Logging{
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidates.exists(_.getId == x.getId),
       x => IndicatorRoleClassifier(x) == "Indicator",
-//      x => indicatorCandidates.exists(p=> p.getId == x.getId),
-      x => LandmarkRoleClassifier(x) == "Landmark"
-      //x => lmCandidates.exists(_.getId == x.getId)
+      x => lmCandidates.exists(_.getId == x.getId)
         )
+
+    println("Image LM Confirmed:" + triplets.getTrainingInstances.count(x=> x.getProperty("Relation") == "true"
+      && tripletLMIsImageConceptExactMatch(x)=="true"))
+    println("Image LM Wrong Confirmed:" + triplets.getTrainingInstances.count(x=> x.getProperty("Relation") != "true"
+      && tripletLMIsImageConceptExactMatch(x)=="true"))
+    println("Image TR Confirmed:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") == "true" &&
+      tripletTRIsImageConceptExactMatch(x)=="true"))
+    println("Image TR Wrong Confirmed:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") != "true" &&
+      tripletTRIsImageConceptExactMatch(x)=="true"))
+    println("Image TR-LM Confirmed:" + triplets.getTrainingInstances.count(x=> x.getProperty("Relation") == "true"
+      && tripletTRLMIsImageConcept(x)=="true"))
+    println("Image TR-LM Wrong Confirmed:" + triplets.getTrainingInstances.count(x=> x.getProperty("Relation") != "true"
+      && tripletTRLMIsImageConcept(x)=="true"))
 
 /*      println("Candidate Triplets Training Size -> " + triplets.getTrainingInstances.size)
       println("Relation:" + triplets.getTrainingInstances.count(x=>x.getProperty("Relation") == "true"))
@@ -84,19 +104,26 @@ object MultiModalTripletApp extends App with Logging{
     })*/
 
     TripletRelationClassifier.learn(iterations)
+//    TripletRelationClassifierWithImage.learn(iterations)
+//    TripletGeneralTypeClassifier.learn(iterations)
+//    TripletRCC8Classifier.learn(iterations)
+//
     TripletRelationClassifier.save()
-
+//    TripletRelationClassifierWithImage.save()
+//    TripletGeneralTypeClassifier.save()
+//    TripletRCC8Classifier.save()
   }
 
   if (!isTrain) {
 
     println("testing started ...")
 //    TrajectorRoleClassifier.load()
-    LandmarkRoleClassifier.load()
+//    LandmarkRoleClassifier.load()
     IndicatorRoleClassifier.load()
     TripletRelationClassifier.load()
-
-    if (useConstraints) {
+//    TripletGeneralTypeClassifier.load()
+//    TripletRCC8Classifier.load()
+//    TripletRelationClassifierWithImage.load()
 
       val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
       val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
@@ -104,20 +131,43 @@ object MultiModalTripletApp extends App with Logging{
 
       populateTripletDataFromAnnotatedCorpus(
           x => trCandidates.exists(_.getId == x.getId),
-//          x => indicatorCandidates.exists(p=> p.getId == x.getId),
           x => IndicatorRoleClassifier(x) == "Indicator",
           x => lmCandidates.exists(_.getId == x.getId))
 
-/*      println("Candidate Triplets Testing Size -> " + triplets.getTestingInstances.size)
-            println("Relation:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") == "true"))
-            println("Relations Image Confirmed:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") == "true"
-              && tripletImageConfirms(x)=="true"))
-            println("Relations Image Wrongly Confirmed:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") != "true"
-              && tripletImageConfirms(x)=="true"))
-*/
+    println("Image LM Confirmed:" + triplets.getTestingInstances.count(x=> x.getProperty("Relation") == "true"
+      && tripletLMIsImageConceptExactMatch(x)=="true"))
+    println("Image LM Wrong Confirmed:" + triplets.getTestingInstances.count(x=> x.getProperty("Relation") != "true"
+      && tripletLMIsImageConceptExactMatch(x)=="true"))
+    println("Image TR Confirmed:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") == "true" &&
+      tripletTRIsImageConceptExactMatch(x)=="true"))
+    println("Image TR Wrong Confirmed:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") != "true" &&
+      tripletTRIsImageConceptExactMatch(x)=="true"))
+    println("Image TR-LM Confirmed:" + triplets.getTestingInstances.count(x=> x.getProperty("Relation") == "true"
+      && tripletTRLMIsImageConcept(x)=="true"))
+    println("Image TR-LM Wrong Confirmed:" + triplets.getTestingInstances.count(x=> x.getProperty("Relation") != "true"
+      && tripletTRLMIsImageConcept(x)=="true"))
+
 //      SentenceLevelConstraintClassifiers.TripletRelationTypeConstraintClassifier.test()
       TripletRelationClassifier.test()
-    }
+//    TripletRelationClassifierWithImage.test()
+/*    TripletGeneralTypeClassifier.test()
+    TripletRCC8Classifier.test()
+
+    val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
+    val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
+    val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
+
+    val tripletList = triplets.getTestingInstances
+      .filter(x=> TripletRelationClassifier(x) == "Relation").toList
+
+    ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
+      x => TripletGeneralTypeClassifier(x),
+      x => "",
+      x => TripletRCC8Classifier(x),
+      x => "",
+      s"$resultsDir/${expName}${suffix}.xml")
+
+    ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")*/
   }
 }
 

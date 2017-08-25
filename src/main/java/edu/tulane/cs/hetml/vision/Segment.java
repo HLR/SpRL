@@ -54,6 +54,11 @@ public class Segment {
         return segmentConcept;
     }
 
+    public List<String> getSegmentConceptOntology()
+    {
+        return ontologyConcepts;
+    }
+
     public boolean isexistOntologyConcepts(String x)
     {
         for(String o : ontologyConcepts) {

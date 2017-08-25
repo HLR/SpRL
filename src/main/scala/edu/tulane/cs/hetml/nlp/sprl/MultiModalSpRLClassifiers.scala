@@ -20,7 +20,7 @@ object MultiModalSpRLClassifiers {
     List(wordForm, headWordFrom, pos, headWordPos, phrasePos, semanticRole, dependencyRelation, subCategorization,
       spatialContext, headSpatialContext, headDependencyRelation, headSubCategorization) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(isImageConcept)
+        case FeatureSets.BaseLineWithImage => List()
         case FeatureSets.WordEmbedding => List(headVector)
         case FeatureSets.WordEmbeddingPlusImage => List(headVector, nearestSegmentConceptToHeadVector)
         case _ => List[Property[Phrase]]()
@@ -44,15 +44,16 @@ object MultiModalSpRLClassifiers {
 
   def tripletFeatures(featureSet: FeatureSets): List[Property[Relation]] =
     List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
-      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos, tripletHeadWordForm
-
-      //-tripletSpatialContext,-tripletSubCategorization, -tripletPos, -tripletHeadSpatialContext, -tripletHeadDependencyRelation, -tripletLemma, -tripletHeadWordLemma
+      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos
+      //-tripletSpatialContext,-tripletSubCategorization, -tripletPos, -tripletHeadSpatialContext,
+      // -tripletHeadDependencyRelation, -tripletLemma, -tripletHeadWordLemma, -tripletHeadWordForm
       ) ++
-      //) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(tripletImageConfirms)
+        case FeatureSets.BaseLineWithImage => List()
         case FeatureSets.WordEmbedding => List(tripletHeadVector)
-        case FeatureSets.WordEmbeddingPlusImage => List(tripletImageConfirms)
+        case FeatureSets.WordEmbeddingPlusImage => List(tripletTRIsImageConceptExactMatch, tripletLMIsImageConceptExactMatch,
+          tripletTRNearestSegmentConceptToHeadVector, tripletTRNearestSegmentConceptToPhraseVector,
+          tripletLMNearestSegmentConceptToHeadVector, tripletLMNearestSegmentConceptToPhraseVector, tripletImageConfirms)
         case _ => List[Property[Relation]]()
       })
 
@@ -89,7 +90,7 @@ object MultiModalSpRLClassifiers {
     }
 
     override def feature = (phraseFeatures ++ List(lemma, headWordLemma))
-      .diff(List(isImageConcept))
+      .diff(List(isImageConceptExactMatch))
   }
 
   object IndicatorRoleClassifier extends Learnable(phrases) {
@@ -103,7 +104,7 @@ object MultiModalSpRLClassifiers {
     }
 
     override def feature = (phraseFeatures(FeatureSets.BaseLine) ++ List(headSubCategorization))
-      .diff(List(headWordPos, headWordFrom, headDependencyRelation, isImageConcept))
+      .diff(List(headWordPos, headWordFrom, headDependencyRelation, isImageConceptExactMatch))
   }
 
   object TrajectorPairClassifier extends Learnable(pairs) {
@@ -148,7 +149,25 @@ object MultiModalSpRLClassifiers {
       baseLTU = new SparseAveragedPerceptron(p)
     }
 
-    override def feature = tripletFeatures
+    override def feature = List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
+      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos, tripletLMIsImageConceptApproxMatch)
+  }
+
+  object TripletRelationClassifierWithImage extends Learnable(triplets) {
+    def label = tripletIsRelation
+
+    override lazy val classifier = new SparseNetworkLearner {
+      val p = new SparseAveragedPerceptron.Parameters()
+      p.learningRate = .1
+      p.positiveThickness = 4
+      p.negativeThickness = 1
+      baseLTU = new SparseAveragedPerceptron(p)
+    }
+
+    override def feature = List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
+      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos, tripletTRIsImageConceptExactMatch, tripletLMIsImageConceptExactMatch,
+      tripletTRNearestSegmentConceptToHeadVector, tripletTRNearestSegmentConceptToPhraseVector,
+      tripletLMNearestSegmentConceptToHeadVector, tripletLMNearestSegmentConceptToPhraseVector)
   }
 
   object TripletGeneralTypeClassifier extends Learnable(triplets) {

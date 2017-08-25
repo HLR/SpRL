@@ -205,11 +205,33 @@ object MultiModalSpRLDataModel extends DataModel {
     x: Phrase => if (x != dummyPhrase) getVector(getHeadword(x).getText.toLowerCase) else getVector(null)
   }
 
-  val isImageConcept = property(phrases, cache = true) {
+  val isImageConceptExactMatch = property(phrases, cache = true) {
     p: Phrase =>
       if (p != dummyPhrase) {
         getSegmentConcepts(p)
           .exists(x => p.getText.toLowerCase.contains(x.toLowerCase.trim)).toString
+      } else {
+        ""
+      }
+  }
+
+
+  val isImageConceptApproxMatch = property(phrases, cache = true) {
+    p: Phrase =>
+      if (p != dummyPhrase) {
+        if(getSegmentConcepts(p)
+          .exists(x=> getGoogleSimilarity(getHeadword(p).getText, x.toLowerCase.trim) >= 0.40))
+          {
+            "true"
+          }
+        else
+          getSegmentConceptsOntology(p).exists(x => {
+              x.exists(s =>
+                (!phraseConceptToWord.contains(s) && getGoogleSimilarity(getHeadword(p).getText, s.toLowerCase().trim) >= 0.40)
+                || (phraseConceptToWord.contains(s) && getGoogleSimilarity(phraseConceptToWord(s), s) >= 0.40)
+              )
+            }).toString
+
       } else {
         ""
       }
@@ -373,7 +395,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val pairIsImageConcept = property(pairs, cache = true) {
     r: Relation =>
       val (first, _) = getPairArguments(r)
-      isImageConcept(first)
+      isImageConceptExactMatch(first)
   }
 
   val before = property(pairs, cache = true) {
@@ -575,6 +597,64 @@ object MultiModalSpRLDataModel extends DataModel {
         false
   }
 
+  val tripletTRIsImageConceptExactMatch = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, _, _) = getTripletArguments(r)
+      isImageConceptExactMatch(first)
+  }
+
+  val tripletLMIsImageConceptExactMatch = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, _, third) = getTripletArguments(r)
+      isImageConceptExactMatch(third)
+  }
+
+  val tripletTRLMIsImageConcept = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, _, third) = getTripletArguments(r)
+      if(tripletTRIsImageConceptExactMatch(r)=="true" && tripletLMIsImageConceptExactMatch(r) == "true")
+        "true"
+      else
+        ""
+  }
+
+
+  val tripletTRIsImageConceptApproxMatch = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, _, _) = getTripletArguments(r)
+      isImageConceptApproxMatch(first)
+  }
+
+  val tripletLMIsImageConceptApproxMatch = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, _, third) = getTripletArguments(r)
+      isImageConceptApproxMatch(third)
+  }
+
+  val tripletTRNearestSegmentConceptToHeadVector = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, _, _) = getTripletArguments(r)
+      nearestSegmentConceptToHeadVector(first)
+  }
+
+  val tripletLMNearestSegmentConceptToHeadVector = property(triplets, cache = true) {
+    r: Relation =>
+      val (_ , _, third) = getTripletArguments(r)
+      nearestSegmentConceptToHeadVector(third)
+  }
+
+  val tripletTRNearestSegmentConceptToPhraseVector = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, _, _) = getTripletArguments(r)
+      nearestSegmentConceptToPhraseVector(first)
+  }
+
+  val tripletLMNearestSegmentConceptToPhraseVector = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, _, third) = getTripletArguments(r)
+      nearestSegmentConceptToPhraseVector(third)
+  }
+
   val tripletHeadWordForm = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
@@ -746,6 +826,12 @@ object MultiModalSpRLDataModel extends DataModel {
         else
           phraseConceptToWord(x.getSegmentConcept))
   }
+
+  private def getSegmentConceptsOntology(p: Phrase) = {
+    ((phrases(p) ~> -sentenceToPhrase ~> -documentToSentence) ~> documentToImage ~> imageToSegment)
+      .map(x => x.getSegmentConceptOntology)
+  }
+
 
   private def roleToSpDependencyPath(first: Phrase, second: Phrase) = {
     if(first != dummyPhrase && second != dummyPhrase) {
