@@ -3,13 +3,10 @@ package edu.tulane.cs.hetml.nlp.sprl
 import edu.illinois.cs.cogcomp.lbjava.learn.{SparseAveragedPerceptron, SparseNetworkLearner, SupportVectorMachine}
 import edu.illinois.cs.cogcomp.saul.classifier.Learnable
 import edu.illinois.cs.cogcomp.saul.datamodel.property.Property
-import edu.illinois.cs.cogcomp.saul.learn.SaulWekaWrapper
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets.FeatureSets
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
-import weka.classifiers.`lazy`.IBk
-import weka.classifiers.bayes.NaiveBayes
 
 object MultiModalSpRLClassifiers {
   var featureSet = FeatureSets.WordEmbeddingPlusImage
@@ -44,16 +41,11 @@ object MultiModalSpRLClassifiers {
 
   def tripletFeatures(featureSet: FeatureSets): List[Property[Relation]] =
     List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
-      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos
-      //-tripletSpatialContext,-tripletSubCategorization, -tripletPos, -tripletHeadSpatialContext,
-      // -tripletHeadDependencyRelation, -tripletLemma, -tripletHeadWordLemma, -tripletHeadWordForm
-      ) ++
+      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos) ++
       (featureSet match {
         case FeatureSets.BaseLineWithImage => List()
-        case FeatureSets.WordEmbedding => List(tripletHeadVector)
-        case FeatureSets.WordEmbeddingPlusImage => List(tripletTRIsImageConceptExactMatch, tripletLMIsImageConceptExactMatch,
-          tripletTRNearestSegmentConceptToHeadVector, tripletTRNearestSegmentConceptToPhraseVector,
-          tripletLMNearestSegmentConceptToHeadVector, tripletLMNearestSegmentConceptToPhraseVector, tripletImageConfirms)
+        case FeatureSets.WordEmbedding => List(tripletTRSPPairVector, tripletSPLMPairVector)
+        case FeatureSets.WordEmbeddingPlusImage => List(tripletImageConfirms)
         case _ => List[Property[Relation]]()
       })
 
@@ -115,7 +107,6 @@ object MultiModalSpRLClassifiers {
       p.learningRate = .1
       p.positiveThickness = 2
       p.negativeThickness = 1
-      //p.thickness = 4
       baseLTU = new SparseAveragedPerceptron(p)
     }
 
@@ -149,8 +140,7 @@ object MultiModalSpRLClassifiers {
       baseLTU = new SparseAveragedPerceptron(p)
     }
 
-    override def feature = List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
-      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos, tripletLMIsImageConceptApproxMatch)
+    override def feature = tripletFeatures
   }
 
   object TripletRelationClassifierWithImage extends Learnable(triplets) {
@@ -226,20 +216,4 @@ object MultiModalSpRLClassifiers {
 
     override def feature = tripletFeatures
   }
-
-  object TripletClassifier extends Learnable(triplets) {
-    def label = tripletIsRelation
-
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.positiveThickness = 4
-      p.negativeThickness = 1
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
-
-    override def feature = tripletFeatures
-  }
-
-
 }

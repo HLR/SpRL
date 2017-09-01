@@ -338,8 +338,6 @@ public class CLEFImageReader {
                                 if (val == 1)
                                     rel = "adjacent";
                                 else if (val == 2)
-                                    //rel = null;
-                                    // Ignoring disjoint relations
                                     rel = "disjoint";
                                 else
                                     rel = null;
@@ -358,9 +356,9 @@ public class CLEFImageReader {
                                     rel = "beside";
                                 else if (val == 4) {
                                     // Original "x-aligned"
-                                    //rel = "x-aligned";
-                                    String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
-                                    rel = redefindedRelations.get(key);
+                                    rel = "x-aligned";
+                                    //String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
+                                    //rel = redefindedRelations.get(key);
                                 }
 
                                 if (rel != null) {

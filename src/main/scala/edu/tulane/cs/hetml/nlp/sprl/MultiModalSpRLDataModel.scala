@@ -679,10 +679,16 @@ object MultiModalSpRLDataModel extends DataModel {
       dependencyRelation(first) + "::" + dependencyRelation(second) + "::" + dependencyRelation(third)
   }
 
-  val tripletHeadVector = property(triplets, cache = true) {
+  val tripletTRSPPairVector = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
-      headVector(first) ++ headVector(second) ++ headVector(third)
+      headVector(first) ++ headVector(second)
+  }
+
+  val tripletSPLMPairVector = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      headVector(second) ++ headVector(third)
   }
 
   val tripletTrSpVector = property(triplets, cache = true) {
@@ -698,7 +704,7 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
   val tripletImageConfirms = property(triplets, cache = true) {
-    r: Relation => isExistsInSegmentRelations(r, false)
+    r: Relation => (isExistsInSegmentRelations(r, false) && tripletIsRelation(r)=="Relation")
   }
 
   val tripletImageRelations = property(triplets, cache = true) {
@@ -847,7 +853,7 @@ object MultiModalSpRLDataModel extends DataModel {
       val firstConcept = headWordFrom(first)
       val secondConcept = headWordFrom(second)
       val thirdConcept = headWordFrom(third)
-        val img = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage head
+        val img = (phrases(second) ~> -sentenceToPhrase ~> -documentToSentence) ~> documentToImage head
         val segs = (images(img) ~> imageToSegment).map(s=> s.getSegmentId -> s).toMap
         val rels = images(img) ~> imageToSegment ~> -segmentRelationsToSegments
       rels.exists(ir=>{
@@ -892,59 +898,4 @@ object MultiModalSpRLDataModel extends DataModel {
       segWords.exists(sw=>getGoogleSimilarity(sw.toLowerCase(), concept.toLowerCase()) >= 0.40)
     }
   }
-
-  /*private def getSegmentRelations(r: Relation) : List[String] = {
-    val (first, second, third) = getTripletArguments(r)
-    var newImageRelations = new ArrayBuffer[String]()
-
-    if(second.getId!=dummyPhrase.getId) {
-      val firstConcept = headWordFrom(first)
-      val thirdConcept = headWordFrom(third)
-      val img = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage
-      val segs = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage ~> imageToSegment
-      val rels = phrases(second) ~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage ~> imageToSegment ~> -segmentRelationsToSegments
-      for(ir <- rels) {
-        var firstsegConcept = ""
-        var firstsegOntology : List[String] = Nil
-        var firstsegReferit : List[String] = Nil
-        var secondsegConcept = ""
-        var secondsegOntology : List[String] = Nil
-        var secondsegReferit : List[String] = Nil
-
-        var firstsegMatch = false
-        var secondsegMatch = false
-        val imageRelation = ir.getRelation
-        for(s <- segs) {
-          if(s.getSegmentId == ir.getFirstSegmentId) {
-            firstsegConcept = s.getSegmentConcept
-            firstsegOntology = s.ontologyConcepts.toList
-            firstsegReferit = s.referitText.toList
-          }
-          if(s.getSegmentId == ir.getSecondSegmentId) {
-            secondsegConcept = s.getSegmentConcept
-            secondsegOntology = s.ontologyConcepts.toList
-            secondsegReferit = s.referitText.toList
-          }
-        }
-
-        firstsegMatch = isImageConceptMatchingWith(firstsegConcept, firstConcept)
-        if(!firstsegMatch) {
-          firstsegMatch = getOntologyConceptMatching(firstConcept, firstsegOntology)
-          if(!firstsegMatch)
-            firstsegMatch = getReferitConceptMatching(firstConcept, firstsegOntology)
-        }
-        secondsegMatch = isImageConceptMatchingWith(secondsegConcept, thirdConcept)
-        if(!secondsegMatch) {
-          secondsegMatch = getOntologyConceptMatching(thirdConcept, secondsegOntology)
-          if(!secondsegMatch)
-            secondsegMatch = getReferitConceptMatching(thirdConcept, secondsegReferit)
-        }
-        if(firstsegMatch && secondsegMatch) {
-          newImageRelations += firstsegConcept + "::" + secondsegConcept + "::" + imageRelation
-        }
-      }
-    }
-    newImageRelations.toList
-  }
-  */
 }

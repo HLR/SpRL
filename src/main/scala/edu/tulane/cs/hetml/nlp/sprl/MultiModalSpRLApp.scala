@@ -62,7 +62,7 @@ object MultiModalSpRLApp extends App with Logging{
 //    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
 //    ReportHelper.saveCandidateList(true, pairs.getTrainingInstances.toList)
 
-/*
+
     if(skipIndividualClassifiersTraining) {
       TrajectorPairClassifier.load()
       LandmarkPairClassifier.load()
@@ -80,7 +80,7 @@ object MultiModalSpRLApp extends App with Logging{
         IndicatorConstraintClassifier :: TRPairConstraintClassifier ::
         LMPairConstraintClassifier :: Nil, init = false, it = 10)*/
     }
-*/
+
     TrajectorRoleClassifier.save()
     IndicatorRoleClassifier.save()
     LandmarkRoleClassifier.save()
@@ -101,14 +101,13 @@ object MultiModalSpRLApp extends App with Logging{
 
       populateTripletDataFromAnnotatedCorpus(
         x => trCandidates.exists(_.getId == x.getId),
-        x => indicatorCandidates.exists(p=> p.getId == x.getId),
-        //x => IndicatorRoleClassifier(x) == "Indicator",
+        x => IndicatorRoleClassifier(x) == "Indicator",
         x => lmCandidates.exists(_.getId == x.getId))
     }
 
     TripletRelationClassifier.learn(iterations)
     TripletRelationClassifier.save()
-/*
+
     val goldTriplets = triplets.getTrainingInstances.filter(_.containsProperty("ActualId"))
     TripletGeneralTypeClassifier.learn(iterations, goldTriplets)
     TripletGeneralTypeClassifier.save()
@@ -120,7 +119,7 @@ object MultiModalSpRLApp extends App with Logging{
     TripletRCC8Classifier.save()
 
     TripletFoRClassifier.learn(iterations, goldTriplets)
-    TripletFoRClassifier.save() */
+    TripletFoRClassifier.save()
   }
 
   if (!isTrain) {
@@ -130,12 +129,12 @@ object MultiModalSpRLApp extends App with Logging{
     TrajectorRoleClassifier.load()
     LandmarkRoleClassifier.load()
     IndicatorRoleClassifier.load()
-/*    TrajectorPairClassifier.load()
+    TrajectorPairClassifier.load()
     LandmarkPairClassifier.load()
     TripletGeneralTypeClassifier.load()
     TripletSpecificTypeClassifier.load()
     TripletRCC8Classifier.load()
-    TripletFoRClassifier.load()*/
+    TripletFoRClassifier.load()
     TripletRelationClassifier.load()
 
 //    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
@@ -160,8 +159,7 @@ object MultiModalSpRLApp extends App with Logging{
 
         populateTripletDataFromAnnotatedCorpus(
           x => trCandidates.exists(_.getId == x.getId),
-          x => indicatorCandidates.exists(p=> p.getId == x.getId),
-          //x => IndicatorRoleClassifier(x) == "Indicator",
+          x => IndicatorRoleClassifier(x) == "Indicator",
           x => lmCandidates.exists(_.getId == x.getId))
       }
 
@@ -176,8 +174,6 @@ object MultiModalSpRLApp extends App with Logging{
       val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
 
       val tripletList = triplets.getTestingInstances.toList
-
-      println("Testing Triplets Size if-> " + triplets.getTestingInstances.size)
 
       ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
         x => TripletGeneralTypeClassifier(x),
@@ -202,18 +198,16 @@ object MultiModalSpRLApp extends App with Logging{
 
         populateTripletDataFromAnnotatedCorpus(
           x => trCandidates.exists(_.getId == x.getId),
-          x => indicatorCandidates.exists(p=> p.getId == x.getId),
-          //x => IndicatorRoleClassifier(x) == "Indicator",
+          x => IndicatorRoleClassifier(x) == "Indicator",
           x => lmCandidates.exists(_.getId == x.getId))
       }
 
       TripletRelationClassifier.test()
-/*
+
       val trajectors = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.TRConstraintClassifier(x) == "Trajector").toList
       val landmarks = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.LMConstraintClassifier(x) == "Landmark").toList
       val indicators = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator").toList
       val tripletList = triplets.getTestingInstances.toList
-      println("Testing Triplets Size else-> " + triplets.getTestingInstances.size)
 
       ReportHelper.reportTripletResults(testFile, resultsDir, s"${expName}${suffix}_triplet", tripletList)
 
@@ -222,11 +216,10 @@ object MultiModalSpRLApp extends App with Logging{
         x => TripletSpecificTypeClassifier(x),
         x => TripletRCC8Classifier(x),
         x => TripletFoRClassifier(x),
-        s"$resultsDir/${expName}${suffix}.xml")*/
+        s"$resultsDir/${expName}${suffix}.xml")
     }
 
-//    ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+    ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
   }
-
 }
 

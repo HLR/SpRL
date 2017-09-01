@@ -13,7 +13,7 @@ object mSpRLConfigurator {
   val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"
   val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"
   val suffix = ""
-  val model = FeatureSets.WordEmbeddingPlusImage
+  val model = FeatureSets.BaseLine
   val isTrain = true
   val useCandidateTrLmTriplets = true
   val jointTrain = false
