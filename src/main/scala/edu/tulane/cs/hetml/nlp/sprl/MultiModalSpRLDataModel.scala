@@ -5,7 +5,9 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers.TripletRelationClassifier
 import edu.tulane.cs.hetml.vision._
+
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConversions._
 
@@ -704,7 +706,17 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
   val tripletImageConfirms = property(triplets, cache = true) {
-    r: Relation => (isExistsInSegmentRelations(r, false) && tripletIsRelation(r)=="Relation")
+    r: Relation => isExistsInSegmentRelations(r, false)
+  }
+
+  val tripletVerifiedfromImage = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      if(predictedRelation.contains(first+"-"+second+"-"+third)) {
+        true
+      }
+      else
+        false
   }
 
   val tripletImageRelations = property(triplets, cache = true) {

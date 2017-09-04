@@ -80,6 +80,8 @@ object MultiModalSpRLSensors {
     d.getPropertyFirstValue("IMAGE").endsWith("/" + i.getLabel)
   }
 
+  var predictedRelation = scala.collection.mutable.Map[String, String]()
+
   val phraseConceptToWord = HashMap(
     "child-boy" -> "child",
     "child-girl" -> "child",
