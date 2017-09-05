@@ -709,16 +709,6 @@ object MultiModalSpRLDataModel extends DataModel {
     r: Relation => isExistsInSegmentRelations(r, false)
   }
 
-  val tripletVerifiedfromImage = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, second, third) = getTripletArguments(r)
-      if(predictedRelation.contains(first+"-"+second+"-"+third)) {
-        true
-      }
-      else
-        false
-  }
-
   val tripletImageRelations = property(triplets, cache = true) {
     r: Relation => "" //getSegmentRelations(r)
   }

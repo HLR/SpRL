@@ -8,8 +8,10 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
+import edu.tulane.cs.hetml.nlp.sprl.SentenceLevelConstraintClassifiers._
 import org.apache.commons.io.FileUtils
+import edu.illinois.cs.cogcomp.saul.classifier.{JointTrainSparseNetwork, JointTrainSparsePerceptron}
+import edu.tulane.cs.hetml.nlp.BaseTypes.Relation
 
 object MultiModalTripletApp extends App with Logging{
 
@@ -31,7 +33,6 @@ object MultiModalTripletApp extends App with Logging{
     TrajectorRoleClassifier,
     LandmarkRoleClassifier,
     IndicatorRoleClassifier,
-    TripletTextRelationClassifier,
     TripletRelationClassifier,
     TripletGeneralTypeClassifier,
     TripletSpecificTypeClassifier,
@@ -49,13 +50,18 @@ object MultiModalTripletApp extends App with Logging{
   if (isTrain) {
     println("training started ...")
 
-    TrajectorRoleClassifier.learn(iterations)
+/*  TrajectorRoleClassifier.learn(iterations)
     IndicatorRoleClassifier.learn(iterations)
     LandmarkRoleClassifier.learn(iterations)
 
     TrajectorRoleClassifier.save()
     IndicatorRoleClassifier.save()
     LandmarkRoleClassifier.save()
+*/
+
+    TrajectorRoleClassifier.load()
+    IndicatorRoleClassifier.load()
+    LandmarkRoleClassifier.load()
 
     val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
     val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
@@ -68,30 +74,29 @@ object MultiModalTripletApp extends App with Logging{
       x => lmCandidates.exists(_.getId == x.getId)
         )
 
-    val goldTriplets = triplets.getTrainingInstances.filter(_.containsProperty("ActualId"))
-
-    goldTriplets.foreach(t => {
-      predictedRelation += t.getArgument(0) + "-" + t.getArgument(1) + "-" + t.getArgument(2) ->
-        tripletImageConfirms(t).toString()
-    })
-
-    TripletTextRelationClassifier.learn(iterations)
-    TripletTextRelationClassifier.save()
-
-    TripletRelationClassifier.learn(iterations)
-    TripletRelationClassifier.save()
-
+/*    TripletRelationClassifier.learn(iterations)
     TripletGeneralTypeClassifier.learn(iterations)
-    TripletGeneralTypeClassifier.save()
-
     TripletSpecificTypeClassifier.learn(iterations)
-    TripletSpecificTypeClassifier.save()
-
     TripletRCC8Classifier.learn(iterations)
-    TripletRCC8Classifier.save()
-
     TripletFoRClassifier.learn(iterations)
+*/
+    TripletRelationClassifier.load()
+    TripletGeneralTypeClassifier.load()
+    TripletSpecificTypeClassifier.load()
+    TripletRCC8Classifier.load()
+    TripletFoRClassifier.load()
+
+    JointTrainSparsePerceptron.train(MultiModalSpRLDataModel.sentences, List(TripletRelationTypeConstraintClassifier,
+      TripletGeneralTypeConstraintClassifier), 10)// TripletSpecificTypeConstraintClassifier,
+//      TripletRCC8TypeConstraintClassifier, TripletForTypeConstraintClassifier) , 10)
+
+
+/*    TripletRelationClassifier.save()
+    TripletGeneralTypeClassifier.save()
+    TripletSpecificTypeClassifier.save()
+    TripletRCC8Classifier.save()
     TripletFoRClassifier.save()
+*/
   }
 
   if (!isTrain) {
@@ -100,12 +105,11 @@ object MultiModalTripletApp extends App with Logging{
     TrajectorRoleClassifier.load()
     LandmarkRoleClassifier.load()
     IndicatorRoleClassifier.load()
-    TripletTextRelationClassifier.load()
     TripletRelationClassifier.load()
-//    TripletGeneralTypeClassifier.load()
-  //  TripletSpecificTypeClassifier.load()
-  //  TripletRCC8Classifier.load()
-  //  TripletFoRClassifier.load()
+    TripletGeneralTypeClassifier.load()
+    TripletSpecificTypeClassifier.load()
+    TripletRCC8Classifier.load()
+    TripletFoRClassifier.load()
 
       val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
       val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
@@ -116,30 +120,15 @@ object MultiModalTripletApp extends App with Logging{
           x => IndicatorRoleClassifier(x) == "Indicator",
           x => lmCandidates.exists(_.getId == x.getId))
 
- //   val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
-    //val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
-    //val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
-
-    TripletTextRelationClassifier.test()
-
-    println("Triplets ->" + triplets.getTestingInstances.size)
+    val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
+    val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
+    val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
 
     val tripletList = triplets.getTestingInstances
-      .filter(x=> TripletTextRelationClassifier(x) == "Relation").toList
-
-    println("Filtered Triplets ->" + tripletList.size)
-
-    tripletList.foreach(t => {
-      predictedRelation += t.getArgument(0) + "-" + t.getArgument(1) + "-" + t.getArgument(2) ->
-        tripletImageConfirms(t).toString()
-    })
-    println(predictedRelation.size)
-    println("HashMap Created...!")
-
-    println(triplets.getTestingInstances.count(t=> predictedRelation.contains(t.getArgument(0) + "-" + t.getArgument(1) + "-" + t.getArgument(2))))
+      .filter(x=> TripletRelationClassifier(x) == "Relation").toList
 
     TripletRelationClassifier.test()
-/*
+
     ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
       x => TripletGeneralTypeClassifier(x),
       x => TripletSpecificTypeClassifier(x),
@@ -148,7 +137,6 @@ object MultiModalTripletApp extends App with Logging{
       s"$resultsDir/${expName}${suffix}.xml")
 
     ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
-*/
   }
 }
 

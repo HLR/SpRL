@@ -43,9 +43,9 @@ object MultiModalSpRLClassifiers {
     List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
       tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(tripletVerifiedfromImage)
+        case FeatureSets.BaseLineWithImage => List(tripletImageConfirms)
         case FeatureSets.WordEmbedding => List(tripletTRSPPairVector, tripletSPLMPairVector)
-        case FeatureSets.WordEmbeddingPlusImage => List(tripletVerifiedfromImage)
+        case FeatureSets.WordEmbeddingPlusImage => List(tripletImageConfirms)
         case _ => List[Property[Relation]]()
       })
 
@@ -127,21 +127,6 @@ object MultiModalSpRLClassifiers {
 
     override def feature = (pairFeatures ++ List(relationSpatialContext))
       .diff(List(pairIsImageConcept, pairNearestSegmentConceptToPhraseVector))
-  }
-
-  object TripletTextRelationClassifier extends Learnable(triplets) {
-    def label = tripletIsRelation
-
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.positiveThickness = 4
-      p.negativeThickness = 1
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
-
-    override def feature = List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
-    tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos)
   }
 
   object TripletRelationClassifier extends Learnable(triplets) {

@@ -48,11 +48,38 @@ object SentenceLevelConstraintClassifiers {
     override val pathToHead = Some(-sentenceToPhrase)
   }
 
-/*  object TripletRelationTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletRelationClassifier) {
-    def subjectTo = allConstraintsRelationTriplets
+  object TripletRelationTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletRelationClassifier) {
+    def subjectTo = relationConstraintTriplets
 
     override val solver = erSolver
     override val pathToHead = Some(-sentenceToTriplets)
   }
-*/
+
+  object TripletGeneralTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletGeneralTypeClassifier) {
+    def subjectTo = generalConstraintTriplets
+
+    override val solver = erSolver
+    override val pathToHead = Some(-sentenceToTriplets)
+  }
+
+  object TripletSpecificTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletSpecificTypeClassifier) {
+    def subjectTo = specificConstraintTriplets
+
+    override val solver = erSolver
+    override val pathToHead = Some(-sentenceToTriplets)
+  }
+
+  object TripletRCC8TypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletRCC8Classifier) {
+    def subjectTo = rccConstraintTriplets
+
+    override val solver = erSolver
+    override val pathToHead = Some(-sentenceToTriplets)
+  }
+
+  object TripletForTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletFoRClassifier) {
+    def subjectTo = forConstraintTriplets
+
+    override val solver = erSolver
+    override val pathToHead = Some(-sentenceToTriplets)
+  }
 }
