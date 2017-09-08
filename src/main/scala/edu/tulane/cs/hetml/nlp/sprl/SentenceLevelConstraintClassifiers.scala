@@ -1,11 +1,11 @@
 package edu.tulane.cs.hetml.nlp.sprl
 
-import edu.illinois.cs.cogcomp.infer.ilp.OJalgoHook
+import edu.illinois.cs.cogcomp.infer.ilp.{GurobiHook, OJalgoHook}
 import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.SentenceLevelConstraints._
-import edu.tulane.cs.hetml.nlp.BaseTypes.{ Relation, Sentence, Phrase }
+import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation, Sentence}
 
 /** Created by parisakordjamshidi on 2/9/17.
   */
@@ -49,37 +49,16 @@ object SentenceLevelConstraintClassifiers {
   }
 
   object TripletRelationTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletRelationClassifier) {
-    def subjectTo = relationConstraintTriplets
+    def subjectTo = tripletsConstraint
 
-    override val solver = erSolver
+    override val solver = new GurobiHook
     override val pathToHead = Some(-sentenceToTriplets)
   }
 
   object TripletGeneralTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletGeneralTypeClassifier) {
-    def subjectTo = generalConstraintTriplets
+    def subjectTo = tripletsConstraint
 
-    override val solver = erSolver
-    override val pathToHead = Some(-sentenceToTriplets)
-  }
-
-  object TripletSpecificTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletSpecificTypeClassifier) {
-    def subjectTo = specificConstraintTriplets
-
-    override val solver = erSolver
-    override val pathToHead = Some(-sentenceToTriplets)
-  }
-
-  object TripletRCC8TypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletRCC8Classifier) {
-    def subjectTo = rccConstraintTriplets
-
-    override val solver = erSolver
-    override val pathToHead = Some(-sentenceToTriplets)
-  }
-
-  object TripletForTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletFoRClassifier) {
-    def subjectTo = forConstraintTriplets
-
-    override val solver = erSolver
+    override val solver = new GurobiHook
     override val pathToHead = Some(-sentenceToTriplets)
   }
 }

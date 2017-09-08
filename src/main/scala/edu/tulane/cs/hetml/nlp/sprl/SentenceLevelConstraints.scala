@@ -107,7 +107,7 @@ object SentenceLevelConstraints {
       a
   }
 
-  val boostTripletRelation = ConstrainedClassifier.constraint[Sentence] {
+  val boostTriplet = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
@@ -123,97 +123,13 @@ object SentenceLevelConstraints {
       a
   }
 
-  val boostTripletGeneral = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and (((TripletGeneralTypeClassifier on x) isNot "None") ==>
-            (TripletRelationClassifier on x is "Relation") or
-            (TripletSpecificTypeClassifier on x isNot "None") or
-            (TripletRCC8Classifier on x isNot "None") or
-            (TripletFoRClassifier on x isNot "None")
-            )
-      }
-      a
-  }
-
-  val boostTripletSpecific = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and (((TripletSpecificTypeClassifier on x) isNot "None") ==>
-            (TripletRelationClassifier on x is "Relation") or
-            (TripletGeneralTypeClassifier on x isNot "None") or
-            (TripletRCC8Classifier on x isNot "None") or
-            (TripletFoRClassifier on x isNot "None")
-            )
-      }
-      a
-  }
-
-  val boostTripletRcc = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and (((TripletRCC8Classifier on x) isNot "None") ==>
-            (TripletRelationClassifier on x is "Relation") or
-            (TripletGeneralTypeClassifier on x isNot "None") or
-            (TripletSpecificTypeClassifier on x isNot "None") or
-            (TripletFoRClassifier on x isNot "None")
-            )
-      }
-      a
-  }
-
-  val boostTripletFor = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and (((TripletFoRClassifier on x) isNot "None") ==>
-            (TripletRelationClassifier on x is "Relation") or
-            (TripletGeneralTypeClassifier on x isNot "None") or
-            (TripletSpecificTypeClassifier on x isNot "None") or
-            (TripletRCC8Classifier on x isNot "None")
-            )
-      }
-      a
-  }
-
   val allConstraints = ConstrainedClassifier.constraint[Sentence] {
 
     x: Sentence => integrityLM(x) and integrityTR(x) and multiLabelPair(x) and boostIndicator(x) and boostPairs(x)
   }
 
-  val relationConstraintTriplets = ConstrainedClassifier.constraint[Sentence] {
+  val tripletsConstraint = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTripletRelation(x) and boostTripletLmSp(x)
-  }
-
-  val generalConstraintTriplets = ConstrainedClassifier.constraint[Sentence] {
-
-    x: Sentence => boostTripletGeneral(x) and boostTripletLmSp(x)
-  }
-
-  val specificConstraintTriplets = ConstrainedClassifier.constraint[Sentence] {
-
-    x: Sentence => boostTripletSpecific(x) and boostTripletLmSp(x)
-  }
-
-  val rccConstraintTriplets = ConstrainedClassifier.constraint[Sentence] {
-
-    x: Sentence => boostTripletRcc(x) and boostTripletLmSp(x)
-  }
-
-  val forConstraintTriplets = ConstrainedClassifier.constraint[Sentence] {
-
-    x: Sentence => boostTripletFor(x) and boostTripletLmSp(x)
+    x: Sentence => boostTriplet(x) and boostTripletLmSp(x)
   }
 }

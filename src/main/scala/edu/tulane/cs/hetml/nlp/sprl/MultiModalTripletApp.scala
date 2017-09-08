@@ -50,18 +50,13 @@ object MultiModalTripletApp extends App with Logging{
   if (isTrain) {
     println("training started ...")
 
-/*  TrajectorRoleClassifier.learn(iterations)
+    TrajectorRoleClassifier.learn(iterations)
     IndicatorRoleClassifier.learn(iterations)
     LandmarkRoleClassifier.learn(iterations)
 
     TrajectorRoleClassifier.save()
     IndicatorRoleClassifier.save()
     LandmarkRoleClassifier.save()
-*/
-
-    TrajectorRoleClassifier.load()
-    IndicatorRoleClassifier.load()
-    LandmarkRoleClassifier.load()
 
     val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
     val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
@@ -74,34 +69,30 @@ object MultiModalTripletApp extends App with Logging{
       x => lmCandidates.exists(_.getId == x.getId)
         )
 
-/*    TripletRelationClassifier.learn(iterations)
+    TripletRelationClassifier.learn(iterations)
     TripletGeneralTypeClassifier.learn(iterations)
     TripletSpecificTypeClassifier.learn(iterations)
     TripletRCC8Classifier.learn(iterations)
     TripletFoRClassifier.learn(iterations)
-*/
-    TripletRelationClassifier.load()
-    TripletGeneralTypeClassifier.load()
-    TripletSpecificTypeClassifier.load()
-    TripletRCC8Classifier.load()
-    TripletFoRClassifier.load()
 
-    JointTrainSparsePerceptron.train(MultiModalSpRLDataModel.sentences, List(TripletRelationTypeConstraintClassifier,
-      TripletGeneralTypeConstraintClassifier), 10)// TripletSpecificTypeConstraintClassifier,
-//      TripletRCC8TypeConstraintClassifier, TripletForTypeConstraintClassifier) , 10)
+    println("Jointly Training...")
 
+    val cls = List(TripletRelationTypeConstraintClassifier, TripletGeneralTypeConstraintClassifier)
+    JointTrainSparseNetwork.train(sentences, cls, 10, true)
 
-/*    TripletRelationClassifier.save()
+    println("Jointly Training Done. Saving...")
+
+    TripletRelationClassifier.save()
     TripletGeneralTypeClassifier.save()
     TripletSpecificTypeClassifier.save()
     TripletRCC8Classifier.save()
     TripletFoRClassifier.save()
-*/
   }
 
   if (!isTrain) {
 
     println("testing started ...")
+
     TrajectorRoleClassifier.load()
     LandmarkRoleClassifier.load()
     IndicatorRoleClassifier.load()
@@ -127,7 +118,15 @@ object MultiModalTripletApp extends App with Logging{
     val tripletList = triplets.getTestingInstances
       .filter(x=> TripletRelationClassifier(x) == "Relation").toList
 
+
+    TripletRelationTypeConstraintClassifier.test()
+    TripletGeneralTypeConstraintClassifier.test()
+
     TripletRelationClassifier.test()
+//    TripletGeneralTypeClassifier.test()
+//    TripletSpecificTypeClassifier.test()
+//    TripletRCC8Classifier.test()
+//    TripletFoRClassifier.test()
 
     ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
       x => TripletGeneralTypeClassifier(x),
@@ -137,6 +136,7 @@ object MultiModalTripletApp extends App with Logging{
       s"$resultsDir/${expName}${suffix}.xml")
 
     ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+
   }
 }
 

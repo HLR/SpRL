@@ -45,7 +45,7 @@ object MultiModalSpRLClassifiers {
       (featureSet match {
         case FeatureSets.BaseLineWithImage => List(tripletImageConfirms)
         case FeatureSets.WordEmbedding => List(tripletTRSPPairVector, tripletSPLMPairVector)
-        case FeatureSets.WordEmbeddingPlusImage => List(tripletImageConfirms)
+        case FeatureSets.WordEmbeddingPlusImage => List()
         case _ => List[Property[Relation]]()
       })
 
@@ -132,13 +132,7 @@ object MultiModalSpRLClassifiers {
   object TripletRelationClassifier extends Learnable(triplets) {
     def label = tripletIsRelation
 
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.positiveThickness = 4
-      p.negativeThickness = 1
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
+    override lazy val classifier = new SparseNetworkLearner()
 
     override def feature = tripletFeatures
   }
@@ -163,13 +157,7 @@ object MultiModalSpRLClassifiers {
   object TripletGeneralTypeClassifier extends Learnable(triplets) {
     def label = tripletGeneralType
 
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.positiveThickness = 4
-      p.negativeThickness = 1
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
+    override lazy val classifier = new SparseNetworkLearner()
 
     override def feature = tripletFeatures
   }
@@ -177,13 +165,7 @@ object MultiModalSpRLClassifiers {
   object TripletSpecificTypeClassifier extends Learnable(triplets) {
     def label = tripletSpecificType
 
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.positiveThickness = 4
-      p.negativeThickness = 1
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
+    override lazy val classifier = new SparseNetworkLearner()
 
     override def feature = tripletFeatures
   }
@@ -191,13 +173,7 @@ object MultiModalSpRLClassifiers {
   object TripletRCC8Classifier extends Learnable(triplets) {
     def label = tripletRCC8
 
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.positiveThickness = 4
-      p.negativeThickness = 1
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
+    override lazy val classifier = new SparseNetworkLearner()
 
     override def feature = tripletFeatures
   }
@@ -206,13 +182,7 @@ object MultiModalSpRLClassifiers {
   object TripletFoRClassifier extends Learnable(triplets) {
     def label = tripletFoR
 
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.positiveThickness = 4
-      p.negativeThickness = 1
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
+    override lazy val classifier = new SparseNetworkLearner()
 
     override def feature = tripletFeatures
   }
