@@ -66,47 +66,6 @@ object SentenceLevelConstraints {
         ((sentences(s) ~> sentenceToPairs).toList._exists { x: Relation => LandmarkPairClassifier on x is "LM-SP" }))
   }
 
-  val boostTripletsTrSpLm = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and (((TripletRelationClassifier on x) is "Relation") ==>
-            (TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector") and
-            (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "Indicator") and
-            (LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "Landmark")
-            )
-      }
-      a
-  }
-
-  val boostTripletTrSp = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and (((TripletRelationClassifier on x) is "Relation") ==>
-            ((TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector") and
-              (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "Indicator")))
-      }
-      a
-  }
-
-  val boostTripletLmSp = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and (((TripletRelationClassifier on x) is "Relation") ==>
-            ((TrajectorRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "Landmark") and
-              (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "Indicator")))
-      }
-      a
-  }
-
   val boostTriplet = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
@@ -114,11 +73,14 @@ object SentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (((TripletRelationClassifier on x) is "Relation") ==>
-            (TripletGeneralTypeClassifier on x isNot "None") or
-            (TripletSpecificTypeClassifier on x isNot "None") or
-            (TripletRCC8Classifier on x isNot "None") or
-            (TripletFoRClassifier on x isNot "None")
-            )
+            ((TripletGeneralTypeClassifier on x isNot "None") and
+            (TripletSpecificTypeClassifier on x isNot "None") and
+            (TripletRCC8Classifier on x isNot "None") and
+            (TripletFoRClassifier on x isNot "None") and
+              ((TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector") and
+              (LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "Landmark") and
+              (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "Indicator")))
+        )
       }
       a
   }
@@ -130,6 +92,6 @@ object SentenceLevelConstraints {
 
   val tripletsConstraint = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTriplet(x) and boostTripletLmSp(x)
+    x: Sentence => boostTriplet(x) and integrityLM(x) and integrityTR(x) and boostIndicator(x)
   }
 }

@@ -150,8 +150,9 @@ object MultiModalSpRLClassifiers {
 
     override def feature = List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
       tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos, tripletTRIsImageConceptExactMatch, tripletLMIsImageConceptExactMatch,
-      tripletTRNearestSegmentConceptToHeadVector, tripletTRNearestSegmentConceptToPhraseVector,
-      tripletLMNearestSegmentConceptToHeadVector, tripletLMNearestSegmentConceptToPhraseVector, tripletImageConfirms)
+      tripletTRNearestSegmentConceptToHeadVector, tripletTRNearestSegmentConceptToPhraseVector, tripletTRIsImageConceptApproxMatch,
+      tripletLMIsImageConceptApproxMatch, tripletLMNearestSegmentConceptToHeadVector,
+      tripletLMNearestSegmentConceptToPhraseVector, tripletImageConfirms)
   }
 
   object TripletGeneralTypeClassifier extends Learnable(triplets) {

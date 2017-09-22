@@ -2,6 +2,7 @@ package edu.tulane.cs.hetml.nlp.sprl
 
 import edu.tulane.cs.hetml.vision.CLEFImageReader
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.transflowExamples.{HelloTF, LabelImage}
 
 import scala.collection.JavaConversions._
 
@@ -10,7 +11,14 @@ import scala.collection.JavaConversions._
 object ImageApp extends App {
 
   val readFullData = false
-  val CLEFDataset = new CLEFImageReader("data/mSprl/saiapr_tc-12", "newSprl2017_train", "newSprl2017_gold", readFullData)
+  /* Example 1 */
+  val tensorflowExample1 = new HelloTF
+  tensorflowExample1.TestGraph()
+
+  /* Example 2 */
+  val tensorflowLableImage = new LabelImage("data/imageModel","data/imageModel/28.jpg")
+
+/*  val CLEFDataset = new CLEFImageReader("data/mSprl/saiapr_tc-12", "newSprl2017_train", "newSprl2017_gold", readFullData)
 
   val imageListTrain = CLEFDataset.trainingImages
   val segmentListTrain = CLEFDataset.trainingSegments
@@ -27,6 +35,6 @@ object ImageApp extends App {
   images.populate(imageListTest, false)
   segments.populate(segementListTest, false)
   segmentRelations.populate(relationListTest, false)
-
+*/
 }
 
