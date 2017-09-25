@@ -4,8 +4,8 @@ import java.util.Properties
 
 import edu.illinois.cs.cogcomp.core.datastructures.{ViewNames, _}
 import edu.illinois.cs.cogcomp.core.datastructures.textannotation.{Relation => _, Sentence => _, _}
-import edu.illinois.cs.cogcomp.edison.features.FeatureUtilities
-import edu.illinois.cs.cogcomp.edison.features.factory.{SubcategorizationFrame, WordFeatureExtractorFactory}
+import edu.illinois.cs.cogcomp.edison.features.{FeatureExtractor, FeatureUtilities}
+import edu.illinois.cs.cogcomp.edison.features.factory.{SubcategorizationFrame, WordFeatureExtractorFactory, WordNetFeatureExtractor}
 import edu.illinois.cs.cogcomp.edison.features.helpers.PathFeatureHelper
 import edu.illinois.cs.cogcomp.nlp.common.PipelineConfigurator._
 import edu.illinois.cs.cogcomp.nlp.utilities.CollinsHeadFinder
@@ -14,6 +14,7 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.TextAnnotationFactory
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 
 import scala.collection.JavaConverters._
+import scala.collection.JavaConversions._
 import scala.collection.mutable
 
 /** Created by parisakordjamshidi on 12/25/16.
@@ -96,16 +97,20 @@ object LanguageBaseTypeSensors extends Logging {
   def getHeadword(p: Phrase): Token = {
     var ta = getTextAnnotation(p)
     val (startId: Int, endId: Int) = getTextAnnotationSpan(p)
-    var phrase = new Constituent("temp", "", ta, startId, endId + 1)
-    var headId: Int = getHeadwordId(ta, phrase)
+    val phrase = new Constituent("temp", "", ta, startId, endId + 1)
+    val headId: Int = getHeadwordId(ta, phrase)
     if (headId < startId || headId > endId) {
       //when out of phrase, create a text annotation using just the phrase text
       ta = TextAnnotationFactory.createTextAnnotation(as, "", "", p.getText)
-      phrase = new Constituent("temp", "", ta, 0, ta.getTokens.length)
-      headId = getHeadwordId(ta, phrase)
+      val newPhrase = new Constituent("temp", "", ta, 0, ta.getTokens.length)
+      val newHeadId = getHeadwordId(ta, newPhrase)
+      val head = ta.getView(ViewNames.TOKENS).asInstanceOf[TokenLabelView].getConstituentAtToken(newHeadId)
+      new Token(p, p.getId + head.getSpan, head.getStartCharOffset + p.getStart, head.getEndCharOffset + p.getStart, head.toString)
     }
-    val head = ta.getView(ViewNames.TOKENS).asInstanceOf[TokenLabelView].getConstituentAtToken(headId)
-    new Token(p, p.getId + head.getSpan, head.getStartCharOffset, head.getEndCharOffset, head.toString)
+    else{
+      val head = ta.getView(ViewNames.TOKENS).asInstanceOf[TokenLabelView].getConstituentAtToken(headId)
+      new Token(p, p.getId + head.getSpan, head.getStartCharOffset, head.getEndCharOffset, head.toString)
+    }
   }
 
   def getTokens(text: String): List[Token] = {
@@ -191,6 +196,15 @@ object LanguageBaseTypeSensors extends Logging {
     ta.getTokens.slice(start, end)
   }
 
+  def getDependencyRelationWith(t: Token, relationName:String): List[(Int, Int, String)] = {
+    val relations = getDependencyRelations(getTextAnnotation(t))
+
+    relations
+      .filter(r => r.getTarget.getStartCharOffset == t.getStart && r.getRelationName.equalsIgnoreCase(relationName))
+      .map(r=> (r.getSource.getStartCharOffset, r.getSource.getEndCharOffset, r.getSource.toString))
+      .toList
+  }
+
   def getDependencyRelation(t: Token): String = {
     val relations = getDependencyRelations(getTextAnnotation(t))
     val root = getDependencyRoot(relations)
@@ -241,9 +255,20 @@ object LanguageBaseTypeSensors extends Logging {
   }
 
 
+  def getWordnetHypernyms(t: Token) = {
+    val fex = new WordNetFeatureExtractor
+    fex.addFeatureType(WordNetFeatureExtractor.WordNetFeatureClass.hypernymsAllSenses)
+    val c = getElementConstituents(t).head
+    getFeature(c, fex)
+  }
+
   ////////////////////////////////////////////////////////////////////////////
   /// private methods
   ////////////////////////////////////////////////////////////////////////////
+  private def getFeature(x: Constituent, fex: FeatureExtractor): String = {
+    FeatureUtilities.getFeatureSet(fex, x).mkString(",")
+  }
+
   private def crossProduct[T](input: List[List[T]]): List[List[T]] = input match {
     case Nil => Nil
     case head :: Nil => head.map(_ :: Nil)

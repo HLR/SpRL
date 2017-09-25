@@ -59,17 +59,37 @@ object MultiModalPopulateData extends Logging{
     logger.info("Pair population finished.")
   }
 
-  def populateTripletDataFromAnnotatedCorpus(
-                                              trSpFilter: (Relation) => Boolean,
-                                              spFilter: (Phrase) => Boolean,
-                                              lmSpFilter: (Relation) => Boolean
-                                            ): Unit = {
+  def populateTripletDataFromAnnotatedCorpusFromPairs(
+                                                       trSpFilter: (Relation) => Boolean,
+                                                       spFilter: (Phrase) => Boolean,
+                                                       lmSpFilter: (Relation) => Boolean
+                                                     ): Unit = {
 
     logger.info("Triplet population started ...")
-    val candidateRelations = CandidateGenerator.generateTripletCandidates(
+    val candidateRelations = CandidateGenerator.generateTripletCandidatesFromPairs(
       trSpFilter,
       spFilter,
       lmSpFilter,
+      isTrain
+    )
+    triplets.populate(candidateRelations, isTrain)
+
+    xmlReader.setTripletRelationTypes(candidateRelations)
+
+    logger.info("Triplet population finished.")
+  }
+
+  def populateTripletDataFromAnnotatedCorpus(
+                                                       trFilter: (Phrase) => Boolean,
+                                                       spFilter: (Phrase) => Boolean,
+                                                       lmFilter: (Phrase) => Boolean
+                                                     ): Unit = {
+
+    logger.info("Triplet population started ...")
+    val candidateRelations = CandidateGenerator.generateAllTripletCandidates(
+      trFilter,
+      spFilter,
+      lmFilter,
       isTrain
     )
     triplets.populate(candidateRelations, isTrain)

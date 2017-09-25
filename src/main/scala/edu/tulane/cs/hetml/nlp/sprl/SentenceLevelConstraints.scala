@@ -10,6 +10,7 @@ import edu.tulane.cs.hetml.nlp.BaseTypes._
 /** Created by parisakordjamshidi on 2/9/17.
   */
 object SentenceLevelConstraints {
+
   val integrityTR = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
@@ -65,33 +66,32 @@ object SentenceLevelConstraints {
         ((sentences(s) ~> sentenceToPairs).toList._exists { x: Relation => LandmarkPairClassifier on x is "LM-SP" }))
   }
 
-  //  val reasoningConstraints = ConstrainedClassifier.constraint[Sentence] {
-  //    var a: FirstOrderConstraint = null
-  //    s : Sentence =>
-  //      (sentences(s) ~> sentenceToRelations).foreach {
-  //        a = new FirstOrderConstant(true)
-  //
-  //        x: Relation => {
-  //
-  //          a = a and ((TrajectorPairClassifier on x is "TR-SP") ==>
-  //            (pairs(x) ~> relationToFirstArgument ~> -relationToFirstArgument).foreach
-  //            {
-  //              y: Relation =>
-  //                {(TrajectorPairClassifier on y isNot "TR-SP")}
-  //                a
-  //            })
-  //        }
-  //          a
-  //      }
-  //    a
-  //  }
-
-  // if w1-w2 is tr-sp then w1-x should not be tr-sp for all x!=w2
-  //if w1-w2 is lm-sp then w1-x should not be lm-sp for all x!=w2
+  val boostTriplet = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          a = a and (((TripletRelationClassifier on x) is "Relation") ==>
+            ((TripletGeneralTypeClassifier on x isNot "None") and
+            (TripletSpecificTypeClassifier on x isNot "None") and
+            (TripletRCC8Classifier on x isNot "None") and
+            (TripletFoRClassifier on x isNot "None") and
+              ((TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector") and
+              (LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "Landmark") and
+              (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "Indicator")))
+        )
+      }
+      a
+  }
 
   val allConstraints = ConstrainedClassifier.constraint[Sentence] {
 
     x: Sentence => integrityLM(x) and integrityTR(x) and multiLabelPair(x) and boostIndicator(x) and boostPairs(x)
   }
 
+  val tripletsConstraint = ConstrainedClassifier.constraint[Sentence] {
+
+    x: Sentence => boostTriplet(x) and integrityLM(x) and integrityTR(x) and boostIndicator(x)
+  }
 }

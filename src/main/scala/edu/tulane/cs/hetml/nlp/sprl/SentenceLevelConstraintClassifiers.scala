@@ -1,11 +1,11 @@
 package edu.tulane.cs.hetml.nlp.sprl
 
-import edu.illinois.cs.cogcomp.infer.ilp.OJalgoHook
+import edu.illinois.cs.cogcomp.infer.ilp.{GurobiHook, OJalgoHook}
 import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.SentenceLevelConstraints._
-import edu.tulane.cs.hetml.nlp.BaseTypes.{ Relation, Sentence, Phrase }
+import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation, Sentence}
 
 /** Created by parisakordjamshidi on 2/9/17.
   */
@@ -48,4 +48,17 @@ object SentenceLevelConstraintClassifiers {
     override val pathToHead = Some(-sentenceToPhrase)
   }
 
+  object TripletRelationTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletRelationClassifier) {
+    def subjectTo = tripletsConstraint
+
+    override val solver = new GurobiHook
+    override val pathToHead = Some(-sentenceToTriplets)
+  }
+
+  object TripletGeneralTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletGeneralTypeClassifier) {
+    def subjectTo = tripletsConstraint
+
+    override val solver = new GurobiHook
+    override val pathToHead = Some(-sentenceToTriplets)
+  }
 }

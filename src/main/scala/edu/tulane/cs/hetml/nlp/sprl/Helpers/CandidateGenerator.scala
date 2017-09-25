@@ -6,7 +6,7 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-
+import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import scala.collection.JavaConversions._
 import scala.io.Source
 
@@ -14,7 +14,7 @@ import scala.io.Source
   */
 object CandidateGenerator {
 
-  def generateTripletCandidates(
+  def generateTripletCandidatesFromPairs(
                                  trSpFilter: (Relation) => Boolean,
                                  spFilter: (Phrase) => Boolean,
                                  lmSpFilter: (Relation) => Boolean,
@@ -40,6 +40,41 @@ object CandidateGenerator {
         List()
       }
     })
+  }
+
+  def generateAllTripletCandidates(
+                                    trFilter: (Phrase) => Boolean,
+                                    spFilter: (Phrase) => Boolean,
+                                    lmFilter: (Phrase) => Boolean,
+                                    isTrain: Boolean
+                                  ): List[Relation] = {
+
+    val instances = if (isTrain) phrases.getTrainingInstances else phrases.getTestingInstances
+
+    val indicators = instances.filter(t => t.getId != dummyPhrase.getId && spFilter(t)).toList
+      .sortBy(x => x.getSentence.getStart + x.getStart)
+
+    val trajectors = instances.filter(t => t.getId != dummyPhrase.getId && trFilter(t)).toList
+      .sortBy(x => x.getSentence.getStart + x.getStart)
+
+    val landmarks = instances.filter(t =>  t.getId != dummyPhrase.getId && lmFilter(t)).toList
+      .sortBy(x => x.getSentence.getStart + x.getStart) ++ List(dummyPhrase)
+
+    val candidateRelations = indicators.flatMap(sp => {
+      val trList = trajectors.filter(t => sp.getSentence.getId == t.getSentence.getId)
+      if (trList.nonEmpty) {
+        val lmList = landmarks.filter(t => t.getId == dummyPhrase.getId || sp.getSentence.getId == t.getSentence.getId)
+        if (lmList.nonEmpty) {
+          trList.flatMap(tr => lmList.map(lm => createRelation(Some(tr), Some(sp), Some(lm))))
+            .filter(r => r.getArgumentIds.toList.distinct.size == 3) // distinct arguments
+        } else {
+          List()
+        }
+      } else {
+        List()
+      }
+    })
+    candidateRelations
   }
 
   def generatePairCandidates(
@@ -105,11 +140,11 @@ object CandidateGenerator {
   private def createRelation(tr: Option[Phrase], sp: Option[Phrase], lm: Option[Phrase]): Relation = {
 
     val r = new Relation()
-    r.setArgument(0, if (tr.nonEmpty) tr.get else dummyPhrase)
+    r.setArgument(0, if (tr.nonEmpty && tr.get.getId != dummyPhrase.getId) tr.get else dummyPhrase)
     r.setArgumentId(0, r.getArgument(0).getId)
     r.setArgument(1, sp.get)
     r.setArgumentId(1, r.getArgument(1).getId)
-    r.setArgument(2, if (lm.nonEmpty) lm.get else dummyPhrase)
+    r.setArgument(2, if (lm.nonEmpty && lm.get.getId != dummyPhrase.getId) lm.get else dummyPhrase)
     r.setArgumentId(2, r.getArgument(2).getId)
 
     //set relation parent

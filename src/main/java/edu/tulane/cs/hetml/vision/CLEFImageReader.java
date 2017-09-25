@@ -34,6 +34,7 @@ public class CLEFImageReader {
     public List<SegmentRelation> testRelations;
 
     private Hashtable<Integer, String> MapCode2Concept = new Hashtable<Integer, String>();
+    private Hashtable<String, String> segmentReferitText = new Hashtable<String, String>();
     private Hashtable<String, String> segmentOntology = new Hashtable<String, String>();
     private Hashtable<String, String> redefindedRelations = new Hashtable<String, String>();
 
@@ -72,6 +73,8 @@ public class CLEFImageReader {
         getRedefinedRelations(directory);
         // Load Concepts
         getConcepts(directory);
+        //Load Referit Data
+        getReferitText(directory);
         // Load Training
         getTrainingImages();
         // Load Testing
@@ -128,6 +131,24 @@ public class CLEFImageReader {
         }
     }
 
+    /*******************************************************/
+    // Loading Referit Text for CLEF Segments
+    // Storing information in HashTable for quick retrieval
+
+    /*******************************************************/
+    private void getReferitText(String directory) throws IOException {
+        String file = directory + "/ReferGames.txt";
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] segReferitText = line.split("\\~");
+            if (segReferitText.length > 1) {
+                segmentReferitText.put(segReferitText[0], segReferitText[1]);
+            } else {
+                segmentReferitText.put(segReferitText[0], " ");
+            }
+        }
+    }
     private void getRedefinedRelations(String directory) throws IOException {
         directory = directory + "/relations";
         File d = new File(directory);
@@ -175,25 +196,28 @@ public class CLEFImageReader {
 
         for (File f : d.listFiles()) {
             if (f.isDirectory()) {
-                ++length;
-                String mainFolder = directory + "/" + f.getName();
-                System.out.println(mainFolder);
-                //Load all images
-                String imageFolder = mainFolder + "/images";
-                getImages(imageFolder);
 
-                //Load all segments
-                String ontologyfile = mainFolder + "/ontology_path.txt";
-                getSegmentsOntology(ontologyfile);
+                if( !readFullData && (f.getName().contentEquals("00") || f.getName().contentEquals("01"))) {
 
-                //Load all segments
-                String file = mainFolder + "/features.txt";
-                getSegments(file);
+                    ++length;
+                    String mainFolder = directory + "/" + f.getName();
+                    System.out.println(mainFolder);
+                    //Load all images
+                    String imageFolder = mainFolder + "/images";
+                    getImages(imageFolder);
 
-                //Load all relations
-                String spatialRelations = mainFolder + "/spatial_rels";
-                getSegmentsRelations(spatialRelations);
+                    //Load all segments
+                    String ontologyfile = mainFolder + "/ontology_path.txt";
+                    getSegmentsOntology(ontologyfile);
 
+                    //Load all segments
+                    String file = mainFolder + "/features.txt";
+                    getSegments(file);
+
+                    //Load all relations
+                    String spatialRelations = mainFolder + "/spatial_rels";
+                    getSegmentsRelations(spatialRelations);
+                }
             }
             if (!readFullData && length == 2)
                 break;
@@ -212,9 +236,10 @@ public class CLEFImageReader {
             for (File f : d.listFiles()) {
                 String label = f.getName();
                 String[] split = label.split("\\.");
+
                 if (trainingData.contains(split[0]))
                     trainingImages.add(new Image(label, split[0]));
-                else if (testData.contains(split[0]))
+                if (testData.contains(split[0]))
                     testImages.add(new Image(label, split[0]));
             }
         }
@@ -247,13 +272,28 @@ public class CLEFImageReader {
                             ontologyConcepts.add(o);
                     }
 
+                    List<String> referitText = new ArrayList<>();
+                    String referitKey = imageId + "_" + segmentId + ".jpg";
+                    String text = segmentReferitText.get(referitKey);
+
+                    if(text!=null) {
+                        String[] referit = text.split(" ");
+                        for (int i = 0; i < referit.length; i++) {
+                            String r = referit[i].trim();
+                            referitText.add(r);
+                        }
+                    }
+                    else
+                        referitText.add(" ");
+
                     if (segmentConcept != null) {
                         String segmentFeatures = segmentInfo[2];
                         segmentFeatures = segmentFeatures.trim().replaceAll(" +", " ");
                         if (trainingData.contains(imageId)) {
-                            trainingSegments.add(new Segment(imageId, segmentId, segmentCode, segmentFeatures, segmentConcept, ontologyConcepts));
-                        } else if (testData.contains(imageId)) {
-                            testSegments.add(new Segment(imageId, segmentId, segmentCode, segmentFeatures, segmentConcept, ontologyConcepts));
+                            trainingSegments.add(new Segment(imageId, segmentId, segmentCode, segmentFeatures, segmentConcept, ontologyConcepts, referitText));
+                        }
+                        if (testData.contains(imageId)) {
+                            testSegments.add(new Segment(imageId, segmentId, segmentCode, segmentFeatures, segmentConcept, ontologyConcepts, referitText));
                         }
                     }
                 }
@@ -298,9 +338,7 @@ public class CLEFImageReader {
                                 if (val == 1)
                                     rel = "adjacent";
                                 else if (val == 2)
-                                    rel = null;
-                                    // Ignoring disjoint relations
-                                    // rel = "disjoint";
+                                    rel = "disjoint";
                                 else
                                     rel = null;
 
@@ -308,7 +346,8 @@ public class CLEFImageReader {
                                     if (trainingData.contains(imgId)) {
                                         //Creating new Relation between segments
                                         trainingRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
-                                    } else if (testData.contains(imgId)) {
+                                    }
+                                    if (testData.contains(imgId)) {
                                         testRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
                                     }
                                 }
@@ -317,30 +356,33 @@ public class CLEFImageReader {
                                     rel = "beside";
                                 else if (val == 4) {
                                     // Original "x-aligned"
-                                    String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
-                                    rel = redefindedRelations.get(key);
+                                    rel = "x-aligned";
+                                    //String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
+                                    //rel = redefindedRelations.get(key);
                                 }
 
                                 if (rel != null) {
                                     if (trainingData.contains(imgId)) {
                                         //Creating new Relation between segments
                                         trainingRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
-                                    } else if (testData.contains(imgId)) {
+                                    }
+                                    if (testData.contains(imgId)) {
                                         testRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
                                     }
                                 }
 
                                 val = (int) yRels[x][y];
                                 if (val == 5)
-                                    rel = null;
+                                    //rel = null;
                                     // Ignoring above relations
-                                    // rel = "above";
+                                    rel = "above";
                                 else if (val == 6)
-                                    rel = null;
+                                    //rel = null;
                                     // Ignoring below relations
-                                    //rel = "below";
+                                    rel = "below";
                                 else if (val == 7) {
                                     // Original "y-aligned"
+                                    //rel= "y-aligned";
                                     String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
                                     rel = redefindedRelations.get(key);
                                 }
@@ -349,7 +391,8 @@ public class CLEFImageReader {
                                     if (trainingData.contains(imgId)) {
                                         //Creating new Relation between segments
                                         trainingRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
-                                    } else if (testData.contains(imgId)) {
+                                    }
+                                    if (testData.contains(imgId)) {
                                         testRelations.add(new SegmentRelation(imgId, firstSegmentId, secondSegmentId, rel));
                                     }
                                 }
@@ -398,6 +441,8 @@ public class CLEFImageReader {
             throw new IOException(file + " does not exist!");
         }
         NlpXmlReader reader = new NlpXmlReader(file, "SCENE", "SENTENCE", null, null);
+        reader.setIdUsingAnotherProperty("SCENE", "DOCNO");
+
         List<Document> documentList = reader.getDocuments();
 
         for (Document d : documentList) {
@@ -464,7 +509,7 @@ public class CLEFImageReader {
         }
     }
 
-    private void printImageInformation() throws IOException {
+/*    private void printImageInformation() throws IOException {
         // Test Images
         for (Image i : testImages) {
             String path = "data/mSpRL/results/imagetest/" + i.getId() + ".txt";
@@ -480,13 +525,13 @@ public class CLEFImageReader {
             String path = "data/mSpRL/results/imagetrain/" + i.getId() + ".txt";
             printWriterTest = new PrintWriter(path);
             for (SegmentRelation sr : trainingRelations) {
-                if (i.getId().equals(sr.getImageId()) && (sr.getRelation().equals("x-aligned") || sr.getRelation().equals("y-aligned")))
+                if (i.getId().equals(sr.getImageId())) //&& (sr.getRelation().equals("x-aligned") || sr.getRelation().equals("y-aligned")))
                     printWriterTest.println(sr.getFirstSegmentId() + "," + sr.getSecondSegmentId() + "," + sr.getRelation() + "," + getTrainSegmentConcept(sr.getImageId(), sr.getFirstSegmentId()) + "," + getTrainSegmentConcept(sr.getImageId(), sr.getSecondSegmentId()));
             }
             printWriterTest.close();
         }
     }
-
+*/
     private String getTestSegmentConcept(String imageID, int segmentSeq) {
         String concept = null;
         for (int i = 0; i < testSegments.size(); i++) {

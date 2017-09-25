@@ -13,7 +13,6 @@ libraryDependencies ++= Seq(
   "org.deeplearning4j" % "deeplearning4j-core" % "0.7.2",
   "org.deeplearning4j" % "deeplearning4j-scaleout-api" % "1.0",
   "org.deeplearning4j" % "deeplearning4j-nlp" % "0.7.2",
-  "org.nd4j" % "nd4j-native-platform" % "0.7.2"
+  "org.nd4j" % "nd4j-native-platform" % "0.7.2",
+  "org.tensorflow" % "tensorflow" % "1.3.0"
 )
-
-        
