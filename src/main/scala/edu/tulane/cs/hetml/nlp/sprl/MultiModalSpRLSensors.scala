@@ -17,7 +17,7 @@ import scala.util.matching.Regex
 
 object MultiModalSpRLSensors {
 
-  private val googleWord2Vec = WordVectorSerializer.loadGoogleModel(new File("data/GoogleNews-vectors-negative300.bin"), true)
+  private lazy val googleWord2Vec = WordVectorSerializer.loadGoogleModel(new File("data/GoogleNews-vectors-negative300.bin"), true)
   private lazy val clefWord2Vec = WordVectorSerializer.readWord2VecModel("data/clef.bin")
 
   def getWord2VectorSimilarity(w2v: Word2Vec, w1: String, w2: String): Double = {

@@ -4,12 +4,13 @@ import java.io.{File, FileOutputStream}
 
 import edu.illinois.cs.cogcomp.saul.classifier.JointTrainSparseNetwork
 import edu.illinois.cs.cogcomp.saul.util.Logging
-import edu.tulane.cs.hetml.nlp.sprl.Helpers.{CandidateGenerator, FeatureSets, ReportHelper}
+import edu.tulane.cs.hetml.nlp.sprl.Helpers.{FeatureSets, ReportHelper}
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.SentenceLevelConstraintClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
+import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets
 import org.apache.commons.io.FileUtils
 
 object MultiModalSpRLApp extends App with Logging{
@@ -59,9 +60,8 @@ object MultiModalSpRLApp extends App with Logging{
       IndicatorRoleClassifier.learn(iterations)
       LandmarkRoleClassifier.learn(iterations)
     }
-//    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
-//    ReportHelper.saveCandidateList(true, pairs.getTrainingInstances.toList)
-
+    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
+    ReportHelper.saveCandidateList(isTrain = true, pairs.getTrainingInstances.toList)
 
     if(skipIndividualClassifiersTraining) {
       TrajectorPairClassifier.load()
@@ -76,37 +76,22 @@ object MultiModalSpRLApp extends App with Logging{
       //JoinTraining using constraints
       //To make the trianing faster use the pre-trained models
       // then apply 10 joint training iterations
-/*      JointTrainSparseNetwork(sentences, TRConstraintClassifier :: LMConstraintClassifier ::
-        IndicatorConstraintClassifier :: TRPairConstraintClassifier ::
-        LMPairConstraintClassifier :: Nil, init = false, it = 10)*/
+      /*      JointTrainSparseNetwork(sentences, TRConstraintClassifier :: LMConstraintClassifier ::
+              IndicatorConstraintClassifier :: TRPairConstraintClassifier ::
+              LMPairConstraintClassifier :: Nil, init = false, it = 10)*/
     }
 
     TrajectorRoleClassifier.save()
     IndicatorRoleClassifier.save()
     LandmarkRoleClassifier.save()
-//    TrajectorPairClassifier.save()
-//    LandmarkPairClassifier.save()
+    TrajectorPairClassifier.save()
+    LandmarkPairClassifier.save()
 
-    if(!useCandidateTrLmTriplets) {
-      populateTripletDataFromAnnotatedCorpusFromPairs(
-        x => TrajectorPairClassifier(x) == "TR-SP",
-        x => IndicatorRoleClassifier(x) == "Indicator",
-        x => LandmarkPairClassifier(x) == "LM-SP")
-    }
-    else
-    {
-      val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
-      val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
-      val indicatorCandidates = (CandidateGenerator.getIndicatorCandidates(phrases().toList))
-
-      populateTripletDataFromAnnotatedCorpus(
-        x => trCandidates.exists(_.getId == x.getId),
-        x => IndicatorRoleClassifier(x) == "Indicator",
-        x => lmCandidates.exists(_.getId == x.getId))
-    }
-
-    TripletRelationClassifier.learn(iterations)
-    TripletRelationClassifier.save()
+    populateTripletDataFromAnnotatedCorpusFromPairs(
+      x => TrajectorPairClassifier(x) == "TR-SP",
+      x => IndicatorRoleClassifier(x) == "Indicator",
+      x => LandmarkPairClassifier(x) == "LM-SP"
+    )
 
     val goldTriplets = triplets.getTrainingInstances.filter(_.containsProperty("ActualId"))
     TripletGeneralTypeClassifier.learn(iterations, goldTriplets)
@@ -120,6 +105,7 @@ object MultiModalSpRLApp extends App with Logging{
 
     TripletFoRClassifier.learn(iterations, goldTriplets)
     TripletFoRClassifier.save()
+
   }
 
   if (!isTrain) {
@@ -135,44 +121,20 @@ object MultiModalSpRLApp extends App with Logging{
     TripletSpecificTypeClassifier.load()
     TripletRCC8Classifier.load()
     TripletFoRClassifier.load()
-    TripletRelationClassifier.load()
-
-//    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
-//    ReportHelper.saveCandidateList(false, pairs.getTestingInstances.toList)
+    populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
+    ReportHelper.saveCandidateList(isTrain = false, pairs.getTestingInstances.toList)
 
     if (!useConstraints) {
 
-      if(!useCandidateTrLmTriplets) {
-        populateTripletDataFromAnnotatedCorpusFromPairs(
-          x => TrajectorPairClassifier(x) == "TR-SP",
-          x => IndicatorRoleClassifier(x) == "Indicator",
-          x => LandmarkPairClassifier(x) == "LM-SP")
-      }
-      else
-      {
-        println("testing Trajector ...")
-        TrajectorRoleClassifier.test()
-
-        val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
-        val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
-        val indicatorCandidates = (CandidateGenerator.getIndicatorCandidates(phrases().toList))
-
-        populateTripletDataFromAnnotatedCorpus(
-          x => trCandidates.exists(_.getId == x.getId),
-          x => IndicatorRoleClassifier(x) == "Indicator",
-          x => lmCandidates.exists(_.getId == x.getId))
-      }
-
-      println("Candidate Triplets Size -> " + triplets.getTestingInstances.size)
-      println("None:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") != "true"))
-      println("Relation:" + triplets.getTestingInstances.count(x=>x.getProperty("Relation") == "true"))
-
-      TripletRelationClassifier.test()
+      populateTripletDataFromAnnotatedCorpusFromPairs(
+        x => TrajectorPairClassifier(x) == "TR-SP",
+        x => IndicatorRoleClassifier(x) == "Indicator",
+        x => LandmarkPairClassifier(x) == "LM-SP"
+      )
 
       val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
       val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
       val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
-
       val tripletList = triplets.getTestingInstances.toList
 
       ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
@@ -181,28 +143,15 @@ object MultiModalSpRLApp extends App with Logging{
         x => TripletRCC8Classifier(x),
         x => TripletFoRClassifier(x),
         s"$resultsDir/${expName}${suffix}.xml")
+
     }
     else {
 
-      if(!useCandidateTrLmTriplets) {
-        populateTripletDataFromAnnotatedCorpusFromPairs(
-          x => TrajectorPairClassifier(x) == "TR-SP",
-          x => IndicatorRoleClassifier(x) == "Indicator",
-          x => LandmarkPairClassifier(x) == "LM-SP")
-      }
-      else
-      {
-        val trCandidates = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
-        val lmCandidates = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
-        val indicatorCandidates = (CandidateGenerator.getIndicatorCandidates(phrases().toList))
-
-        populateTripletDataFromAnnotatedCorpus(
-          x => trCandidates.exists(_.getId == x.getId),
-          x => IndicatorRoleClassifier(x) == "Indicator",
-          x => lmCandidates.exists(_.getId == x.getId))
-      }
-
-      TripletRelationClassifier.test()
+      populateTripletDataFromAnnotatedCorpusFromPairs(
+        x => SentenceLevelConstraintClassifiers.TRPairConstraintClassifier(x) == "TR-SP",
+        x => SentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator",
+        x => SentenceLevelConstraintClassifiers.LMPairConstraintClassifier(x) == "LM-SP"
+      )
 
       val trajectors = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.TRConstraintClassifier(x) == "Trajector").toList
       val landmarks = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.LMConstraintClassifier(x) == "Landmark").toList
@@ -221,5 +170,6 @@ object MultiModalSpRLApp extends App with Logging{
 
     ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
   }
+
 }
 

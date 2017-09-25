@@ -57,8 +57,8 @@ object MultiModalTripletApp extends App with Logging{
     IndicatorRoleClassifier.save()
     LandmarkRoleClassifier.save()
 
-    val trCandidatesTrain = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
-    val lmCandidatesTrain = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
+    val trCandidatesTrain = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+    val lmCandidatesTrain = CandidateGenerator.getLandmarkCandidates(phrases().toList)
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTrain.exists(_.getId == x.getId),
