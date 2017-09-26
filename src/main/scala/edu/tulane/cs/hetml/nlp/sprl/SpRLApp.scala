@@ -131,23 +131,23 @@ object SpRLApp extends App with Logging {
         case y: TRAJECTOR =>
           trCount = trCount + 1
           y.setId(s"T$trCount")
-          y.setStart(new BigInteger(x.getStart.toString))
-          y.setEnd(new BigInteger(x.getEnd.toString))
+          y.setStart(x.getStart)
+          y.setEnd(x.getEnd)
           y.setText(x.getText)
           y
         case y: SPATIALINDICATOR =>
           spCount = spCount + 1
           y.setId(s"S$spCount")
-          y.setStart(new BigInteger(x.getStart.toString))
-          y.setEnd(new BigInteger(x.getEnd.toString))
+          y.setStart(x.getStart)
+          y.setEnd(x.getEnd)
           y.setText(x.getText)
 
           y
         case y: LANDMARK =>
           lmCount = lmCount + 1
           y.setId(s"L$lmCount")
-          y.setStart(new BigInteger(x.getStart.toString))
-          y.setEnd(new BigInteger(x.getEnd.toString))
+          y.setStart(x.getStart)
+          y.setEnd(x.getEnd)
           y.setText(x.getText)
           y
       }).asInstanceOf[T]

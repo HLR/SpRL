@@ -131,12 +131,12 @@ object ReportHelper {
         val prefix = "T_"
         if (x == dummyPhrase) {
           y.setId(prefix + s.getId + "_null")
-          y.setStart(new BigInteger("-1"))
-          y.setEnd(new BigInteger("-1"))
+          y.setStart(-1)
+          y.setEnd(-1)
           return t
         }
-        y.setStart(new BigInteger(x.getStart.toString))
-        y.setEnd(new BigInteger(x.getEnd.toString))
+        y.setStart(x.getStart)
+        y.setEnd(x.getEnd)
         y.setText(x.getText)
         y.setId(prefix + x.getId)
         y
@@ -144,12 +144,12 @@ object ReportHelper {
         val prefix = "L_"
         if (x == dummyPhrase) {
           y.setId(prefix + s.getId + "_null")
-          y.setStart(new BigInteger("-1"))
-          y.setEnd(new BigInteger("-1"))
+          y.setStart(-1)
+          y.setEnd(-1)
           return t
         }
-        y.setStart(new BigInteger(x.getStart.toString))
-        y.setEnd(new BigInteger(x.getEnd.toString))
+        y.setStart(x.getStart)
+        y.setEnd(x.getEnd)
         y.setText(x.getText)
         y.setId(prefix + x.getId)
         y
@@ -157,12 +157,12 @@ object ReportHelper {
         val prefix = "SP_"
         if (x == dummyPhrase) {
           y.setId(prefix + s.getId + "_null")
-          y.setStart(new BigInteger("-1"))
-          y.setEnd(new BigInteger("-1"))
+          y.setStart(-1)
+          y.setEnd(-1)
           return t
         }
-        y.setStart(new BigInteger(x.getStart.toString))
-        y.setEnd(new BigInteger(x.getEnd.toString))
+        y.setStart(x.getStart)
+        y.setEnd(x.getEnd)
         y.setText(x.getText)
         y.setId(prefix + x.getId)
         y
