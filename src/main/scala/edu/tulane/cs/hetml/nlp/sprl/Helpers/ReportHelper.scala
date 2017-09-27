@@ -52,7 +52,7 @@ object ReportHelper {
                 generalTypeClassifier: Relation => String,
                 specificTypeClassifier: Relation => String,
                 RCC8ValueClassifier: Relation => String,
-                FoRClassifier: Relation => String,
+                DirectionClassifier: Relation => String,
                 filePath: String): SpRL2017Document = {
     val doc = new SpRL2017Document()
     val trPerSentence = trajectors.filter(_ != dummyPhrase).groupBy(_.getSentence)
@@ -90,7 +90,8 @@ object ReportHelper {
         sent.setTrajectors(tr)
         sent.setLandmarks(lm)
         sent.setSpatialindicators(sp)
-        sent.setRelations(getXmlRelations(rel, generalTypeClassifier, specificTypeClassifier, RCC8ValueClassifier, FoRClassifier))
+        sent.setRelations(
+          getXmlRelations(rel, generalTypeClassifier, specificTypeClassifier, RCC8ValueClassifier, DirectionClassifier))
         scene.getSentences.add(sent)
       })
       doc.getScenes.add(scene)
@@ -104,7 +105,7 @@ object ReportHelper {
                                generalTypeClassifier: Relation => String,
                                specificTypeClassifier: Relation => String,
                                RCC8ValueClassifier: Relation => String,
-                               FoRClassifier: Relation => String
+                               DirectionClassifier: Relation => String
                              ): List[RELATION] = {
     rel.map(x => {
       val r = new RELATION
@@ -114,8 +115,11 @@ object ReportHelper {
       r.setLandmarkId("L_" + getArgId(x, 2))
       r.setGeneralType(generalTypeClassifier(x))
       r.setSpecificType(specificTypeClassifier(x))
-      r.setRCC8Value(RCC8ValueClassifier(x))
-      r.setFoR(FoRClassifier(x))
+      val rcc8 = RCC8ValueClassifier(x)
+      if("None".equalsIgnoreCase(rcc8))
+        r.setRCC8Value(DirectionClassifier(x))
+      else
+        r.setRCC8Value(rcc8)
       r
     })
   }
@@ -324,9 +328,15 @@ object ReportHelper {
 
   private def convertToEval(r: Results): Seq[SpRLEvaluation] = r.perLabel
     .map(x => {
-      val p = if (x.predictedSize == 0) 1.0 else x.precision
-      val r = if (x.labeledSize == 0) 1.0 else x.recall
-      val f1 = if (x.predictedSize == 0) if (x.labeledSize == 0) 1.0 else 0.0 else x.f1
+      var p = if (x.predictedSize == 0) 1.0 else x.precision
+      var r = if (x.labeledSize == 0) 1.0 else x.recall
+      var f1 = if (x.predictedSize == 0) if (x.labeledSize == 0) 1.0 else 0.0 else x.f1
+      if(p.isNaN)
+        p = 0
+      if(r.isNaN)
+        r = 0
+      if(f1.isNaN)
+        f1 = 0
       val result = new SpRLEvaluation(x.label, p * 100, r * 100, f1 * 100, x.labeledSize, x.predictedSize)
       result
     })

@@ -137,24 +137,6 @@ object MultiModalSpRLClassifiers {
     override def feature = tripletFeatures
   }
 
-  object TripletRelationClassifierWithImage extends Learnable(triplets) {
-    def label = tripletIsRelation
-
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.positiveThickness = 4
-      p.negativeThickness = 1
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
-
-    override def feature = List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
-      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos, tripletTRIsImageConceptExactMatch, tripletLMIsImageConceptExactMatch,
-      tripletTRNearestSegmentConceptToHeadVector, tripletTRNearestSegmentConceptToPhraseVector, tripletTRIsImageConceptApproxMatch,
-      tripletLMIsImageConceptApproxMatch, tripletLMNearestSegmentConceptToHeadVector,
-      tripletLMNearestSegmentConceptToPhraseVector, tripletImageConfirms)
-  }
-
   object TripletGeneralTypeClassifier extends Learnable(triplets) {
     def label = tripletGeneralType
 
@@ -180,8 +162,8 @@ object MultiModalSpRLClassifiers {
   }
 
 
-  object TripletFoRClassifier extends Learnable(triplets) {
-    def label = tripletFoR
+  object TripletDirectionClassifier extends Learnable(triplets) {
+    def label = tripletDirection
 
     override lazy val classifier = new SparseNetworkLearner()
 

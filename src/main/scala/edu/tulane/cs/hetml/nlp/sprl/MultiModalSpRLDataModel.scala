@@ -221,18 +221,17 @@ object MultiModalSpRLDataModel extends DataModel {
   val isImageConceptApproxMatch = property(phrases, cache = true) {
     p: Phrase =>
       if (p != dummyPhrase) {
-        if(getSegmentConcepts(p)
-          .exists(x=> getGoogleSimilarity(getHeadword(p).getText, x.toLowerCase.trim) >= 0.40))
-          {
-            "true"
-          }
+        if (getSegmentConcepts(p)
+          .exists(x => getGoogleSimilarity(getHeadword(p).getText, x.toLowerCase.trim) >= 0.40)) {
+          "true"
+        }
         else
           getSegmentConceptsOntology(p).exists(x => {
-              x.exists(s =>
-                (!phraseConceptToWord.contains(s) && getGoogleSimilarity(getHeadword(p).getText, s.toLowerCase().trim) >= 0.40)
+            x.exists(s =>
+              (!phraseConceptToWord.contains(s) && getGoogleSimilarity(getHeadword(p).getText, s.toLowerCase().trim) >= 0.40)
                 || (phraseConceptToWord.contains(s) && getGoogleSimilarity(phraseConceptToWord(s), s) >= 0.40)
-              )
-            }).toString
+            )
+          }).toString
 
       } else {
         ""
@@ -433,13 +432,20 @@ object MultiModalSpRLDataModel extends DataModel {
   val tripletSpecificType = property(triplets) {
     r: Relation => if (r.containsProperty("SpecificType")) r.getProperty("SpecificType") else "None"
   }
-
+  val rcc8Values = List("NTPP", "TPP", "EC", "DC", "EQ")
   val tripletRCC8 = property(triplets) {
-    r: Relation => if (r.containsProperty("RCC8")) r.getProperty("RCC8") else "None"
+    r: Relation =>
+      if (r.containsProperty("RCC8") && rcc8Values.exists(x => r.getProperty("RCC8").toUpperCase().contains(x)))
+        rcc8Values.find(x => r.getProperty("RCC8").toUpperCase().contains(x)).get
+      else "None"
   }
 
-  val tripletFoR = property(triplets) {
-    r: Relation => if (r.containsProperty("FoR")) r.getProperty("FoR") else "None"
+  val directionValues = List("above", "behind", "below", "front", "left", "right")
+  val tripletDirection = property(triplets) {
+    r: Relation =>
+      if (r.containsProperty("RCC8") && directionValues.exists(x => r.getProperty("RCC8").toLowerCase().contains(x)))
+        directionValues.find(x => r.getProperty("RCC8").toLowerCase().contains(x)).get
+      else "None"
   }
 
   val JF2_1 = property(triplets, cache = true) {
@@ -451,9 +457,9 @@ object MultiModalSpRLDataModel extends DataModel {
   val JF2_2 = property(triplets, cache = true) {
     r: Relation =>
       val (_, _, third) = getTripletArguments(r)
-      if(third != dummyPhrase) {
+      if (third != dummyPhrase) {
         (phrases(third) ~> phraseToToken)
-          .exists(p=>Dictionaries.spLexicon.exists(sp=> p.getText.toLowerCase.contains(sp)))
+          .exists(p => Dictionaries.spLexicon.exists(sp => p.getText.toLowerCase.contains(sp)))
       }
       else {
         false
@@ -466,13 +472,13 @@ object MultiModalSpRLDataModel extends DataModel {
       val (start, end) = getStartAndEndArgs(r)
 
       val toks = (triplets(r) ~> -sentenceToTriplets ~> sentenceToPhrase ~> phraseToToken)
-        .filter(x=> x.getStart >= start.getEnd && x.getEnd <= end.getStart)
+        .filter(x => x.getStart >= start.getEnd && x.getEnd <= end.getStart)
         .toList.sortBy(_.getStart)
 
-      val template = toks.foldLeft("")((str, token) =>{
+      val template = toks.foldLeft("")((str, token) => {
 
-        if(first.contains(token) || second.contains(token) || third.contains(token))
-            str
+        if (first.contains(token) || second.contains(token) || third.contains(token))
+          str
         else
           str + "::" + token.getText
       })
@@ -506,7 +512,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val JF2_8 = property(triplets, cache = true) {
     r: Relation =>
       val (_, _, third) = getTripletArguments(r)
-      if(third == dummyPhrase)
+      if (third == dummyPhrase)
         undefined
       else {
         getWordnetHypernyms(getHeadword(third))
@@ -525,24 +531,24 @@ object MultiModalSpRLDataModel extends DataModel {
       val (start, end) = getStartAndEndArgs(r)
 
       val toks = (triplets(r) ~> -sentenceToTriplets ~> sentenceToPhrase ~> phraseToToken)
-        .filter(x=> x.getStart >= start.getStart && x.getEnd <= end.getEnd)
+        .filter(x => x.getStart >= start.getStart && x.getEnd <= end.getEnd)
         .toList.sortBy(_.getStart)
 
-      val template = toks.foldLeft("")((str, token) =>{
+      val template = toks.foldLeft("")((str, token) => {
 
-        if(first.contains(token)) {
+        if (first.contains(token)) {
           if (str.endsWith("[TR]"))
             str
           else
             str + "::[TR]"
         }
-        else if(second.contains(token)) {
+        else if (second.contains(token)) {
           if (str.endsWith("[SP]"))
             str
           else
             str + "::[SP]"
         }
-        else if(third.contains(token)) {
+        else if (third.contains(token)) {
           if (str.endsWith("[LM]"))
             str
           else
@@ -562,7 +568,7 @@ object MultiModalSpRLDataModel extends DataModel {
       val sp = getHeadword(second)
       val preps = getDependencyRelationWith(tr, "PREP")
       val otherPrep = preps.filterNot(p => p._1 == sp.getStart && p._2 == sp.getEnd).headOption
-      if(otherPrep.nonEmpty)
+      if (otherPrep.nonEmpty)
         otherPrep.head._3
       else
         ""
@@ -571,11 +577,11 @@ object MultiModalSpRLDataModel extends DataModel {
   val JF2_13 = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
-      if(third == dummyPhrase){
+      if (third == dummyPhrase) {
         val phrases = (triplets(r) ~> -sentenceToTriplets ~> sentenceToPhrase).filterNot(_ == first)
-        phrases.exists(p=>getPos(p).exists(x=>x.startsWith("NN")))
+        phrases.exists(p => getPos(p).exists(x => x.startsWith("NN")))
       }
-      else{
+      else {
         false
       }
   }
@@ -592,7 +598,7 @@ object MultiModalSpRLDataModel extends DataModel {
       val tr = getHeadword(first)
       val sp = getHeadword(second)
       val preps = getDependencyRelationWith(tr, "POBJ")
-      if(preps.nonEmpty){
+      if (preps.nonEmpty) {
         preps.exists(p => p._1 != sp.getStart)
       }
       else
@@ -614,7 +620,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val tripletTRLMIsImageConcept = property(triplets, cache = true) {
     r: Relation =>
       val (first, _, third) = getTripletArguments(r)
-      if(tripletTRIsImageConceptExactMatch(r)=="true" && tripletLMIsImageConceptExactMatch(r) == "true")
+      if (tripletTRIsImageConceptExactMatch(r) == "true" && tripletLMIsImageConceptExactMatch(r) == "true")
         "true"
       else
         ""
@@ -641,7 +647,7 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val tripletLMNearestSegmentConceptToHeadVector = property(triplets, cache = true) {
     r: Relation =>
-      val (_ , _, third) = getTripletArguments(r)
+      val (_, _, third) = getTripletArguments(r)
       nearestSegmentConceptToHeadVector(third)
   }
 
@@ -785,23 +791,22 @@ object MultiModalSpRLDataModel extends DataModel {
   /// Helper methods
   ////////////////////////////////////////////////////////////////////
 
-  private def getStartAndEndArgs(r: Relation):(Phrase, Phrase) = {
+  private def getStartAndEndArgs(r: Relation): (Phrase, Phrase) = {
     val (first, second, third) = getTripletArguments(r)
 
     val start = if (isBefore(first, second))
       if (third == dummyPhrase || isBefore(first, third)) first else third
-    else
-      if (third == dummyPhrase || isBefore(second, third)) second else third
+    else if (third == dummyPhrase || isBefore(second, third)) second else third
 
 
     val end = if (isBefore(first, second))
       if (third != dummyPhrase && isBefore(second, third)) third else second
-    else
-      if (third != dummyPhrase && isBefore(first, third)) third else first
+    else if (third != dummyPhrase && isBefore(first, third)) third else first
 
 
     (start, end)
   }
+
   private def getVector(w: String): List[Double] = {
     if (useVectorAverages) {
       getAverage(getGoogleWordVector(w), getClefWordVector(w))
@@ -842,7 +847,7 @@ object MultiModalSpRLDataModel extends DataModel {
 
 
   private def roleToSpDependencyPath(first: Phrase, second: Phrase) = {
-    if(first != dummyPhrase && second != dummyPhrase) {
+    if (first != dummyPhrase && second != dummyPhrase) {
       val f = getHeadword(first)
       val s = getHeadword(second)
       getDependencyPath(f, s)
@@ -850,46 +855,51 @@ object MultiModalSpRLDataModel extends DataModel {
     else
       undefined
   }
-  private def isExistsInSegmentRelations(r: Relation, useSp: Boolean) : Boolean = {
-    val (first, second, third) = getTripletArguments(r)
-      val firstConcept = headWordFrom(first)
-      val secondConcept = headWordFrom(second)
-      val thirdConcept = headWordFrom(third)
-        val img = (phrases(second) ~> -sentenceToPhrase ~> -documentToSentence) ~> documentToImage head
-        val segs = (images(img) ~> imageToSegment).map(s=> s.getSegmentId -> s).toMap
-        val rels = images(img) ~> imageToSegment ~> -segmentRelationsToSegments
-      rels.exists(ir=>{
-        if(segs.contains(ir.getFirstSegmentId) && segs.contains(ir.getSecondSegmentId)) {
-          val firstSeg = segs(ir.getFirstSegmentId)
-          val secondSeg = segs(ir.getSecondSegmentId)
-          val relSeg = ir.getRelation
 
-          isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, firstConcept, thirdConcept, second.getText, useSp) ||
-            isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, thirdConcept, firstConcept, second.getText, useSp)
-        }
-        else{
+  private def isExistsInSegmentRelations(r: Relation, useSp: Boolean): Boolean = {
+    val (first, second, third) = getTripletArguments(r)
+    val firstConcept = headWordFrom(first)
+    val secondConcept = headWordFrom(second)
+    val thirdConcept = headWordFrom(third)
+    val img = (phrases(second) ~> -sentenceToPhrase ~> -documentToSentence) ~> documentToImage head
+    val segs = (images(img) ~> imageToSegment).map(s => s.getSegmentId -> s).toMap
+    val rels = images(img) ~> imageToSegment ~> -segmentRelationsToSegments
+    rels.exists(ir => {
+      if (segs.contains(ir.getFirstSegmentId) && segs.contains(ir.getSecondSegmentId)) {
+        val firstSeg = segs(ir.getFirstSegmentId)
+        val secondSeg = segs(ir.getSecondSegmentId)
+        val relSeg = ir.getRelation
+
+        isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, firstConcept, thirdConcept, second.getText, useSp) ||
+          isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, thirdConcept, firstConcept, second.getText, useSp)
+      }
+      else {
+        false
+      }
+    })
+  }
+
+  private def isImageRelMatchesWithTextRel(seg1: Segment, seg2: Segment, segRel: String,
+                                           tr: String, lm: String, sp: String, useSp: Boolean): Boolean = {
+    isSegmentMatchingWith(seg1, tr) &&
+      isSegmentMatchingWith(seg2, lm) &&
+      (if (useSp) {
+        if (SpToImageSp.contains(sp))
+          SpToImageSp(sp) == segRel.toLowerCase
+        else
           false
-        }
+      }
+      else {
+        true
       })
   }
 
-  private def isImageRelMatchesWithTextRel(seg1:Segment, seg2:Segment, segRel: String,
-                                           tr:String, lm:String, sp:String, useSp:Boolean):Boolean = {
-    isSegmentMatchingWith(seg1, tr) &&
-      isSegmentMatchingWith(seg2, lm) &&
-      (if(useSp){
-        if(SpToImageSp.contains(sp))
-            SpToImageSp(sp)==segRel.toLowerCase
-          else
-            false
-      }
-      else {true})
-  }
-  private  def isSegmentMatchingWith(segment: Segment, concept: String):Boolean = {
+  private def isSegmentMatchingWith(segment: Segment, concept: String): Boolean = {
     isImageConceptMatchingWith(segment.getSegmentConcept, concept) ||
-      segment.ontologyConcepts.exists(o=> isImageConceptMatchingWith(o, concept)) ||
-      segment.referitText.exists(o=> isImageConceptMatchingWith(o, concept))
+      segment.ontologyConcepts.exists(o => isImageConceptMatchingWith(o, concept)) ||
+      segment.referitText.exists(o => isImageConceptMatchingWith(o, concept))
   }
+
   private def isImageConceptMatchingWith(imageConcept: String, concept: String): Boolean = {
     if (!imageConcept.contains("-")) {
       getGoogleSimilarity(imageConcept.toLowerCase(), concept.toLowerCase()) >= 0.40
@@ -897,7 +907,7 @@ object MultiModalSpRLDataModel extends DataModel {
     }
     else {
       val segWords = imageConcept.split("-")
-      segWords.exists(sw=>getGoogleSimilarity(sw.toLowerCase(), concept.toLowerCase()) >= 0.40)
+      segWords.exists(sw => getGoogleSimilarity(sw.toLowerCase(), concept.toLowerCase()) >= 0.40)
     }
   }
 }

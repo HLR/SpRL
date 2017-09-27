@@ -1,6 +1,6 @@
 package edu.tulane.cs.hetml.nlp.sprl
 
-import java.io.File
+import java.io.{File, FileOutputStream}
 
 import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.{CandidateGenerator, FeatureSets, ReportHelper}
@@ -36,7 +36,7 @@ object MultiModalTripletApp extends App with Logging {
     TripletGeneralTypeClassifier,
     TripletSpecificTypeClassifier,
     TripletRCC8Classifier,
-    TripletFoRClassifier
+    TripletDirectionClassifier
   )
   classifiers.foreach(x => {
     x.modelDir = s"models/mSpRL/triplet_$featureSet/"
@@ -70,13 +70,13 @@ object MultiModalTripletApp extends App with Logging {
     TripletGeneralTypeClassifier.learn(iterations)
     TripletSpecificTypeClassifier.learn(iterations)
     TripletRCC8Classifier.learn(iterations)
-    TripletFoRClassifier.learn(iterations)
+    TripletDirectionClassifier.learn(iterations)
 
     TripletRelationClassifier.save()
     TripletGeneralTypeClassifier.save()
     TripletSpecificTypeClassifier.save()
     TripletRCC8Classifier.save()
-    TripletFoRClassifier.save()
+    TripletDirectionClassifier.save()
 
   }
 
@@ -91,10 +91,10 @@ object MultiModalTripletApp extends App with Logging {
     TripletGeneralTypeClassifier.load()
     TripletSpecificTypeClassifier.load()
     TripletRCC8Classifier.load()
-    TripletFoRClassifier.load()
+    TripletDirectionClassifier.load()
 
-    val trCandidatesTest = (CandidateGenerator.getTrajectorCandidates(phrases().toList))
-    val lmCandidatesTest = (CandidateGenerator.getLandmarkCandidates(phrases().toList))
+    val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+    val lmCandidatesTest = CandidateGenerator.getLandmarkCandidates(phrases().toList)
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTest.exists(_.getId == x.getId),
@@ -109,25 +109,21 @@ object MultiModalTripletApp extends App with Logging {
       .filter(x => TripletRelationClassifier(x) == "Relation").toList
 
 
-    TripletRelationTypeConstraintClassifier.test()
-
-    //    TripletGeneralTypeConstraintClassifier.test()
-
-    TripletRelationClassifier.test()
-    //    TripletGeneralTypeClassifier.test()
-    //    TripletSpecificTypeClassifier.test()
-    //    TripletRCC8Classifier.test()
-    //    TripletFoRClassifier.test()
-
     ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
       x => TripletGeneralTypeClassifier(x),
       x => TripletSpecificTypeClassifier(x),
       x => TripletRCC8Classifier(x),
-      x => TripletFoRClassifier(x),
+      x => TripletDirectionClassifier(x),
       s"$resultsDir/${expName}${suffix}.xml")
 
     ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
 
+    val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", true)
+    val direction = TripletDirectionClassifier.test()
+    ReportHelper.saveEvalResults(outStream, "Direction(within data model)", direction)
+
+    val rcc8 = TripletRCC8Classifier.test()
+    ReportHelper.saveEvalResults(outStream, "RCC8(within data model)", rcc8)
   }
 }
 

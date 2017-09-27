@@ -73,13 +73,9 @@ object SentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (((TripletRelationClassifier on x) is "Relation") ==>
-            ((TripletGeneralTypeClassifier on x isNot "None") and
-            (TripletSpecificTypeClassifier on x isNot "None") and
-            (TripletRCC8Classifier on x isNot "None") and
-            (TripletFoRClassifier on x isNot "None") and
               ((TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector") and
               (LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "Landmark") and
-              (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "Indicator")))
+              (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "Indicator"))
         )
       }
       a

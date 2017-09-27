@@ -37,7 +37,7 @@ object MultiModalSpRLApp extends App with Logging{
     TripletGeneralTypeClassifier,
     TripletSpecificTypeClassifier,
     TripletRCC8Classifier,
-    TripletFoRClassifier
+    TripletDirectionClassifier
   )
   classifiers.foreach(x => {
     x.modelDir = s"models/mSpRL/$featureSet/"
@@ -103,8 +103,8 @@ object MultiModalSpRLApp extends App with Logging{
     TripletRCC8Classifier.learn(iterations, goldTriplets)
     TripletRCC8Classifier.save()
 
-    TripletFoRClassifier.learn(iterations, goldTriplets)
-    TripletFoRClassifier.save()
+    TripletDirectionClassifier.learn(iterations, goldTriplets)
+    TripletDirectionClassifier.save()
 
   }
 
@@ -120,7 +120,7 @@ object MultiModalSpRLApp extends App with Logging{
     TripletGeneralTypeClassifier.load()
     TripletSpecificTypeClassifier.load()
     TripletRCC8Classifier.load()
-    TripletFoRClassifier.load()
+    TripletDirectionClassifier.load()
     populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
     ReportHelper.saveCandidateList(isTrain = false, pairs.getTestingInstances.toList)
 
@@ -141,7 +141,7 @@ object MultiModalSpRLApp extends App with Logging{
         x => TripletGeneralTypeClassifier(x),
         x => TripletSpecificTypeClassifier(x),
         x => TripletRCC8Classifier(x),
-        x => TripletFoRClassifier(x),
+        x => TripletDirectionClassifier(x),
         s"$resultsDir/${expName}${suffix}.xml")
 
     }
@@ -164,7 +164,7 @@ object MultiModalSpRLApp extends App with Logging{
         x => TripletGeneralTypeClassifier(x),
         x => TripletSpecificTypeClassifier(x),
         x => TripletRCC8Classifier(x),
-        x => TripletFoRClassifier(x),
+        x => TripletDirectionClassifier(x),
         s"$resultsDir/${expName}${suffix}.xml")
     }
 
