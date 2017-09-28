@@ -687,18 +687,6 @@ object MultiModalSpRLDataModel extends DataModel {
       dependencyRelation(first) + "::" + dependencyRelation(second) + "::" + dependencyRelation(third)
   }
 
-  val tripletTRSPPairVector = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, second, third) = getTripletArguments(r)
-      headVector(first) ++ headVector(second)
-  }
-
-  val tripletSPLMPairVector = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, second, third) = getTripletArguments(r)
-      headVector(second) ++ headVector(third)
-  }
-
   val tripletTrSpVector = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, _) = getTripletArguments(r)

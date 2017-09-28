@@ -14,7 +14,7 @@ object mSpRLConfigurator {
   val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"
   val suffix = ""
   val model = FeatureSets.BaseLine
-  var isTrain = false
+  var isTrain = true
   val jointTrain = false
   val skipIndividualClassifiersTraining = false  /* When using joint train, it will ignore individual classifiers
                                                   * training and loads them from the disk*/

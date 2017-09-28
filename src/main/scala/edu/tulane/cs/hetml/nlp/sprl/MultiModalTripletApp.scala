@@ -119,11 +119,29 @@ object MultiModalTripletApp extends App with Logging {
     ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
 
     val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", true)
+
+    val tr = TrajectorRoleClassifier.test()
+    ReportHelper.saveEvalResults(outStream, "Trajector(within data model)", tr)
+
+    val sp = IndicatorRoleClassifier.test()
+    ReportHelper.saveEvalResults(outStream, "Spatial Indicator(within data model)", sp)
+
+    val lm = LandmarkRoleClassifier.test()
+    ReportHelper.saveEvalResults(outStream, "Landmark(within data model)", lm)
+
+    val relation = TripletRelationClassifier.test()
+    ReportHelper.saveEvalResults(outStream, "Relation(within data model)", relation)
+
+    val general = TripletGeneralTypeClassifier.test()
+    ReportHelper.saveEvalResults(outStream, "General(within data model)", general)
+
     val direction = TripletDirectionClassifier.test()
     ReportHelper.saveEvalResults(outStream, "Direction(within data model)", direction)
 
     val rcc8 = TripletRCC8Classifier.test()
     ReportHelper.saveEvalResults(outStream, "RCC8(within data model)", rcc8)
+
+
   }
 }
 
