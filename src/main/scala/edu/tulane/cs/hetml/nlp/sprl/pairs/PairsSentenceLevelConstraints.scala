@@ -1,15 +1,15 @@
-package edu.tulane.cs.hetml.nlp.sprl
+package edu.tulane.cs.hetml.nlp.sprl.pairs
 
 import edu.illinois.cs.cogcomp.lbjava.infer.{FirstOrderConstant, FirstOrderConstraint}
 import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel.{sentenceToPhrase, _}
 import edu.tulane.cs.hetml.nlp.BaseTypes._
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel.{sentenceToPhrase, _}
+import edu.tulane.cs.hetml.nlp.sprl.pairs.MultiModalSpRLPairClassifiers._
 
 /** Created by parisakordjamshidi on 2/9/17.
   */
-object SentenceLevelConstraints {
+object PairsSentenceLevelConstraints {
 
   val integrityTR = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
@@ -66,28 +66,8 @@ object SentenceLevelConstraints {
         ((sentences(s) ~> sentenceToPairs).toList._exists { x: Relation => LandmarkPairClassifier on x is "LM-SP" }))
   }
 
-  val boostTriplet = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and (((TripletRelationClassifier on x) is "Relation") ==>
-              ((TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector") and
-              (LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "Landmark") and
-              (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "Indicator"))
-        )
-      }
-      a
-  }
-
   val allConstraints = ConstrainedClassifier.constraint[Sentence] {
 
     x: Sentence => integrityLM(x) and integrityTR(x) and multiLabelPair(x) and boostIndicator(x) and boostPairs(x)
-  }
-
-  val tripletsConstraint = ConstrainedClassifier.constraint[Sentence] {
-
-    x: Sentence => boostTriplet(x) and integrityLM(x) and integrityTR(x) and boostIndicator(x)
   }
 }

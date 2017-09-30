@@ -1,21 +1,18 @@
-package edu.tulane.cs.hetml.nlp.sprl
+package edu.tulane.cs.hetml.nlp.sprl.pairs
 
-import java.io.{File, FileOutputStream}
+import java.io.File
 
-import edu.illinois.cs.cogcomp.saul.classifier.JointTrainSparseNetwork
 import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.{FeatureSets, ReportHelper}
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.nlp.sprl.SentenceLevelConstraintClassifiers._
+import MultiModalSpRLPairClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
-import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets
 import org.apache.commons.io.FileUtils
 
-object MultiModalSpRLApp extends App with Logging{
+object MultiModalPairSpRLApp extends App with Logging{
 
-  val expName = (model, useConstraints) match {
+  val expName = "pairs_" + ((model, useConstraints) match {
     case (FeatureSets.BaseLine, false) => "BM"
     case (FeatureSets.BaseLine, true) => "BM+C"
     case (FeatureSets.WordEmbedding, false) => "BM+E"
@@ -25,8 +22,8 @@ object MultiModalSpRLApp extends App with Logging{
     case _ =>
       logger.error("experiment no supported")
       System.exit(1)
-  }
-  MultiModalSpRLClassifiers.featureSet = model
+  })
+  MultiModalSpRLPairClassifiers.featureSet = model
 
   val classifiers = List(
     TrajectorRoleClassifier,
@@ -40,7 +37,7 @@ object MultiModalSpRLApp extends App with Logging{
     TripletDirectionClassifier
   )
   classifiers.foreach(x => {
-    x.modelDir = s"models/mSpRL/$featureSet/"
+    x.modelDir = s"models/mSpRL/pairs/$featureSet/"
     x.modelSuffix = suffix
   })
   FileUtils.forceMkdir(new File(resultsDir))
@@ -148,14 +145,14 @@ object MultiModalSpRLApp extends App with Logging{
     else {
 
       populateTripletDataFromAnnotatedCorpusFromPairs(
-        x => SentenceLevelConstraintClassifiers.TRPairConstraintClassifier(x) == "TR-SP",
-        x => SentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator",
-        x => SentenceLevelConstraintClassifiers.LMPairConstraintClassifier(x) == "LM-SP"
+        x => PairsSentenceLevelConstraintClassifiers.TRPairConstraintClassifier(x) == "TR-SP",
+        x => PairsSentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator",
+        x => PairsSentenceLevelConstraintClassifiers.LMPairConstraintClassifier(x) == "LM-SP"
       )
 
-      val trajectors = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.TRConstraintClassifier(x) == "Trajector").toList
-      val landmarks = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.LMConstraintClassifier(x) == "Landmark").toList
-      val indicators = phrases.getTestingInstances.filter(x => SentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator").toList
+      val trajectors = phrases.getTestingInstances.filter(x => PairsSentenceLevelConstraintClassifiers.TRConstraintClassifier(x) == "Trajector").toList
+      val landmarks = phrases.getTestingInstances.filter(x => PairsSentenceLevelConstraintClassifiers.LMConstraintClassifier(x) == "Landmark").toList
+      val indicators = phrases.getTestingInstances.filter(x => PairsSentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator").toList
       val tripletList = triplets.getTestingInstances.toList
 
       ReportHelper.reportTripletResults(testFile, resultsDir, s"${expName}${suffix}_triplet", tripletList)

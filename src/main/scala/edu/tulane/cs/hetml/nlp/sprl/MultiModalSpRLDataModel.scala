@@ -5,7 +5,6 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers.TripletRelationClassifier
 import edu.tulane.cs.hetml.vision._
 
 import scala.collection.mutable.ArrayBuffer
@@ -433,7 +432,7 @@ object MultiModalSpRLDataModel extends DataModel {
     r: Relation => if (r.containsProperty("SpecificType")) r.getProperty("SpecificType") else "None"
   }
   val rcc8Values = List("NTPP", "TPP", "EC", "DC", "EQ")
-  val tripletRCC8 = property(triplets) {
+  val tripletRegion = property(triplets) {
     r: Relation =>
       if (r.containsProperty("RCC8") && rcc8Values.exists(x => r.getProperty("RCC8").toUpperCase().contains(x)))
         rcc8Values.find(x => r.getProperty("RCC8").toUpperCase().contains(x)).get

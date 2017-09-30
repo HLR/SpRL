@@ -1,14 +1,14 @@
-package edu.tulane.cs.hetml.nlp.sprl
+package edu.tulane.cs.hetml.nlp.sprl.pairs
 
-import edu.illinois.cs.cogcomp.lbjava.learn.{SparseAveragedPerceptron, SparseNetworkLearner, SupportVectorMachine}
+import edu.illinois.cs.cogcomp.lbjava.learn.{SparseAveragedPerceptron, SparseNetworkLearner}
 import edu.illinois.cs.cogcomp.saul.classifier.Learnable
 import edu.illinois.cs.cogcomp.saul.datamodel.property.Property
+import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets.FeatureSets
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.nlp.BaseTypes._
 
-object MultiModalSpRLClassifiers {
+object MultiModalSpRLPairClassifiers {
   var featureSet = FeatureSets.WordEmbeddingPlusImage
 
   def phraseFeatures: List[Property[Phrase]] = phraseFeatures(featureSet)
@@ -40,8 +40,7 @@ object MultiModalSpRLClassifiers {
   def tripletFeatures: List[Property[Relation]] = tripletFeatures(featureSet)
 
   def tripletFeatures(featureSet: FeatureSets): List[Property[Relation]] =
-    List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
-      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos) ++
+    List(tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos) ++
       (featureSet match {
         case FeatureSets.BaseLineWithImage => List(tripletImageConfirms)
         case FeatureSets.WordEmbedding => List(tripletTrSpVector, tripletSpLmVector)
@@ -129,14 +128,6 @@ object MultiModalSpRLClassifiers {
       .diff(List(pairIsImageConcept, pairNearestSegmentConceptToPhraseVector))
   }
 
-  object TripletRelationClassifier extends Learnable(triplets) {
-    def label = tripletIsRelation
-
-    override lazy val classifier = new SparseNetworkLearner()
-
-    override def feature = tripletFeatures
-  }
-
   object TripletGeneralTypeClassifier extends Learnable(triplets) {
     def label = tripletGeneralType
 
@@ -154,7 +145,7 @@ object MultiModalSpRLClassifiers {
   }
 
   object TripletRCC8Classifier extends Learnable(triplets) {
-    def label = tripletRCC8
+    def label = tripletRegion
 
     override lazy val classifier = new SparseNetworkLearner()
 
