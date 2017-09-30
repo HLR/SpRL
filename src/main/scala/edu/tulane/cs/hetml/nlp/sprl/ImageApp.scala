@@ -1,6 +1,6 @@
 package edu.tulane.cs.hetml.nlp.sprl
 
-import edu.tulane.cs.hetml.vision.CLEFImageReader
+import edu.tulane.cs.hetml.vision._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.transflowExamples.{HelloTF, LabelImage}
 
@@ -12,15 +12,17 @@ object ImageApp extends App {
 
   val readFullData = false
   /* Example 1 */
-  val tensorflowExample1 = new HelloTF
-  tensorflowExample1.TestGraph()
+//  val tensorflowExample1 = new HelloTF
+//  tensorflowExample1.TestGraph()
 
   /* Example 2 */
-  val tensorflowLableImage = new LabelImage("data/imageModel","data/imageModel/28.jpg")
+//  val tensorflowLableImage = new LabelImage("data/imageModel","data/imageModel/28.jpg")
 
-/*  val CLEFDataset = new CLEFImageReader("data/mSprl/saiapr_tc-12", "newSprl2017_train", "newSprl2017_gold", readFullData)
+//  val CLEFDataset = new CLEFImageReader("data/mSprl/saiapr_tc-12", "data/mSprl/saiapr_tc-12/newSprl2017_train.xml",
+//    "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml", readFullData)
+  val CLEFAnnotations = new CLEFAnnotationReader("data/annotatedFiles")
 
-  val imageListTrain = CLEFDataset.trainingImages
+  /*  val imageListTrain = CLEFDataset.trainingImages
   val segmentListTrain = CLEFDataset.trainingSegments
   val relationListTrain = CLEFDataset.trainingRelations
 

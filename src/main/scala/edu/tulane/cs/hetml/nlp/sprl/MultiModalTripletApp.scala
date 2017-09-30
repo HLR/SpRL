@@ -46,6 +46,10 @@ object MultiModalTripletApp extends App with Logging{
 
   populateRoleDataFromAnnotatedCorpus()
 
+  images().foreach(i => {
+    imagePhrases(i)
+  })
+  /*
   if (isTrain) {
     println("training started ...")
 
@@ -147,5 +151,6 @@ object MultiModalTripletApp extends App with Logging{
     ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
 */
   }
+  */
 }
 

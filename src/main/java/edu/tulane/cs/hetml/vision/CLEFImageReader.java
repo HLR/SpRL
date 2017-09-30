@@ -82,8 +82,8 @@ public class CLEFImageReader {
         // Load all Images
         getallImages(directory);
 
-        // Print Segments with x-align or y-align relations
-//        printImageInformation();
+        // Save to File
+        printImageInformation();
 
         System.out.println("Total Train Data " + trainingData.size());
 
@@ -509,18 +509,31 @@ public class CLEFImageReader {
         }
     }
 
-/*    private void printImageInformation() throws IOException {
-        // Test Images
+    private void printImageInformation() throws IOException {
+
+        String path = "data/mSpRL/results/matlabdata.txt";
+        printWriterTest = new PrintWriter(path);
+
         for (Image i : testImages) {
-            String path = "data/mSpRL/results/imagetest/" + i.getId() + ".txt";
-            printWriterTest = new PrintWriter(path);
-            for (SegmentRelation sr : testRelations) {
-                if (i.getId().equals(sr.getImageId()) && (sr.getRelation().equals("x-aligned") || sr.getRelation().equals("y-aligned")))
-                    printWriterTest.println(sr.getFirstSegmentId() + "," + sr.getSecondSegmentId() + "," + sr.getRelation() + "," + getTestSegmentConcept(sr.getImageId(), sr.getFirstSegmentId()) + "," + getTestSegmentConcept(sr.getImageId(), sr.getSecondSegmentId()));
+            int count =0;
+            for (Segment s : testSegments) {
+                if (i.getId().equals(s.getAssociatedImageID()))
+                    count++;
             }
-            printWriterTest.close();
+            printWriterTest.println(i.getId() + " " + count);
         }
-        // Train Images
+
+        for (Image i : trainingImages) {
+            int count =0;
+            for (Segment s : trainingSegments) {
+                if (i.getId().equals(s.getAssociatedImageID()))
+                    count++;
+            }
+            printWriterTest.println(i.getId() + " " + count);
+        }
+        printWriterTest.close();
+
+/*        // Train Images
         for (Image i : trainingImages) {
             String path = "data/mSpRL/results/imagetrain/" + i.getId() + ".txt";
             printWriterTest = new PrintWriter(path);
@@ -530,8 +543,9 @@ public class CLEFImageReader {
             }
             printWriterTest.close();
         }
-    }
 */
+    }
+
     private String getTestSegmentConcept(String imageID, int segmentSeq) {
         String concept = null;
         for (int i = 0; i < testSegments.size(); i++) {
