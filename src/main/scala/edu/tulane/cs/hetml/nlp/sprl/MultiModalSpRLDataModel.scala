@@ -36,6 +36,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val images = node[Image]
   val segments = node[Segment]
   val segmentRelations = node[SegmentRelation]
+  val segmentPhrasePairs = node[Relation]((r: Relation) => r.getId)
 
   /*
   Edges
@@ -78,6 +79,9 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val segmentRelationsToSegments = edge(segmentRelations, segments)
   segmentRelationsToSegments.addSensor(segmentRelationToSegmentMatching _)
+
+  val phraseToSegmentPhrasePair = edge(phrases, segmentPhrasePairs)
+  phraseToSegmentPhrasePair.addSensor(phraseToSegmentPhrasePairs _)
 
   /*
   Properties
@@ -202,7 +206,7 @@ object MultiModalSpRLDataModel extends DataModel {
         "2"
   }
 
-  val headVector = property(phrases, cache = true) {
+  val headVector = property(phrases, cache = true, ordered = true) {
     x: Phrase => if (x != dummyPhrase) getVector(getHeadword(x).getText.toLowerCase) else getVector(null)
   }
 
@@ -431,7 +435,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val tripletSpecificType = property(triplets) {
     r: Relation => if (r.containsProperty("SpecificType")) r.getProperty("SpecificType") else "None"
   }
-  val rcc8Values = List("NTPP", "TPP", "EC", "DC", "EQ")
+  val rcc8Values = List("PO", "TPP", "EC", "DC", "EQ")
   val tripletRegion = property(triplets) {
     r: Relation =>
       if (r.containsProperty("RCC8") && rcc8Values.exists(x => r.getProperty("RCC8").toUpperCase().contains(x)))
@@ -686,16 +690,22 @@ object MultiModalSpRLDataModel extends DataModel {
       dependencyRelation(first) + "::" + dependencyRelation(second) + "::" + dependencyRelation(third)
   }
 
-  val tripletTrSpVector = property(triplets, cache = true) {
+  val tripletTrVector = property(triplets, cache = true, ordered = true) {
     r: Relation =>
-      val (first, second, _) = getTripletArguments(r)
-      headVector(first) ++ headVector(second)
+      val (first, _, _) = getTripletArguments(r)
+      headVector(first)
   }
 
-  val tripletSpLmVector = property(triplets, cache = true) {
+  val tripletSpVector = property(triplets, cache = true, ordered = true) {
     r: Relation =>
-      val (_, second, third) = getTripletArguments(r)
-      headVector(second) ++ headVector(third)
+      val (_, second, _) = getTripletArguments(r)
+      headVector(second)
+  }
+
+  val tripletLmVector = property(triplets, cache = true, ordered = true) {
+    r: Relation =>
+      val (_, _, third) = getTripletArguments(r)
+      headVector(third)
   }
 
   val tripletImageConfirms = property(triplets, cache = true) {

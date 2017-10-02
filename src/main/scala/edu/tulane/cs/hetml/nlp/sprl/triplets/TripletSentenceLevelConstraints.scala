@@ -46,15 +46,32 @@ object TripletSentenceLevelConstraints {
         )
   }
 
-  val boostTriplet = ConstrainedClassifier.constraint[Sentence] {
+  val boostTripletByRoles = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       (
         (sentences(s) ~> sentenceToPhrase).toList._exists { p: Phrase => IndicatorRoleClassifier on p is "Indicator" } or
           (sentences(s) ~> sentenceToPhrase).toList._exists { p: Phrase => LandmarkRoleClassifier on p is "Landmark" } or
           (sentences(s) ~> sentenceToPhrase).toList._exists { p: Phrase => TrajectorRoleClassifier on p is "Trajector" }
+
         )==>
         (sentences(s) ~> sentenceToTriplets).toList._exists { r: Relation => TripletRelationClassifier on r is "Relation" }
+  }
+
+  val boostTripletByGeneralType = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          a = a and (
+            (
+              (TripletGeneralTypeClassifier on x) isNot "None"
+              ) ==>
+              (TripletRelationClassifier on x is "Relation")
+            )
+      }
+      a
   }
 
   val boostGeneralType = ConstrainedClassifier.constraint[Sentence] {
@@ -104,12 +121,17 @@ object TripletSentenceLevelConstraints {
 
   val roleConstraints = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTrajector(x) and boostLandmark(x) and roleIntegrity(x) and boostTriplet(x)
+    x: Sentence => boostTrajector(x) and boostLandmark(x) and roleIntegrity(x)
+  }
+
+  val tripletConstraints = ConstrainedClassifier.constraint[Sentence] {
+
+    x: Sentence => boostTripletByRoles(x) and boostTripletByGeneralType(x)
   }
 
   val generalConstraints = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTriplet(x) and boostGeneralType(x)
+    x: Sentence => boostTripletByRoles(x) and boostGeneralType(x)
   }
 
   val directionConstraints = ConstrainedClassifier.constraint[Sentence]{

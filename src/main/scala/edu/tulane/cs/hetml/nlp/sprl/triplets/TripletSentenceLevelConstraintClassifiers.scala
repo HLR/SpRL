@@ -33,7 +33,7 @@ object TripletSentenceLevelConstraintClassifiers {
   }
 
   object TripletRelationConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletRelationClassifier) {
-    def subjectTo = boostTriplet
+    def subjectTo = tripletConstraints
 
     override val solver = erSolver
     override val pathToHead = Some(-sentenceToTriplets)

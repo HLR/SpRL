@@ -30,7 +30,7 @@ object MultiModalSpRLTripletClassifiers {
       tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos) ++
       (featureSet match {
         case FeatureSets.BaseLineWithImage => List(tripletImageConfirms)
-        case FeatureSets.WordEmbedding => List(tripletTrSpVector, tripletSpLmVector)
+        case FeatureSets.WordEmbedding => List(tripletTrVector, tripletLmVector)
         case FeatureSets.WordEmbeddingPlusImage => List()
         case _ => List[Property[Relation]]()
       })
@@ -90,7 +90,8 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = tripletFeatures
+    override def feature =  (tripletFeatures)
+      .diff(List(tripletLmVector))
   }
 
   object TripletGeneralTypeClassifier extends Learnable(triplets) {
@@ -98,7 +99,8 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = tripletFeatures
+    override def feature = (tripletFeatures)
+      .diff(List(tripletLmVector))
   }
 
   object TripletSpecificTypeClassifier extends Learnable(triplets) {
@@ -114,7 +116,8 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = tripletFeatures
+    override def feature =  (tripletFeatures)
+      .diff(List(tripletLmVector))
   }
 
 

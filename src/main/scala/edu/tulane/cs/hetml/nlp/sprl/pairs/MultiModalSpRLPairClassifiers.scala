@@ -43,7 +43,7 @@ object MultiModalSpRLPairClassifiers {
     List(tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos) ++
       (featureSet match {
         case FeatureSets.BaseLineWithImage => List(tripletImageConfirms)
-        case FeatureSets.WordEmbedding => List(tripletTrSpVector, tripletSpLmVector)
+        case FeatureSets.WordEmbedding => List(tripletTrVector, tripletSpVector, tripletLmVector)
         case FeatureSets.WordEmbeddingPlusImage => List()
         case _ => List[Property[Relation]]()
       })

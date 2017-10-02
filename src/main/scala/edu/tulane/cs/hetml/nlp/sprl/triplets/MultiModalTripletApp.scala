@@ -153,10 +153,10 @@ object MultiModalTripletApp extends App with Logging {
 //
 //
 //      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
-//        x => TripletGeneralTypeClassifier(x),
+//        x => TripletGeneralTypeConstraintClassifier(x),
 //        x => TripletSpecificTypeClassifier(x),
-//        x => TripletRCC8Classifier(x),
-//        x => TripletDirectionClassifier(x),
+//        x => TripletRegionConstraintClassifier(x),
+//        x => TripletDirectionConstraintClassifier(x),
 //        s"$resultsDir/${expName}${suffix}.xml")
 //
 //      ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
