@@ -14,19 +14,24 @@ public class Segment {
     private String segmentFeatures;
     private String segmentConcept;
     private String imageId;
-    public List<String> ontologyConcepts= new ArrayList<>();
-    public List<String> referitText= new ArrayList<>();
-    public double[] features;
+    public List<String> tagged;
+    public String refExp;
 
-    public Segment(String ImageId, int segmentId, int segmentCode, String segmentFeatures, String segmentConcept, List<String> ontologyConcepts, List<String> referitText)
+    public Segment(String ImageId, int segmentId, String segmentFeatures, String refExp) {
+        this.imageId = ImageId;
+        this.segmentId = segmentId;
+        this.segmentFeatures = segmentFeatures;
+        this.refExp = refExp;
+        this.tagged = new ArrayList<>();
+    }
+
+    public Segment(String ImageId, int segmentId, int segmentCode, String segmentFeatures, String segmentConcept, List<String> tagged, List<String> refExp)
     {
         this.imageId = ImageId;
         this.segmentId = segmentId;
         this.segmentCode = segmentCode;
         this.segmentFeatures = segmentFeatures;
         this.segmentConcept = segmentConcept;
-        this.ontologyConcepts = ontologyConcepts;
-        this.referitText = referitText;
     }
 
     public String getAssociatedImageID()
@@ -52,25 +57,5 @@ public class Segment {
     public String getSegmentConcept()
     {
         return segmentConcept;
-    }
-
-    public List<String> getSegmentConceptOntology()
-    {
-        return ontologyConcepts;
-    }
-
-    public boolean isexistOntologyConcepts(String x)
-    {
-        for(String o : ontologyConcepts) {
-            if(x.contains(o.toLowerCase()))
-                return true;
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        // TODO Auto-generated method stub
-        return imageId + ", " + segmentId + ", " + segmentCode + ", " + segmentFeatures + ", " + segmentConcept;
     }
 }

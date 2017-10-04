@@ -221,26 +221,6 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
 
-  val isImageConceptApproxMatch = property(phrases, cache = true) {
-    p: Phrase =>
-      if (p != dummyPhrase) {
-        if (getSegmentConcepts(p)
-          .exists(x => getGoogleSimilarity(getHeadword(p).getText, x.toLowerCase.trim) >= 0.40)) {
-          "true"
-        }
-        else
-          getSegmentConceptsOntology(p).exists(x => {
-            x.exists(s =>
-              (!phraseConceptToWord.contains(s) && getGoogleSimilarity(getHeadword(p).getText, s.toLowerCase().trim) >= 0.40)
-                || (phraseConceptToWord.contains(s) && getGoogleSimilarity(phraseConceptToWord(s), s) >= 0.40)
-            )
-          }).toString
-
-      } else {
-        ""
-      }
-  }
-
   val nearestSegmentConceptToHeadVector = property(phrases, cache = true) {
     p: Phrase =>
       if (p != dummyPhrase) {
@@ -630,18 +610,6 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
 
-  val tripletTRIsImageConceptApproxMatch = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, _, _) = getTripletArguments(r)
-      isImageConceptApproxMatch(first)
-  }
-
-  val tripletLMIsImageConceptApproxMatch = property(triplets, cache = true) {
-    r: Relation =>
-      val (_, _, third) = getTripletArguments(r)
-      isImageConceptApproxMatch(third)
-  }
-
   val tripletTRNearestSegmentConceptToHeadVector = property(triplets, cache = true) {
     r: Relation =>
       val (first, _, _) = getTripletArguments(r)
@@ -709,7 +677,7 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
   val tripletImageConfirms = property(triplets, cache = true) {
-    r: Relation => isExistsInSegmentRelations(r, false)
+    r: Relation => ""
   }
 
   val tripletImageRelations = property(triplets, cache = true) {
@@ -845,12 +813,6 @@ object MultiModalSpRLDataModel extends DataModel {
           phraseConceptToWord(x.getSegmentConcept))
   }
 
-  private def getSegmentConceptsOntology(p: Phrase) = {
-    ((phrases(p) ~> -sentenceToPhrase ~> -documentToSentence) ~> documentToImage ~> imageToSegment)
-      .map(x => x.getSegmentConceptOntology)
-  }
-
-
   private def roleToSpDependencyPath(first: Phrase, second: Phrase) = {
     if (first != dummyPhrase && second != dummyPhrase) {
       val f = getHeadword(first)
@@ -859,50 +821,6 @@ object MultiModalSpRLDataModel extends DataModel {
     }
     else
       undefined
-  }
-
-  private def isExistsInSegmentRelations(r: Relation, useSp: Boolean): Boolean = {
-    val (first, second, third) = getTripletArguments(r)
-    val firstConcept = headWordFrom(first)
-    val secondConcept = headWordFrom(second)
-    val thirdConcept = headWordFrom(third)
-    val img = (phrases(second) ~> -sentenceToPhrase ~> -documentToSentence) ~> documentToImage head
-    val segs = (images(img) ~> imageToSegment).map(s => s.getSegmentId -> s).toMap
-    val rels = images(img) ~> imageToSegment ~> -segmentRelationsToSegments
-    rels.exists(ir => {
-      if (segs.contains(ir.getFirstSegmentId) && segs.contains(ir.getSecondSegmentId)) {
-        val firstSeg = segs(ir.getFirstSegmentId)
-        val secondSeg = segs(ir.getSecondSegmentId)
-        val relSeg = ir.getRelation
-
-        isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, firstConcept, thirdConcept, second.getText, useSp) ||
-          isImageRelMatchesWithTextRel(firstSeg, secondSeg, relSeg, thirdConcept, firstConcept, second.getText, useSp)
-      }
-      else {
-        false
-      }
-    })
-  }
-
-  private def isImageRelMatchesWithTextRel(seg1: Segment, seg2: Segment, segRel: String,
-                                           tr: String, lm: String, sp: String, useSp: Boolean): Boolean = {
-    isSegmentMatchingWith(seg1, tr) &&
-      isSegmentMatchingWith(seg2, lm) &&
-      (if (useSp) {
-        if (SpToImageSp.contains(sp))
-          SpToImageSp(sp) == segRel.toLowerCase
-        else
-          false
-      }
-      else {
-        true
-      })
-  }
-
-  private def isSegmentMatchingWith(segment: Segment, concept: String): Boolean = {
-    isImageConceptMatchingWith(segment.getSegmentConcept, concept) ||
-      segment.ontologyConcepts.exists(o => isImageConceptMatchingWith(o, concept)) ||
-      segment.referitText.exists(o => isImageConceptMatchingWith(o, concept))
   }
 
   private def isImageConceptMatchingWith(imageConcept: String, concept: String): Boolean = {
