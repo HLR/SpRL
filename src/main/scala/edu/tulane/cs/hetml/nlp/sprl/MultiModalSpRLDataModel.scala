@@ -83,6 +83,9 @@ object MultiModalSpRLDataModel extends DataModel {
   val segmentToSegmentPhrasePair = edge(segments, segmentPhrasePairs)
   segmentToSegmentPhrasePair.addSensor(segmentToSegmentPhrasePairs _)
 
+  val segmentPhrasePairToPhrase = edge(segmentPhrasePairs, phrases)
+  segmentPhrasePairToPhrase.addSensor(SegmentPhrasePairToPhraseMatching _)
+
   /*
   Properties
    */
@@ -820,7 +823,7 @@ object MultiModalSpRLDataModel extends DataModel {
     }
   }
 
-  private def getSimilarity(w1: String, w2: String): Double = {
+  def getSimilarity(w1: String, w2: String): Double = {
     if (useVectorAverages) {
       (getGoogleSimilarity(w1, w2) + getClefSimilarity(w1, w2)) / 2.0
     } else {

@@ -36,6 +36,23 @@ object TripletSentenceLevelConstraints {
           (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => TrajectorRoleClassifier on x is "Trajector" }
         )
   }
+  val sim = new SegmentPhraseSimilarityClassifier()
+  val boostTrajectorByImage = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToPhrase ~> -segmentPhrasePairToPhrase).foreach {
+        pair =>
+          val p = segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase head
+          //val s = segmentPhrasePairs(pair) ~> -segmentToSegmentPhrasePair head
+
+          a = a and (
+            (
+              (sim on pair) is "true") ==> (TrajectorRoleClassifier on p is "Trajector")
+            )
+      }
+      a
+  }
 
   val boostLandmark = ConstrainedClassifier.constraint[Sentence] {
     s: Sentence =>
@@ -54,7 +71,7 @@ object TripletSentenceLevelConstraints {
           (sentences(s) ~> sentenceToPhrase).toList._exists { p: Phrase => LandmarkRoleClassifier on p is "Landmark" } or
           (sentences(s) ~> sentenceToPhrase).toList._exists { p: Phrase => TrajectorRoleClassifier on p is "Trajector" }
 
-        )==>
+        ) ==>
         (sentences(s) ~> sentenceToTriplets).toList._exists { r: Relation => TripletRelationClassifier on r is "Relation" }
   }
 
@@ -121,7 +138,7 @@ object TripletSentenceLevelConstraints {
 
   val roleConstraints = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTrajector(x) and boostLandmark(x) and roleIntegrity(x)
+    x: Sentence => boostTrajector(x) and boostLandmark(x) and roleIntegrity(x) and boostTrajectorByImage(x)
   }
 
   val tripletConstraints = ConstrainedClassifier.constraint[Sentence] {
@@ -134,12 +151,12 @@ object TripletSentenceLevelConstraints {
     x: Sentence => boostTripletByRoles(x) and boostGeneralType(x)
   }
 
-  val directionConstraints = ConstrainedClassifier.constraint[Sentence]{
+  val directionConstraints = ConstrainedClassifier.constraint[Sentence] {
 
     x: Sentence => generalConstraints(x) and boostDirection(x) and boostRegion(x)
   }
 
-  val regionConstraints = ConstrainedClassifier.constraint[Sentence]{
+  val regionConstraints = ConstrainedClassifier.constraint[Sentence] {
 
     x: Sentence => generalConstraints(x) and boostRegion(x)
   }

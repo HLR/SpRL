@@ -95,6 +95,9 @@ object MultiModalSpRLSensors {
         r
     }
   }
+  def SegmentPhrasePairToPhraseMatching(pair: Relation, phrase: Phrase): Boolean = {
+    pair.getArgumentId(0) == phrase.getId
+  }
 
   val phraseConceptToWord = HashMap(
     "child-boy" -> "child",
