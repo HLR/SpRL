@@ -7,7 +7,7 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers.TripletRelationClassifier
 import edu.tulane.cs.hetml.vision._
-
+import java.io._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConversions._
 
@@ -761,6 +761,14 @@ object MultiModalSpRLDataModel extends DataModel {
       headSpatialContext(first) + "::" + headSpatialContext(second)
   }
 
+  val imageAnnotationData = property(images) {
+    x: Image => writeDataforAnnotation(x)
+  }
+
+  val imagePhrases= property(images) {
+    x: Image => writePhrases(x)
+  }
+
   val imageLabel = property(images, cache = true) {
     x: Image => x.getLabel
   }
@@ -900,4 +908,56 @@ object MultiModalSpRLDataModel extends DataModel {
       segWords.exists(sw=>getGoogleSimilarity(sw.toLowerCase(), concept.toLowerCase()) >= 0.40)
     }
   }
+
+  private def writeDataforAnnotation(i:Image): Boolean =
+  {
+    val filename = i.getId
+    val path = "data/mSpRL/results/annotation/" + filename + ".txt"
+    val pathann = "data/mSpRL/results/annotation/" + filename + ".ann"
+    var printWriterText = new PrintWriter(path)
+    var printWriterAnn = new PrintWriter(pathann)
+    printWriterText.println(filename)
+    printWriterText.println("")
+    printWriterText.println("Segments:")
+    val seg = images(i) ~> imageToSegment
+    seg.foreach(s => {
+      printWriterText.print(s.getSegmentId + " " + s.getSegmentConcept + ", ")
+    })
+    printWriterText.println("")
+    printWriterText.println("")
+    val sen = images(i) ~> -documentToImage ~> documentToSentence
+    var count = 1
+    sen.foreach(s => {
+      printWriterText.println("S" + count + "-Phrases:")
+      val ps = sentences(s) ~> sentenceToPhrase
+      ps.foreach(p => {
+        printWriterText.print(p.getText + ", ")
+      })
+      count = count + 1
+      printWriterText.println("")
+    })
+
+    count = 1
+    printWriterText.println("")
+    printWriterText.println("Sentences:")
+    sen.foreach(s => {
+      printWriterText.println("S" + count + ": " + s.getText)
+      count = count + 1
+    })
+    printWriterText.close()
+    true
+  }
+
+  private def writePhrases(i:Image): Boolean =
+  {
+    val filename = i.getId
+    val path = "data/mSpRL/results/phrases/" + filename + ".txt"
+    var printWriterText = new PrintWriter(path)
+    val phrases = images(i) ~> -documentToImage ~> documentToSentence ~> sentenceToPhrase
+    phrases.foreach(p => printWriterText.println(p.getText)
+    )
+    printWriterText.close()
+    true
+  }
+
 }
