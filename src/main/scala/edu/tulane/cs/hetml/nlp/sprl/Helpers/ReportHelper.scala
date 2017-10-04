@@ -10,8 +10,8 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRLAnnotati
 import edu.tulane.cs.hetml.nlp.sprl.Eval._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLPairClassifiers
 import edu.tulane.cs.hetml.nlp.sprl.SpRL2017.{Scene, SpRL2017Document}
-import edu.tulane.cs.hetml.nlp.sprl.pairs.MultiModalSpRLPairClassifiers
 import org.h2.store.fs.FilePath
 
 import scala.collection.JavaConversions._

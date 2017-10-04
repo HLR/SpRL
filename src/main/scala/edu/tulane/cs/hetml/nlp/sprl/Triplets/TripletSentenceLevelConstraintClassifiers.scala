@@ -1,11 +1,11 @@
-package edu.tulane.cs.hetml.nlp.sprl.triplets
+package edu.tulane.cs.hetml.nlp.sprl.Triplets
 
-import edu.illinois.cs.cogcomp.infer.ilp.{GurobiHook, OJalgoHook}
+import edu.illinois.cs.cogcomp.infer.ilp.GurobiHook
 import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation, Sentence}
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-import MultiModalSpRLTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.triplets.TripletSentenceLevelConstraints._
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraints._
 
 object TripletSentenceLevelConstraintClassifiers {
 
