@@ -22,7 +22,7 @@ object MultiModalTripletApp extends App with Logging {
     case (FeatureSets.WordEmbeddingPlusImage, false) => "BM+E+I"
     case (FeatureSets.WordEmbeddingPlusImage, true) => "BM+C+E+I"
     case _ =>
-      logger.error("experiment no supported")
+      logger.error("experiment is not supported")
       System.exit(1)
   })
   MultiModalSpRLTripletClassifiers.featureSet = model

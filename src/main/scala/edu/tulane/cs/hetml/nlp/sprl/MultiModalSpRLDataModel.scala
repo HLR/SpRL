@@ -80,8 +80,8 @@ object MultiModalSpRLDataModel extends DataModel {
   val segmentRelationsToSegments = edge(segmentRelations, segments)
   segmentRelationsToSegments.addSensor(segmentRelationToSegmentMatching _)
 
-  val phraseToSegmentPhrasePair = edge(phrases, segmentPhrasePairs)
-  phraseToSegmentPhrasePair.addSensor(phraseToSegmentPhrasePairs _)
+  val segmentToSegmentPhrasePair = edge(segments, segmentPhrasePairs)
+  segmentToSegmentPhrasePair.addSensor(segmentToSegmentPhrasePairs _)
 
   /*
   Properties

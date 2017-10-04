@@ -14,7 +14,7 @@ import org.deeplearning4j.models.word2vec.Word2Vec
 import scala.collection.immutable.HashMap
 import scala.collection.JavaConversions._
 import scala.util.matching.Regex
-import  MultiModalSpRLDataModel._
+import MultiModalSpRLDataModel._
 
 object MultiModalSpRLSensors {
 
@@ -81,10 +81,13 @@ object MultiModalSpRLSensors {
     d.getPropertyFirstValue("IMAGE").endsWith("/" + i.getLabel)
   }
 
-  def phraseToSegmentPhrasePairs(p: Phrase): List[Relation] = {
-    val segments = (phrases(p)~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage ~> imageToSegment).toList
-    segments.map{
-      s=>
+  def segmentToSegmentPhrasePairs(s: Segment): List[Relation] = {
+    val image = images().filter(i=>i.getId == s.getAssociatedImageID)
+    val phrases = (images(image) ~> -documentToImage ~> documentToSentence ~> sentenceToPhrase)
+      .filter(p => p != dummyPhrase)
+      .toList
+    phrases.map {
+      p =>
         val r = new Relation()
         r.setId(p.getId + "__" + s.getSegmentId)
         r.setArgumentId(0, p.getId)
