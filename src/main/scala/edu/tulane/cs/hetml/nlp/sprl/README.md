@@ -141,7 +141,7 @@ object ImageClassifiers {
 }
 ```
 We extend `Learnable` class of Saul and specify the type of classifier we want. Next the target label for classification is determined by implementing `label` property and finally the set of features needed for classification is provided.
-You can find this implementation in [`ImageClassifiers`](MultiModalSpRLClassifiers.scala)
+You can find this implementation in [`ImageClassifiers`](MultiModalSpRLPairClassifiers.scala)
 
 ## Test results for mSpRL-2017 data
 The IAPR TC-12 Benchmark dataset is used in this example.

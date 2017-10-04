@@ -1,6 +1,5 @@
-package edu.tulane.cs.hetml.nlp.sprl
+package edu.tulane.cs.hetml.nlp.sprl.Helpers
 
-import edu.tulane.cs.hetml.nlp.sprl.Helpers.{CandidateGenerator, ReportHelper, SpRLXmlReader}
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.Eval.{OverlapComparer, SpRLEvaluation}
 

@@ -1,10 +1,10 @@
-package edu.tulane.cs.hetml.nlp.sprl
+package edu.tulane.cs.hetml.nlp.sprl.pairs
 
 import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.BaseTypes.Relation
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
+import MultiModalSpRLPairClassifiers._
 
 /** Created by parisakordjamshidi on 2/4/17.
   */

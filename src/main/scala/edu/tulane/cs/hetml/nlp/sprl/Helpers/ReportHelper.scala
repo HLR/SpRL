@@ -9,9 +9,9 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRL2013._
 import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRLAnnotation
 import edu.tulane.cs.hetml.nlp.sprl.Eval._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLClassifiers
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.SpRL2017.{Scene, SpRL2017Document}
+import edu.tulane.cs.hetml.nlp.sprl.pairs.MultiModalSpRLPairClassifiers
 import org.h2.store.fs.FilePath
 
 import scala.collection.JavaConversions._
@@ -52,7 +52,7 @@ object ReportHelper {
                 generalTypeClassifier: Relation => String,
                 specificTypeClassifier: Relation => String,
                 RCC8ValueClassifier: Relation => String,
-                FoRClassifier: Relation => String,
+                DirectionClassifier: Relation => String,
                 filePath: String): SpRL2017Document = {
     val doc = new SpRL2017Document()
     val trPerSentence = trajectors.filter(_ != dummyPhrase).groupBy(_.getSentence)
@@ -90,7 +90,8 @@ object ReportHelper {
         sent.setTrajectors(tr)
         sent.setLandmarks(lm)
         sent.setSpatialindicators(sp)
-        sent.setRelations(getXmlRelations(rel, generalTypeClassifier, specificTypeClassifier, RCC8ValueClassifier, FoRClassifier))
+        sent.setRelations(
+          getXmlRelations(rel, generalTypeClassifier, specificTypeClassifier, RCC8ValueClassifier, DirectionClassifier))
         scene.getSentences.add(sent)
       })
       doc.getScenes.add(scene)
@@ -104,7 +105,7 @@ object ReportHelper {
                                generalTypeClassifier: Relation => String,
                                specificTypeClassifier: Relation => String,
                                RCC8ValueClassifier: Relation => String,
-                               FoRClassifier: Relation => String
+                               DirectionClassifier: Relation => String
                              ): List[RELATION] = {
     rel.map(x => {
       val r = new RELATION
@@ -114,8 +115,11 @@ object ReportHelper {
       r.setLandmarkId("L_" + getArgId(x, 2))
       r.setGeneralType(generalTypeClassifier(x))
       r.setSpecificType(specificTypeClassifier(x))
-      r.setRCC8Value(RCC8ValueClassifier(x))
-      r.setFoR(FoRClassifier(x))
+      val rcc8 = RCC8ValueClassifier(x)
+      if("None".equalsIgnoreCase(rcc8))
+        r.setRCC8Value(DirectionClassifier(x))
+      else
+        r.setRCC8Value(rcc8)
       r
     })
   }
@@ -131,12 +135,12 @@ object ReportHelper {
         val prefix = "T_"
         if (x == dummyPhrase) {
           y.setId(prefix + s.getId + "_null")
-          y.setStart(new BigInteger("-1"))
-          y.setEnd(new BigInteger("-1"))
+          y.setStart(-1)
+          y.setEnd(-1)
           return t
         }
-        y.setStart(new BigInteger(x.getStart.toString))
-        y.setEnd(new BigInteger(x.getEnd.toString))
+        y.setStart(x.getStart)
+        y.setEnd(x.getEnd)
         y.setText(x.getText)
         y.setId(prefix + x.getId)
         y
@@ -144,12 +148,12 @@ object ReportHelper {
         val prefix = "L_"
         if (x == dummyPhrase) {
           y.setId(prefix + s.getId + "_null")
-          y.setStart(new BigInteger("-1"))
-          y.setEnd(new BigInteger("-1"))
+          y.setStart(-1)
+          y.setEnd(-1)
           return t
         }
-        y.setStart(new BigInteger(x.getStart.toString))
-        y.setEnd(new BigInteger(x.getEnd.toString))
+        y.setStart(x.getStart)
+        y.setEnd(x.getEnd)
         y.setText(x.getText)
         y.setId(prefix + x.getId)
         y
@@ -157,12 +161,12 @@ object ReportHelper {
         val prefix = "SP_"
         if (x == dummyPhrase) {
           y.setId(prefix + s.getId + "_null")
-          y.setStart(new BigInteger("-1"))
-          y.setEnd(new BigInteger("-1"))
+          y.setStart(-1)
+          y.setEnd(-1)
           return t
         }
-        y.setStart(new BigInteger(x.getStart.toString))
-        y.setEnd(new BigInteger(x.getEnd.toString))
+        y.setStart(x.getStart)
+        y.setEnd(x.getEnd)
         y.setText(x.getText)
         y.setId(prefix + x.getId)
         y
@@ -254,7 +258,7 @@ object ReportHelper {
     def getArg(i: Int, r: Relation) = r.getArgument(i).getText.toLowerCase
 
     def print(r: Relation) = {
-      MultiModalSpRLClassifiers.pairFeatures(FeatureSets.BaseLine)
+      MultiModalSpRLPairClassifiers.pairFeatures(FeatureSets.BaseLine)
         .map(prop => printVal(prop(r))).mkString(" | ")
     }
 
@@ -324,9 +328,15 @@ object ReportHelper {
 
   private def convertToEval(r: Results): Seq[SpRLEvaluation] = r.perLabel
     .map(x => {
-      val p = if (x.predictedSize == 0) 1.0 else x.precision
-      val r = if (x.labeledSize == 0) 1.0 else x.recall
-      val f1 = if (x.predictedSize == 0) if (x.labeledSize == 0) 1.0 else 0.0 else x.f1
+      var p = if (x.predictedSize == 0) 1.0 else x.precision
+      var r = if (x.labeledSize == 0) 1.0 else x.recall
+      var f1 = if (x.predictedSize == 0) if (x.labeledSize == 0) 1.0 else 0.0 else x.f1
+      if(p.isNaN)
+        p = 0
+      if(r.isNaN)
+        r = 0
+      if(f1.isNaN)
+        f1 = 0
       val result = new SpRLEvaluation(x.label, p * 100, r * 100, f1 * 100, x.labeledSize, x.predictedSize)
       result
     })
