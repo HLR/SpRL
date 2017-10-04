@@ -14,10 +14,11 @@ import org.deeplearning4j.models.word2vec.Word2Vec
 import scala.collection.immutable.HashMap
 import scala.collection.JavaConversions._
 import scala.util.matching.Regex
+import  MultiModalSpRLDataModel._
 
 object MultiModalSpRLSensors {
 
-  private val googleWord2Vec = WordVectorSerializer.loadGoogleModel(new File("data/GoogleNews-vectors-negative300.bin"), true)
+  private lazy val googleWord2Vec = WordVectorSerializer.loadGoogleModel(new File("data/GoogleNews-vectors-negative300.bin"), true)
   private lazy val clefWord2Vec = WordVectorSerializer.readWord2VecModel("data/clef.bin")
 
   def getWord2VectorSimilarity(w2v: Word2Vec, w1: String, w2: String): Double = {
@@ -78,6 +79,18 @@ object MultiModalSpRLSensors {
 
   def documentToImageMatching(d: Document, i: Image): Boolean = {
     d.getPropertyFirstValue("IMAGE").endsWith("/" + i.getLabel)
+  }
+
+  def phraseToSegmentPhrasePairs(p: Phrase): List[Relation] = {
+    val segments = (phrases(p)~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage ~> imageToSegment).toList
+    segments.map{
+      s=>
+        val r = new Relation()
+        r.setId(p.getId + "__" + s.getSegmentId)
+        r.setArgumentId(0, p.getId)
+        r.setArgumentId(1, s.getSegmentId.toString)
+        r
+    }
   }
 
   val phraseConceptToWord = HashMap(

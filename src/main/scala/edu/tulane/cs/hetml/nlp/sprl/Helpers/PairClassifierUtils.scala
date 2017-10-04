@@ -1,7 +1,6 @@
-package edu.tulane.cs.hetml.nlp.sprl
+package edu.tulane.cs.hetml.nlp.sprl.Helpers
 
-import edu.tulane.cs.hetml.nlp.sprl.Helpers.{ReportHelper, SpRLXmlReader}
-import edu.tulane.cs.hetml.nlp.BaseTypes.{NlpBaseElement, Phrase, Relation}
+import edu.tulane.cs.hetml.nlp.BaseTypes.Relation
 import edu.tulane.cs.hetml.nlp.sprl.Eval.{OverlapComparer, SpRLEvaluation}
 
 import scala.collection.JavaConversions._

@@ -1,14 +1,14 @@
-package edu.tulane.cs.hetml.nlp.sprl
+package edu.tulane.cs.hetml.nlp.sprl.triplets
 
-import edu.illinois.cs.cogcomp.lbjava.learn.{SparseAveragedPerceptron, SparseNetworkLearner, SupportVectorMachine}
+import edu.illinois.cs.cogcomp.lbjava.learn.{SparseAveragedPerceptron, SparseNetworkLearner}
 import edu.illinois.cs.cogcomp.saul.classifier.Learnable
 import edu.illinois.cs.cogcomp.saul.datamodel.property.Property
+import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets.FeatureSets
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.nlp.BaseTypes._
 
-object MultiModalSpRLClassifiers {
+object MultiModalSpRLTripletClassifiers {
   var featureSet = FeatureSets.WordEmbeddingPlusImage
 
   def phraseFeatures: List[Property[Phrase]] = phraseFeatures(featureSet)
@@ -23,20 +23,6 @@ object MultiModalSpRLClassifiers {
         case _ => List[Property[Phrase]]()
       })
 
-  def pairFeatures: List[Property[Relation]] = pairFeatures(featureSet)
-
-  def pairFeatures(featureSet: FeatureSets): List[Property[Relation]] =
-    List(pairWordForm, pairHeadWordForm, pairPos, pairHeadWordPos, pairPhrasePos,
-      pairSemanticRole, pairDependencyRelation, pairSubCategorization, pairHeadSpatialContext,
-      distance, before, isTrajectorCandidate, isLandmarkCandidate, isIndicatorCandidate) ++
-      (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(pairIsImageConcept)
-        case FeatureSets.WordEmbedding => List(pairTokensVector)
-        case FeatureSets.WordEmbeddingPlusImage => List(pairTokensVector, pairNearestSegmentConceptToHeadVector,
-          pairNearestSegmentConceptToPhraseVector, pairIsImageConcept)
-        case _ => List[Property[Relation]]()
-      })
-
   def tripletFeatures: List[Property[Relation]] = tripletFeatures(featureSet)
 
   def tripletFeatures(featureSet: FeatureSets): List[Property[Relation]] =
@@ -44,7 +30,7 @@ object MultiModalSpRLClassifiers {
       tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos) ++
       (featureSet match {
         case FeatureSets.BaseLineWithImage => List(tripletImageConfirms)
-        case FeatureSets.WordEmbedding => List(tripletTRSPPairVector, tripletSPLMPairVector)
+        case FeatureSets.WordEmbedding => List(tripletTrVector, tripletLmVector)
         case FeatureSets.WordEmbeddingPlusImage => List()
         case _ => List[Property[Relation]]()
       })
@@ -99,60 +85,13 @@ object MultiModalSpRLClassifiers {
       .diff(List(headWordPos, headWordFrom, headDependencyRelation, isImageConceptExactMatch))
   }
 
-  object TrajectorPairClassifier extends Learnable(pairs) {
-    def label = isTrajectorRelation
-
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.positiveThickness = 2
-      p.negativeThickness = 1
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
-
-    override def feature = (pairFeatures ++ List(relationHeadDependencyRelation, relationHeadSubCategorization))
-      .diff(List(pairNearestSegmentConceptToHeadVector))
-  }
-
-  object LandmarkPairClassifier extends Learnable(pairs) {
-    def label = isLandmarkRelation
-
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.positiveThickness = 4
-      p.negativeThickness = 1
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
-
-    override def feature = (pairFeatures ++ List(relationSpatialContext))
-      .diff(List(pairIsImageConcept, pairNearestSegmentConceptToPhraseVector))
-  }
-
   object TripletRelationClassifier extends Learnable(triplets) {
     def label = tripletIsRelation
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = tripletFeatures
-  }
-
-  object TripletRelationClassifierWithImage extends Learnable(triplets) {
-    def label = tripletIsRelation
-
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.positiveThickness = 4
-      p.negativeThickness = 1
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
-
-    override def feature = List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
-      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos, tripletTRIsImageConceptExactMatch, tripletLMIsImageConceptExactMatch,
-      tripletTRNearestSegmentConceptToHeadVector, tripletTRNearestSegmentConceptToPhraseVector, tripletTRIsImageConceptApproxMatch,
-      tripletLMIsImageConceptApproxMatch, tripletLMNearestSegmentConceptToHeadVector,
-      tripletLMNearestSegmentConceptToPhraseVector, tripletImageConfirms)
+    override def feature =  (tripletFeatures)
+      .diff(List(tripletLmVector))
   }
 
   object TripletGeneralTypeClassifier extends Learnable(triplets) {
@@ -160,7 +99,8 @@ object MultiModalSpRLClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = tripletFeatures
+    override def feature = (tripletFeatures)
+      .diff(List(tripletLmVector))
   }
 
   object TripletSpecificTypeClassifier extends Learnable(triplets) {
@@ -171,17 +111,18 @@ object MultiModalSpRLClassifiers {
     override def feature = tripletFeatures
   }
 
-  object TripletRCC8Classifier extends Learnable(triplets) {
-    def label = tripletRCC8
+  object TripletRegionClassifier extends Learnable(triplets) {
+    def label = tripletRegion
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = tripletFeatures
+    override def feature =  (tripletFeatures)
+      .diff(List(tripletLmVector))
   }
 
 
-  object TripletFoRClassifier extends Learnable(triplets) {
-    def label = tripletFoR
+  object TripletDirectionClassifier extends Learnable(triplets) {
+    def label = tripletDirection
 
     override lazy val classifier = new SparseNetworkLearner()
 
