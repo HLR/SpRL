@@ -1,4 +1,4 @@
-package edu.tulane.cs.hetml.nlp.sprl.pairs
+package edu.tulane.cs.hetml.nlp.sprl.Pairs
 
 import java.io.File
 
@@ -6,8 +6,8 @@ import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.{FeatureSets, ReportHelper}
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-import MultiModalSpRLPairClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
+import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLPairClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator.{isTrain, _}
 import org.apache.commons.io.FileUtils
 
 object MultiModalPairSpRLApp extends App with Logging{

@@ -1,11 +1,11 @@
-package edu.tulane.cs.hetml.nlp.sprl.triplets
+package edu.tulane.cs.hetml.nlp.sprl.Triplets
 
 import edu.illinois.cs.cogcomp.lbjava.infer.{FirstOrderConstant, FirstOrderConstraint}
 import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-import MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 
 object TripletSentenceLevelConstraints {
 

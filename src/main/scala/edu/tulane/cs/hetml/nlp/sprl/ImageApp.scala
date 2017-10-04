@@ -2,7 +2,6 @@ package edu.tulane.cs.hetml.nlp.sprl
 
 import edu.tulane.cs.hetml.vision._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.transflowExamples.{HelloTF, LabelImage}
 
 import scala.collection.JavaConversions._
 
