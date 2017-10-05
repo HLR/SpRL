@@ -128,4 +128,20 @@ object MultiModalSpRLTripletClassifiers {
 
     override def feature = tripletFeatures
   }
+
+  class SingleWordasClassifer(w: String) extends Learnable(wordsegments) {
+    def label = wordLabel is w
+
+    override lazy val classifier = new SparseNetworkLearner()
+
+    override def feature = List(wordSegFeatures)
+  }
+
+  object WordasClassifer extends Learnable(wordsegments) {
+    def label = wordLabel
+
+    override lazy val classifier = new SparseNetworkLearner()
+
+    override def feature = List(wordSegFeatures)
+  }
 }

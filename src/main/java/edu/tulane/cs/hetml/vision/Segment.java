@@ -16,6 +16,7 @@ public class Segment {
     private String imageId;
     public List<String> tagged;
     public String refExp;
+    public String filteredTokens;
 
     public Segment(String ImageId, int segmentId, String segmentFeatures, String refExp) {
         this.imageId = ImageId;

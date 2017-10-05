@@ -10,8 +10,8 @@ import java.util.List;
 
 public class CLEFGoogleNETReader {
 
-    public List<Image> allImages;
-    public List<Segment> allSegments;
+    public List<Image> trainingImages;
+    public List<Segment> trainingSegments;
     private Hashtable<String, String> segRefExp = new Hashtable<String, String>();
 
     public CLEFGoogleNETReader(String directory) throws IOException {
@@ -27,8 +27,8 @@ public class CLEFGoogleNETReader {
 
         getReferitText(directory);
 
-        allImages = new ArrayList<>();
-        allSegments = new ArrayList<>();
+        trainingImages = new ArrayList<>();
+        trainingSegments = new ArrayList<>();
 
         getFeatures(directory);
 
@@ -45,10 +45,10 @@ public class CLEFGoogleNETReader {
             while ((line = reader.readLine()) != null) {
                 String[] row = (line.trim()).split(",");
                 Image i = new Image(row[0].trim(), row[0].trim());
-                allImages.add(i);
+                trainingImages.add(i);
                 String key = row[0].trim() + "_" + row[1].trim() + ".jpg";
                 Segment s = new Segment(row[0].trim(), Integer.parseInt(row[1].trim()), row[2].trim(),segRefExp.get(key));
-                allSegments.add(s);
+                trainingSegments.add(s);
             }
             reader.close();
         }
@@ -57,7 +57,6 @@ public class CLEFGoogleNETReader {
     /*******************************************************/
     // Loading Referit Text for CLEF Segments
     // Storing information in HashTable for quick retrieval
-
     /*******************************************************/
     private void getReferitText(String directory) throws IOException {
         String file = directory + "/ReferGames.txt";
@@ -71,11 +70,6 @@ public class CLEFGoogleNETReader {
             } else {
                 segRefExp.put(segReferitText[0], " ");
             }
-        }
-    }
-    public void Print() {
-        for (Segment s : allSegments) {
-            System.out.println(s.getAssociatedImageID() + s.getSegmentId() + s.refExp);
         }
     }
 }

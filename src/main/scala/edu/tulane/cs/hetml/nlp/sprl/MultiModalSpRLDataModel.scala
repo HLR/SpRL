@@ -35,6 +35,7 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val images = node[Image]
   val segments = node[Segment]
+  val wordsegments = node[WordSegment]
   val segmentRelations = node[SegmentRelation]
   val segmentPhrasePairs = node[Relation]((r: Relation) => r.getId)
 
@@ -398,6 +399,17 @@ object MultiModalSpRLDataModel extends DataModel {
         -1
       else
         getTokenDistance(first, second)
+  }
+
+  val wordLabel = property(wordsegments, cache = true) {
+    w: WordSegment =>
+      w.getWord
+  }
+
+  val wordSegFeatures = property(wordsegments, cache = true, ordered = true) {
+    w: WordSegment =>
+      val s = w.getSegment
+      s.getSegmentFeatures.split(" ").toList.map(_.toDouble)
   }
 
   val tripletIsRelation = property(triplets, cache = true) {
