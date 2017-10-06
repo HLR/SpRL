@@ -1,14 +1,20 @@
 package edu.tulane.cs.hetml.vision;
 
+import org.bytedeco.javacpp.presets.opencv_core;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 
 public class CLEFAnnotationReader {
 
     private Hashtable<String, String> tokens = new Hashtable<String, String>();
     private Hashtable<String, String> pharseRemaining = new Hashtable<String, String>();
     private Hashtable<String, String> referit = new Hashtable<String, String>();
+
+    public List<Image> testImages;
+    public List<Segment> testSegments;
 
     PrintWriter printToFile;
     PrintWriter printToFileNames;
@@ -25,10 +31,27 @@ public class CLEFAnnotationReader {
             throw new IOException(directory + " is not a directory!");
         }
 
-        printToFile = new PrintWriter( directory + "/OutputDataSet/AnnotatedClef.txt");
-        printToFileNames = new PrintWriter( directory + "/OutputDataSet/Clef_test.txt");
+        testImages = new ArrayList<>();
+        testSegments = new ArrayList<>();
+
         //Load Referit Text
         loadReferit(directory);
+
+        //Annotated File Conversion
+        String annDir = directory + "/annotatedFiles";
+        annotatedFilesConversion(annDir);
+
+        //Load Test Images
+        loadTestImage(annDir);
+
+        //Load Test Segments
+        loadTestSegment(annDir);
+    }
+
+    private void annotatedFilesConversion(String directory) throws IOException {
+
+        printToFile = new PrintWriter( directory + "/Output/ClefSegment.txt");
+        printToFileNames = new PrintWriter( directory + "/Output/ClefImage.txt");
 
         File folder = new File(directory);
         File[] listOfFiles = folder.listFiles();
@@ -63,29 +86,50 @@ public class CLEFAnnotationReader {
                         String[] oldData = referit.get(referitKey).split("~");
 
                         // Our Text in Referit
-                        String newData = referitKey + "~" + arg1Phrase + "~" + oldData[1] + "~" + oldData[2];
+                        String newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~" + oldData[1] + "~" + oldData[2];
                         //Save the new generated data to file
                         printToFile.println(newData);
                     }
                 }
                 for(String s : pharseRemaining.keySet()) {
-                    // Negative Examples
+                    // Writing Remaining Phrases
                     // 0 index doesn't exists
                     String referitKey = fileName + "_0.jpg";
 
-                    String newData = referitKey + "~" + pharseRemaining.get(s) + "~0.0"  + "~0.0";
+                    String newData = fileName + "~" + "0" + "~" + pharseRemaining.get(s) + "~0.0"  + "~0.0";
                     //Save the new generated data to file
                     printToFile.println(newData);
                 }
             }
-            break;
         }
         printToFile.close();
         printToFileNames.close();
     }
+    private void loadTestImage(String directory) throws IOException {
+        String file = directory + "/Output/ClefImage.txt";
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String imageId = line.trim();
+            Image i = new Image(imageId.trim(), imageId.trim());
+            testImages.add(i);
+
+        }
+    }
+
+    private void loadTestSegment(String directory) throws IOException {
+        String file = directory + "/Output/ClefSegment.txt";
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] segInfo = line.split("\\~");
+            Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]),"",segInfo[2]);
+            testSegments.add(s);
+        }
+    }
 
     private void loadReferit(String directory) throws IOException {
-        String file = directory + "/Referit/ReferGames.txt";
+        String file = directory + "/ReferGames.txt";
         BufferedReader reader = new BufferedReader(new FileReader(file));
         String line;
         while ((line = reader.readLine()) != null) {

@@ -403,7 +403,10 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val wordLabel = property(wordsegments, cache = true) {
     w: WordSegment =>
-      w.getWord
+      if (w.getWord2Segment)
+        w.getWord
+      else
+        "None"
   }
 
   val wordSegFeatures = property(wordsegments, cache = true, ordered = true) {

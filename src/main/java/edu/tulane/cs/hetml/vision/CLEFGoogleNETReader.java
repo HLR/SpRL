@@ -10,8 +10,8 @@ import java.util.List;
 
 public class CLEFGoogleNETReader {
 
-    public List<Image> trainingImages;
-    public List<Segment> trainingSegments;
+    public List<Image> allImages;
+    public List<Segment> allSegments;
     private Hashtable<String, String> segRefExp = new Hashtable<String, String>();
 
     public CLEFGoogleNETReader(String directory) throws IOException {
@@ -27,8 +27,8 @@ public class CLEFGoogleNETReader {
 
         getReferitText(directory);
 
-        trainingImages = new ArrayList<>();
-        trainingSegments = new ArrayList<>();
+        allImages = new ArrayList<>();
+        allSegments = new ArrayList<>();
 
         getFeatures(directory);
 
@@ -45,10 +45,10 @@ public class CLEFGoogleNETReader {
             while ((line = reader.readLine()) != null) {
                 String[] row = (line.trim()).split(",");
                 Image i = new Image(row[0].trim(), row[0].trim());
-                trainingImages.add(i);
+                allImages.add(i);
                 String key = row[0].trim() + "_" + row[1].trim() + ".jpg";
                 Segment s = new Segment(row[0].trim(), Integer.parseInt(row[1].trim()), row[2].trim(),segRefExp.get(key));
-                trainingSegments.add(s);
+                allSegments.add(s);
             }
             reader.close();
         }

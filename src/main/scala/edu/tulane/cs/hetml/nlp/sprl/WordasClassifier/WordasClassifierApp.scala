@@ -11,12 +11,14 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator.suffix
+import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
+
 /** Created by Umar on 2017-10-04.
   */
+
 object WordasClassifierApp extends App {
 
-  val CLEFGoogleNETReader = new CLEFGoogleNETReader("data/mSprl/saiapr_tc-12")
+  val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
   // Preprocess RefExp
   val stopWords = Array ("the", "an", "a")
 
@@ -25,9 +27,10 @@ object WordasClassifierApp extends App {
 
   val wordFrequency = new HashMap[String,Int]()
 
-  val trainsegments = CLEFGoogleNETReader.trainingSegments.toList
-  var i = 0
-  trainsegments.foreach(s => {
+  val allsegments = CLEFGoogleNETReaderHelper.allSegments.toList
+
+
+  allsegments.foreach(s => {
     if(s.refExp!=null) {
 
       var refExp = s.refExp.toLowerCase.replaceAll("[^a-z]", " ").trim
@@ -72,35 +75,85 @@ object WordasClassifierApp extends App {
     }
   })
 
+  // Populate in Data Model
+  images.populate(CLEFGoogleNETReaderHelper.allImages)
+  segments.populate(allsegments)
+
+  println("Generating Training Dataset")
+
+  // word training instances
   val wordTrainingInstances = new ListBuffer[WordSegment]()
+
+  // complete training instances
+  val allTrainingInstances = new ListBuffer[WordSegment]()
+
   // Generate Training Instances for words
   wordFrequency.foreach(w => {
     if (w._2 >= 40) {
-      val instances = trainsegments.filter(s => {
+      val instances = allsegments.filter(s => {
         if (s.filteredTokens != null) s.filteredTokens.split(" ").exists(t => t.matches(w._1)) else false
       })
       println(w._1 + "->" + w._2 + "->" + instances.size)
       if(instances.size > 0) {
         instances.foreach(i => {
-          wordTrainingInstances += new WordSegment(w._1, i)
+          wordTrainingInstances += new WordSegment(w._1, i, true)
+          allTrainingInstances += new WordSegment(w._1, i, true)
+          // Create Negative Examples - Max 5 from same Image
+           val ImageSegs = allsegments.filter(t => t.getAssociatedImageID.equals(i.getAssociatedImageID) &&
+             (if (t.filteredTokens != null) !t.filteredTokens.split(" ").exists(tok => tok.matches(w._1)) else false))
+           if(ImageSegs.size > 0) {
+             val len = if(ImageSegs.size < 5) ImageSegs.size else 5
+             for (iter <- 0 to len -1) {
+               val negSeg = ImageSegs(iter);
+               wordTrainingInstances += new WordSegment(w._1, negSeg, false)
+               allTrainingInstances += new WordSegment(w._1, negSeg, false)
+             }
+           }
         })
+        // Training Word classifier
+        wordsegments.populate(wordTrainingInstances)
+        val c = new SingleWordasClassifer(w._1)
+        c.modelSuffix = w._1
+        c.modelDir = s"models/mSpRL/wordclassifer/"
+        c.learn(iterations)
+        c.save()
+        wordTrainingInstances.clear()
+        wordsegments.clear()
       }
     }
   })
+  println("Finished Training Dataset")
 
-  // Populate in Data Model
-  images.populate(CLEFGoogleNETReader.trainingImages)
-  segments.populate(trainsegments)
-  wordsegments.populate(wordTrainingInstances)
-
+  wordsegments.populate(allTrainingInstances)
   //Training the Classifier
 
   WordasClassifer.modelDir = s"models/mSpRL/wordclassifer/"
   WordasClassifer.modelSuffix = "Multi"
-  WordasClassifer.learn(50)
+  WordasClassifer.learn(iterations)
   WordasClassifer.save()
-//  val c = new WordasClassifer("biker")
-//  c.modelSuffix = "bike"
-//  c.modelDir = "data/"
+
+
+
+  // Generating Testing Dataset for Word as Classifer
+  val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
+
+  val testSegments = ClefAnnReader.testSegments
+  println("Generating Test Dataset")
+  val wordTestInstances = new ListBuffer[WordSegment]()
+  // Generate Test Instances for each word
+  testSegments.foreach(s => {
+    val segWithFeatures = allsegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
+
+    //Create all possible combinations M x N
+    s.refExp.split(" ").foreach(tok => {
+      segWithFeatures.foreach(sf => {
+        wordTestInstances += new WordSegment(tok, sf, if(s.getSegmentId==sf.getSegmentId) true else false)
+      })
+    })
+  })
+
+  wordTestInstances.foreach(wt => {
+    println(wt.getWord, wt.getSegment.getAssociatedImageID + "-" + wt.getSegment.getSegmentId,wt.getWord2Segment)
+  })
 }
 
