@@ -11,6 +11,8 @@ import java.util.List;
 public class CLEFGoogleNETReader {
 
     public List<Image> allImages;
+    public List<Image> trainImages;
+    public List<Image> testImages;
     public List<Segment> allSegments;
     private Hashtable<String, String> segRefExp = new Hashtable<String, String>();
 
@@ -25,20 +27,43 @@ public class CLEFGoogleNETReader {
             throw new IOException(directory + " is not a directory!");
         }
 
-        getReferitText(directory);
-
         allImages = new ArrayList<>();
+        trainImages = new ArrayList<>();
+        testImages = new ArrayList<>();
         allSegments = new ArrayList<>();
+
+        loadImages(directory + "/W2CtrainImages.txt", true);
+
+        loadImages(directory + "/W2CtestImages.txt", false);
+
+        getReferitText(directory);
 
         getFeatures(directory);
 
         segRefExp.clear();
     }
 
+    private void loadImages(String file, Boolean isTrain) throws IOException {
+        File f = new File(file);
+        if (f.exists()) {
+            String line;
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            line = reader.readLine();
+            String[] imageIDs = (line.trim()).split(",");
+            for (String id : imageIDs) {
+                Image i = new Image(id.trim(), id.trim());
+                if (isTrain)
+                    trainImages.add(i);
+                else
+                    testImages.add(i);
+            }
+            reader.close();
+        }
+    }
+
     private void getFeatures(String directory) throws IOException {
         String file = directory + "/ImageSegmentsFeatures.txt";
         File f = new File(file);
-
         if (f.exists()) {
             String line;
             BufferedReader reader = new BufferedReader(new FileReader(file));

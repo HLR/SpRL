@@ -401,7 +401,7 @@ object MultiModalSpRLDataModel extends DataModel {
         getTokenDistance(first, second)
   }
 
-  val wordLabel = property(wordsegments, cache = true) {
+  val wordLabel = property(wordsegments) {
     w: WordSegment =>
       if (w.getWord2Segment)
         w.getWord
@@ -409,10 +409,9 @@ object MultiModalSpRLDataModel extends DataModel {
         "None"
   }
 
-  val wordSegFeatures = property(wordsegments, cache = true, ordered = true) {
+  val wordSegFeatures = property(wordsegments, ordered = true) {
     w: WordSegment =>
-      val s = w.getSegment
-      s.getSegmentFeatures.split(" ").toList.map(_.toDouble)
+      w.getSegment.getSegmentFeatures.split(" ").toList.map(_.toDouble)
   }
 
   val tripletIsRelation = property(triplets, cache = true) {

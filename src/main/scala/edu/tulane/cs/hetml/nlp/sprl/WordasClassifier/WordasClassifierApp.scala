@@ -1,57 +1,65 @@
 package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 
+import java.io.FileOutputStream
 import java.util
 
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors
+import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper
 import edu.tulane.cs.hetml.vision._
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers.{SingleWordasClassifer, _}
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalTripletApp.expName
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
+import me.tongfei.progressbar.ProgressBar
 
 /** Created by Umar on 2017-10-04.
   */
 
 object WordasClassifierApp extends App {
 
-  val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
   // Preprocess RefExp
-  val stopWords = Array ("the", "an", "a")
+  val stopWords = Array("the", "an", "a")
 
   val relWords = Array("below", "above", "between", "not", "behind", "under", "underneath", "front of", "right of",
     "left of", "ontop of", "next to", "middle of")
 
-  val wordFrequency = new HashMap[String,Int]()
+  val wordFrequency = new HashMap[String, Int]()
+  val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
 
-  val allsegments = CLEFGoogleNETReaderHelper.allSegments.toList
+  val allImages =
+    if(isTrain)
+      CLEFGoogleNETReaderHelper.trainImages.toList
+    else
+      CLEFGoogleNETReaderHelper.testImages.toList
 
+  val allsegments =
+    if(!useAnntotatedClef) {
+        CLEFGoogleNETReaderHelper.allSegments.filter(s => {allImages.exists(i=> i.getId==s.getAssociatedImageID)})
+    } else {
+      CLEFGoogleNETReaderHelper.allSegments.toList
+    }
+
+  val pb = new ProgressBar("Processing Data", allsegments.size)
+  pb.start()
 
   allsegments.foreach(s => {
-    if(s.refExp!=null) {
+    if (s.refExp != null) {
 
       var refExp = s.refExp.toLowerCase.replaceAll("[^a-z]", " ").trim
-      var tokenRefExp = refExp.split(" ")
-      // Removing Stopwords
-      stopWords.foreach(s => {
-        tokenRefExp = tokenRefExp.filterNot(t => s.matches(t))
-      })
-      relWords.foreach(s => {
-        tokenRefExp = tokenRefExp.filterNot(t => s.matches(t))
-      })
-      refExp = tokenRefExp.mkString(" ").trim
 
+      refExp = filterRefExpression(refExp)
       // Saving filtered tokens for later use
-      s.filteredTokens = refExp;
+      s.filteredTokens = refExp
 
-      if(refExp != "" && refExp.length > 1) {
-        println(s.getAssociatedImageID + "-" + s.getSegmentId + "-" + refExp)
+      if (refExp != "" && refExp.length > 1) {
         val d = new Document(s.getAssociatedImageID)
         val senID = s.getAssociatedImageID + "_" + s.getSegmentId.toString
-        val sen = new Sentence(d, senID , 0, refExp.length, refExp)
+        val sen = new Sentence(d, senID, 0, refExp.length, refExp)
         val toks = LanguageBaseTypeSensors.sentenceToTokenGenerating(sen)
         //Applying postag
         val pos = LanguageBaseTypeSensors.getPos(sen)
@@ -64,7 +72,7 @@ object WordasClassifierApp extends App {
           s.tagged.add(tokenPair)
 
           // Calculate Word Frequency
-          if(wordFrequency.contains(p._1.getText)) {
+          if (wordFrequency.contains(p._1.getText)) {
             var value = wordFrequency.get(p._1.getText)
             wordFrequency.update(p._1.getText, wordFrequency(p._1.getText) + 1)
           } else {
@@ -73,87 +81,109 @@ object WordasClassifierApp extends App {
         })
       }
     }
+    pb.step()
   })
-
+  pb.stop()
   // Populate in Data Model
-  images.populate(CLEFGoogleNETReaderHelper.allImages)
+  //images.populate(CLEFGoogleNETReaderHelper.allImages)
   segments.populate(allsegments)
 
-  println("Generating Training Dataset")
+  // word-segment pair instances
+  val trainInstances = new ListBuffer[WordSegment]()
 
-  // word training instances
-  val wordTrainingInstances = new ListBuffer[WordSegment]()
+  if(isTrain) {
+    // Generate Training Instances for words
+    val words = wordFrequency.filter(w => w._2 >= 40).keys
 
-  // complete training instances
-  val allTrainingInstances = new ListBuffer[WordSegment]()
-
-  // Generate Training Instances for words
-  wordFrequency.foreach(w => {
-    if (w._2 >= 40) {
-      val instances = allsegments.filter(s => {
-        if (s.filteredTokens != null) s.filteredTokens.split(" ").exists(t => t.matches(w._1)) else false
+    words.foreach(w => {
+      val filteredSegments = allsegments.filter(s => {
+        if (s.filteredTokens != null) s.filteredTokens.split(" ").exists(t => t.matches(w)) else false
       })
-      println(w._1 + "->" + w._2 + "->" + instances.size)
-      if(instances.size > 0) {
-        instances.foreach(i => {
-          wordTrainingInstances += new WordSegment(w._1, i, true)
-          allTrainingInstances += new WordSegment(w._1, i, true)
-          // Create Negative Examples - Max 5 from same Image
-           val ImageSegs = allsegments.filter(t => t.getAssociatedImageID.equals(i.getAssociatedImageID) &&
-             (if (t.filteredTokens != null) !t.filteredTokens.split(" ").exists(tok => tok.matches(w._1)) else false))
-           if(ImageSegs.size > 0) {
-             val len = if(ImageSegs.size < 5) ImageSegs.size else 5
-             for (iter <- 0 to len -1) {
-               val negSeg = ImageSegs(iter);
-               wordTrainingInstances += new WordSegment(w._1, negSeg, false)
-               allTrainingInstances += new WordSegment(w._1, negSeg, false)
-             }
-           }
+
+      if (filteredSegments.nonEmpty) {
+        filteredSegments.foreach(i => {
+          trainInstances += new WordSegment(w, i, true)
+            // Create Negative Examples - Max 5 from same Image
+            val ImageSegs = allsegments.filter(t => t.getAssociatedImageID.equals(i.getAssociatedImageID) &&
+              (if (t.filteredTokens != null) !t.filteredTokens.split(" ").exists(tok => tok.matches(w)) else false))
+            if (ImageSegs.nonEmpty) {
+              val len = if (ImageSegs.size < 5) ImageSegs.size else 5
+              for (iter <- 0 until len) {
+                val negSeg = ImageSegs(iter)
+                trainInstances += new WordSegment(w, negSeg, false)
+              }
+            }
         })
         // Training Word classifier
-        wordsegments.populate(wordTrainingInstances)
-        val c = new SingleWordasClassifer(w._1)
-        c.modelSuffix = w._1
+        wordsegments.populate(trainInstances, isTrain)
+        val c = new SingleWordasClassifer(w)
+        c.modelSuffix = w
         c.modelDir = s"models/mSpRL/wordclassifer/"
         c.learn(iterations)
         c.save()
-        wordTrainingInstances.clear()
+        trainInstances.clear()
         wordsegments.clear()
       }
-    }
-  })
-  println("Finished Training Dataset")
-
-  wordsegments.populate(allTrainingInstances)
-  //Training the Classifier
-
-  WordasClassifer.modelDir = s"models/mSpRL/wordclassifer/"
-  WordasClassifer.modelSuffix = "Multi"
-  WordasClassifer.learn(iterations)
-  WordasClassifer.save()
-
-
-
-  // Generating Testing Dataset for Word as Classifer
-  val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
-
-  val testSegments = ClefAnnReader.testSegments
-  println("Generating Test Dataset")
-  val wordTestInstances = new ListBuffer[WordSegment]()
-  // Generate Test Instances for each word
-  testSegments.foreach(s => {
-    val segWithFeatures = allsegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
-
-    //Create all possible combinations M x N
-    s.refExp.split(" ").foreach(tok => {
-      segWithFeatures.foreach(sf => {
-        wordTestInstances += new WordSegment(tok, sf, if(s.getSegmentId==sf.getSegmentId) true else false)
-      })
     })
-  })
+  }
 
-  wordTestInstances.foreach(wt => {
-    println(wt.getWord, wt.getSegment.getAssociatedImageID + "-" + wt.getSegment.getSegmentId,wt.getWord2Segment)
-  })
+  if(!isTrain) {
+
+    val testInstances = new ListBuffer[WordSegment]()
+
+
+    val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
+    val testSegments = if (useAnntotatedClef)ClefAnnReader.testSegments.toList else allsegments
+
+    // Generate Test Instances for each word
+    testSegments.foreach(s => {
+      val segWithFeatures = allsegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
+      if(s.refExp!=null) {
+        val filterRefExp = if(useAnntotatedClef) filterRefExpression(s.refExp) else s.filteredTokens
+
+        //Create all possible combinations M x N
+        filterRefExp.split(" ").foreach(tok => {
+          segWithFeatures.foreach(sf => {
+            testInstances += new WordSegment(tok, sf, s.getSegmentId==sf.getSegmentId)
+          })
+        })
+      }
+    })
+    val outStream = new FileOutputStream(s"$resultsDir/WordasClassifier.txt", false)
+    val outStreamCombined = new FileOutputStream(s"$resultsDir/WordasClassifierCombined.txt", false)
+    testInstances.groupBy(t=> t.getWord).map({
+      w =>
+        try {
+          val c = new SingleWordasClassifer(w._1)
+          c.modelSuffix = w._1
+          c.modelDir = s"models/mSpRL/wordclassifer/"
+          wordsegments.populate(w._2, false)
+          c.load()
+          val result = c.test()
+
+          ReportHelper.saveEvalResults(outStream, w._1, result)
+          ReportHelper.combineResults(result)
+
+          wordsegments.clear()
+        }
+        catch {
+          case _: Throwable => println("Word " + w + "Classifier not found")
+        }
+    })
+    ReportHelper.saveallResults(outStreamCombined, "Combined Results", ReportHelper.allResults)
+    outStream.close()
+    outStreamCombined.close()
+  }
+
+  def filterRefExpression(refExp: String): String = {
+    var tokenRefExp = refExp.split(" ")
+    // Removing Stopwords
+    stopWords.foreach(s => {
+      tokenRefExp = tokenRefExp.filterNot(t => s.matches(t))
+    })
+    relWords.foreach(s => {
+      tokenRefExp = tokenRefExp.filterNot(t => s.matches(t))
+    })
+    tokenRefExp.mkString(" ").trim
+  }
 }
-
