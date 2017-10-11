@@ -409,6 +409,7 @@ object MultiModalSpRLDataModel extends DataModel {
         "None"
   }
 
+
   val wordSegFeatures = property(wordsegments, ordered = true) {
     w: WordSegment =>
       w.getSegment.getSegmentFeatures.split(" ").toList.map(_.toDouble)

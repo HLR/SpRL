@@ -275,35 +275,16 @@ object ReportHelper {
       writer.println(s"(${getArg(0, x)}, ${getArg(1, x)})[${print(x)}] -> ${x.getProperty("RelationType")}"))
     writer.close()
   }
-  var allResults = Seq[SpRLEvaluation]()
-
-  def combineResults(results: Results): Unit = {
-    val r = convertToEval(results)
-    allResults  = mergeResults(r, allResults)
-  }
 
   def saveEvalResults(stream: FileOutputStream, caption: String, results: Results): Unit =
     saveEvalResults(stream, caption, convertToEval(results))
 
-  def saveallResults(stream: FileOutputStream, caption: String, results: Seq[SpRLEvaluation]): Unit = {
+  def saveEvalResults(stream: FileOutputStream, caption: String, results: Seq[SpRLEvaluation], ignore:Seq[String] = Seq("none")): Unit = {
     val writer = new PrintStream(stream, true)
     writer.println("===========================================================================")
     writer.println(s" ${caption}")
     writer.println("---------------------------------------------------------------------------")
-    SpRLEvaluator.printEvaluation(stream, results)
-    writer.println()
-  }
-
-  def mergeResults (l1: Seq[SpRLEvaluation], l2: Seq[SpRLEvaluation]): Seq[SpRLEvaluation] = {
-    val m = l1 ++ l2
-    return m
-  }
-  def saveEvalResults(stream: FileOutputStream, caption: String, results: Seq[SpRLEvaluation]): Unit = {
-    val writer = new PrintStream(stream, true)
-    writer.println("===========================================================================")
-    writer.println(s" ${caption}")
-    writer.println("---------------------------------------------------------------------------")
-    SpRLEvaluator.printEvaluation(stream, results.filterNot(x => x.getLabel.equalsIgnoreCase("none")))
+    SpRLEvaluator.printEvaluation(stream, results.filterNot(x => ignore.exists(i => x.getLabel.equalsIgnoreCase(i))))
     writer.println()
   }
 
@@ -345,7 +326,7 @@ object ReportHelper {
       .mkString(" -> ")
   }
 
-  private def convertToEval(r: Results): Seq[SpRLEvaluation] = r.perLabel
+  def convertToEval(r: Results): Seq[SpRLEvaluation] = r.perLabel
     .map(x => {
       var p = if (x.predictedSize == 0) 1.0 else x.precision
       var r = if (x.labeledSize == 0) 1.0 else x.recall

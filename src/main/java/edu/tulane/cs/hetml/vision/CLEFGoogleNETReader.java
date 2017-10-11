@@ -72,8 +72,10 @@ public class CLEFGoogleNETReader {
                 Image i = new Image(row[0].trim(), row[0].trim());
                 allImages.add(i);
                 String key = row[0].trim() + "_" + row[1].trim() + ".jpg";
-                Segment s = new Segment(row[0].trim(), Integer.parseInt(row[1].trim()), row[2].trim(),segRefExp.get(key));
-                allSegments.add(s);
+                if(segRefExp.get(key)!=null) {
+                    Segment s = new Segment(row[0].trim(), Integer.parseInt(row[1].trim()), row[2].trim(), segRefExp.get(key));
+                    allSegments.add(s);
+                }
             }
             reader.close();
         }
@@ -90,7 +92,7 @@ public class CLEFGoogleNETReader {
         while ((line = reader.readLine()) != null) {
             String[] segReferitText = line.split("\\~");
             if (segReferitText.length > 1) {
-                segRefExp.put(segReferitText[0], segReferitText[1]);
+                segRefExp.put(segReferitText[0], segReferitText[1].trim().replaceAll(" +", " "));
 
             } else {
                 segRefExp.put(segReferitText[0], " ");

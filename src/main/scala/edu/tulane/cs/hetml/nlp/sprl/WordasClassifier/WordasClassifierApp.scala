@@ -3,9 +3,12 @@ package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 import java.io.FileOutputStream
 import java.util
 
+import edu.illinois.cs.cogcomp.saul.classifier.Results
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors
+import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper
+import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper.convertToEval
 import edu.tulane.cs.hetml.vision._
 
 import scala.collection.mutable.ListBuffer
@@ -17,6 +20,8 @@ import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalTripletApp.expName
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import me.tongfei.progressbar.ProgressBar
 
+import scala.collection.mutable
+
 /** Created by Umar on 2017-10-04.
   */
 
@@ -24,6 +29,7 @@ object WordasClassifierApp extends App {
 
   // Preprocess RefExp
   val stopWords = Array("the", "an", "a")
+  var combinedResults = Seq[SpRLEvaluation]()
 
   val relWords = Array("below", "above", "between", "not", "behind", "under", "underneath", "front of", "right of",
     "left of", "ontop of", "next to", "middle of")
@@ -33,7 +39,7 @@ object WordasClassifierApp extends App {
 
   val allImages =
     if(isTrain)
-      CLEFGoogleNETReaderHelper.trainImages.toList
+      CLEFGoogleNETReaderHelper.trainImages.take(100).toList
     else
       CLEFGoogleNETReaderHelper.testImages.toList
 
@@ -131,50 +137,113 @@ object WordasClassifierApp extends App {
 
     val testInstances = new ListBuffer[WordSegment]()
 
-
     val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
     val testSegments = if (useAnntotatedClef)ClefAnnReader.testSegments.toList else allsegments
 
     // Generate Test Instances for each word
+    val tokenPhraseMap = mutable.HashMap[String, List[WordSegment]]()
     testSegments.foreach(s => {
       val segWithFeatures = allsegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
       if(s.refExp!=null) {
-        val filterRefExp = if(useAnntotatedClef) filterRefExpression(s.refExp) else s.filteredTokens
+        val filterRefExp = if(useAnntotatedClef) filterRefExpression(s.refExp.trim) else s.filteredTokens.trim
 
         //Create all possible combinations M x N
-        filterRefExp.split(" ").foreach(tok => {
-          segWithFeatures.foreach(sf => {
-            testInstances += new WordSegment(tok, sf, s.getSegmentId==sf.getSegmentId)
+        val  seg_pairs = filterRefExp.split("\\s+").flatMap(tok => {
+          segWithFeatures.map(sf => {
+            new WordSegment(tok, sf, s.getSegmentId==sf.getSegmentId)
           })
-        })
+        }).toList
+
+        tokenPhraseMap.put(s.getAssociatedImageID + "_" + s.getSegmentId, seg_pairs)
+        testInstances ++= seg_pairs
       }
     })
+
+    // Populate whole testdata in DataModel
+    wordsegments.populate(testInstances)
+
     val outStream = new FileOutputStream(s"$resultsDir/WordasClassifier.txt", false)
     val outStreamCombined = new FileOutputStream(s"$resultsDir/WordasClassifierCombined.txt", false)
-    testInstances.groupBy(t=> t.getWord).map({
-      w =>
-        try {
-          val c = new SingleWordasClassifer(w._1)
-          c.modelSuffix = w._1
-          c.modelDir = s"models/mSpRL/wordclassifer/"
-          wordsegments.populate(w._2, false)
-          c.load()
-          val result = c.test()
+    var acc = 0.0
+    var count = 0
 
-          ReportHelper.saveEvalResults(outStream, w._1, result)
-          ReportHelper.combineResults(result)
+    tokenPhraseMap.foreach{
+      case (segId, wordSegList) =>
+        computeMatrix(wordSegList)
+    }
 
-          wordsegments.clear()
-        }
-        catch {
-          case _: Throwable => println("Word " + w + "Classifier not found")
-        }
-    })
-    ReportHelper.saveallResults(outStreamCombined, "Combined Results", ReportHelper.allResults)
+    //    testInstances.groupBy(t=> t.getWord).foreach({
+//      w =>
+//        try {
+//          val c = new SingleWordasClassifer(w._1)
+//          c.modelSuffix = w._1
+//          c.modelDir = s"models/mSpRL/wordclassifer/"
+//          wordsegments.populate(w._2, false)
+//          c.load()
+//          val result = c.test()
+//          ReportHelper.saveEvalResults(outStream, w._1, result)
+//          val correct = result.perLabel.map(x=>x.correctSize).sum
+//          acc += correct / (w._2.size + 0.0)
+//          count += w._2.size
+//          println(correct / (w._2.size + 0.0))
+//          combineResults(result, w._1)
+//        }
+//        catch {
+//          case _: Throwable =>
+//            println("Word " + w._1 + "Classifier not found")
+//            allResults = mergeResults(List(new SpRLEvaluation(w._1, 100, 0, 0, w._2.size, 0)), allResults)
+//        }
+//        wordsegments.clear
+//    })
+    println("Overall acc: " + acc/count)
+    ReportHelper.saveEvalResults(outStreamCombined, "Combined Results", combinedResults, Seq("false"))
     outStream.close()
     outStreamCombined.close()
   }
 
+  def computeMatrix(instances: List[WordSegment]): Unit = {
+    val scoresMatrix = instances.groupBy(i => i.getWord).map(w => {
+      computeScore(w._1, w._2)
+    }).toList
+    val vector = combineScores(scoresMatrix)
+  }
+
+  def computeScore(word: String, instances: List[WordSegment]): List[Double] = {
+    val c = new SingleWordasClassifer(word)
+    instances.map(i => {
+      try {
+        c.modelSuffix = word
+        c.modelDir = s"models/mSpRL/wordclassifer/"
+        c.load()
+        //c.getLabeler.g.classifier.classify(i).getWeight
+        //val ww = c.classifier.scores(i)
+        val w1 = c(i)
+        0.0
+      }
+      catch {
+        case _: Throwable =>
+          0.0
+      }
+    })
+  }
+
+  def combineScores(scoreMatrix: List[List[Double]]): List[Double] = {
+    scoreMatrix.transpose.map(_.sum)
+  }
+
+  def combineResults(results: Results, w:String): Unit = {
+    val r = convertToEval(results).map {
+      case t if t.getLabel.equalsIgnoreCase("true") =>
+        new SpRLEvaluation(w, t.getPrecision, t.getRecall, t.getF1, t.getLabeledCount, t.getPredictedCount)
+      case t => t
+    }
+    combinedResults  = mergeResults(r, combinedResults)
+  }
+
+  def mergeResults (l1: Seq[SpRLEvaluation], l2: Seq[SpRLEvaluation]): Seq[SpRLEvaluation] = {
+    val m = l1 ++ l2
+    m
+  }
   def filterRefExpression(refExp: String): String = {
     var tokenRefExp = refExp.split(" ")
     // Removing Stopwords
