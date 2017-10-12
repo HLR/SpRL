@@ -111,9 +111,8 @@ public class CLEFAnnotationReader {
         String line;
         while ((line = reader.readLine()) != null) {
             String imageId = line.trim();
-            Image i = new Image(imageId.trim(), imageId.trim());
+            Image i = new Image(imageId.trim() + ".jpg", imageId.trim());
             testImages.add(i);
-
         }
     }
 

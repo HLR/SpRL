@@ -3,6 +3,7 @@ package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 import java.io.FileOutputStream
 import java.util
 
+import edu.illinois.cs.cogcomp.lbjava.learn.Sigmoid
 import edu.illinois.cs.cogcomp.saul.classifier.Results
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors
@@ -136,7 +137,6 @@ object WordasClassifierApp extends App {
   if(!isTrain) {
 
     val testInstances = new ListBuffer[WordSegment]()
-
     val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
     val testSegments = if (useAnntotatedClef)ClefAnnReader.testSegments.toList else allsegments
 
@@ -210,21 +210,30 @@ object WordasClassifierApp extends App {
 
   def computeScore(word: String, instances: List[WordSegment]): List[Double] = {
     val c = new SingleWordasClassifer(word)
-    instances.map(i => {
+    val w = instances.map(i => {
       try {
         c.modelSuffix = word
         c.modelDir = s"models/mSpRL/wordclassifer/"
         c.load()
-        //c.getLabeler.g.classifier.classify(i).getWeight
-        //val ww = c.classifier.scores(i)
-        val w1 = c(i)
-        0.0
+        c.classifier.classify(i)
+        val scores = c.classifier.scores(i)
+        if(scores.size()>0) {
+          scores.toArray.foreach(s => println(s.value + "-" + s.score))
+          val scaleScores = new Sigmoid()
+          val res = scaleScores.normalize(scores)
+          var trueValue = res.toArray.filter(s => s.value.equalsIgnoreCase("true"))
+          trueValue(0).score
+        }
+        else {
+          0.0
+        }
       }
       catch {
         case _: Throwable =>
           0.0
       }
     })
+    w
   }
 
   def combineScores(scoreMatrix: List[List[Double]]): List[Double] = {

@@ -13,7 +13,7 @@ object mSpRLConfigurator {
   val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"
   val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"
   val suffix = ""
-  val model = FeatureSets.WordEmbedding
+  val model = FeatureSets.BaseLine
   val isTrain = false
   val useAnntotatedClef = false
   val jointTrain = false

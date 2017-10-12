@@ -409,10 +409,20 @@ object MultiModalSpRLDataModel extends DataModel {
         "None"
   }
 
-
   val wordSegFeatures = property(wordsegments, ordered = true) {
     w: WordSegment =>
       w.getSegment.getSegmentFeatures.split(" ").toList.map(_.toDouble)
+  }
+
+  val annotationAnalysis = property(phrases) {
+    p: Phrase =>
+      val seg = (phrases(p) ~> -sentenceToPhrase ~> -documentToSentence) ~> documentToImage ~> imageToSegment
+      if(seg.nonEmpty) {
+        val a = seg.exists(s => s.refExp.equals(p.getText) && s.getSegmentId!=0)
+        a
+      } else {
+        false
+      }
   }
 
   val tripletIsRelation = property(triplets, cache = true) {
