@@ -19,7 +19,7 @@ object MultiModalSpRLTripletClassifiers {
       (featureSet match {
         case FeatureSets.BaseLineWithImage => List()
         case FeatureSets.WordEmbedding => List(headVector)
-        case FeatureSets.WordEmbeddingPlusImage => List(headVector, nearestSegmentConceptToHeadVector)
+        case FeatureSets.WordEmbeddingPlusImage => List(headVector)
         case _ => List[Property[Phrase]]()
       })
 
@@ -31,7 +31,7 @@ object MultiModalSpRLTripletClassifiers {
       (featureSet match {
         case FeatureSets.BaseLineWithImage => List(tripletImageConfirms)
         case FeatureSets.WordEmbedding => List(tripletTrVector, tripletLmVector)
-        case FeatureSets.WordEmbeddingPlusImage => List()
+        case FeatureSets.WordEmbeddingPlusImage => List(tripletTrVector, tripletLmVector)
         case _ => List[Property[Relation]]()
       })
 

@@ -41,14 +41,13 @@ object TripletSentenceLevelConstraints {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToPhrase ~> -segmentPhrasePairToPhrase).foreach {
-        pair =>
-          val p = segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase head
-          //val s = segmentPhrasePairs(pair) ~> -segmentToSegmentPhrasePair head
+      (sentences(s) ~> sentenceToPhrase).foreach {
+        p =>
+          val pairs = (phrases(p) ~> -segmentPhrasePairToPhrase).toList
 
-          a = a and (
+          a = a and
             (
-              (sim on pair) is "true") ==> (TrajectorRoleClassifier on p is "Trajector")
+              (TrajectorRoleClassifier on p is "Trajector") ==> pairs._exists(pair => sim on pair is "true")
             )
       }
       a
@@ -85,6 +84,24 @@ object TripletSentenceLevelConstraints {
             (
               (TripletGeneralTypeClassifier on x) isNot "None"
               ) ==>
+              (TripletRelationClassifier on x is "Relation")
+            )
+      }
+      a
+  }
+
+  val boostTripletByImage = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          val tr = (triplets(x) ~> tripletToFirstArg ~> -segmentPhrasePairToPhrase).toList
+          val lm = (triplets(x) ~> tripletToThirdArg ~> -segmentPhrasePairToPhrase).toList
+
+          a = a and (
+            tr._exists(t => (sim on t) is "true")
+              ==>
               (TripletRelationClassifier on x is "Relation")
             )
       }
@@ -143,7 +160,7 @@ object TripletSentenceLevelConstraints {
 
   val tripletConstraints = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTripletByRoles(x) and boostTripletByGeneralType(x)
+    x: Sentence => boostTripletByRoles(x) and boostTripletByGeneralType(x) and boostTripletByImage(x)
   }
 
   val generalConstraints = ConstrainedClassifier.constraint[Sentence] {

@@ -101,23 +101,23 @@ object MultiModalTripletApp extends App with Logging {
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
 
-    if(!useConstraints) {
-//      val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
-//      val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
-//      val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
-//
-//      val tripletList = triplets.getTestingInstances
-//        .filter(x => TripletRelationClassifier(x) == "Relation").toList
-//
-//
-//      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
-//        x => TripletGeneralTypeClassifier(x),
-//        x => TripletSpecificTypeClassifier(x),
-//        x => TripletRCC8Classifier(x),
-//        x => TripletDirectionClassifier(x),
-//        s"$resultsDir/${expName}${suffix}.xml")
-//
-//      ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+    if (!useConstraints) {
+      //      val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
+      //      val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
+      //      val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
+      //
+      //      val tripletList = triplets.getTestingInstances
+      //        .filter(x => TripletRelationClassifier(x) == "Relation").toList
+      //
+      //
+      //      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
+      //        x => TripletGeneralTypeClassifier(x),
+      //        x => TripletSpecificTypeClassifier(x),
+      //        x => TripletRCC8Classifier(x),
+      //        x => TripletDirectionClassifier(x),
+      //        s"$resultsDir/${expName}${suffix}.xml")
+      //
+      //      ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
 
       val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
 
@@ -144,22 +144,22 @@ object MultiModalTripletApp extends App with Logging {
     }
     else {
 
-//      val trajectors = phrases.getTestingInstances.filter(x => TRConstraintClassifier(x) == "Trajector").toList
-//      val landmarks = phrases.getTestingInstances.filter(x => LMConstraintClassifier(x) == "Landmark").toList
-//      val indicators = phrases.getTestingInstances.filter(x => IndicatorConstraintClassifier(x) == "Indicator").toList
-//
-//      val tripletList = triplets.getTestingInstances
-//        .filter(x => TripletRelationConstraintClassifier(x) == "Relation").toList
-//
-//
-//      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
-//        x => TripletGeneralTypeConstraintClassifier(x),
-//        x => TripletSpecificTypeClassifier(x),
-//        x => TripletRegionConstraintClassifier(x),
-//        x => TripletDirectionConstraintClassifier(x),
-//        s"$resultsDir/${expName}${suffix}.xml")
-//
-//      ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+      //      val trajectors = phrases.getTestingInstances.filter(x => TRConstraintClassifier(x) == "Trajector").toList
+      //      val landmarks = phrases.getTestingInstances.filter(x => LMConstraintClassifier(x) == "Landmark").toList
+      //      val indicators = phrases.getTestingInstances.filter(x => IndicatorConstraintClassifier(x) == "Indicator").toList
+      //
+      //      val tripletList = triplets.getTestingInstances
+      //        .filter(x => TripletRelationConstraintClassifier(x) == "Relation").toList
+      //
+      //
+      //      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
+      //        x => TripletGeneralTypeConstraintClassifier(x),
+      //        x => TripletSpecificTypeClassifier(x),
+      //        x => TripletRegionConstraintClassifier(x),
+      //        x => TripletDirectionConstraintClassifier(x),
+      //        s"$resultsDir/${expName}${suffix}.xml")
+      //
+      //      ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
 
       val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
 
