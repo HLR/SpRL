@@ -1,17 +1,15 @@
 package edu.tulane.cs.hetml.vision;
 
-import java.util.*;
-
 public class WordSegment {
 
     private String word;
     private Segment segment;
-    private boolean word2segment;
+    private boolean isMatching;
 
-    public WordSegment(String word, Segment segment, Boolean word2segment) {
+    public WordSegment(String word, Segment segment, Boolean isMatching) {
         this.word = word;
         this.segment = segment;
-        this.word2segment = word2segment;
+        this.isMatching = isMatching;
     }
 
     public String getWord() {
@@ -22,7 +20,7 @@ public class WordSegment {
         return segment;
     }
 
-    public boolean getWord2Segment() {
-        return word2segment;
+    public boolean isWordAndSegmentMatching() {
+        return isMatching;
     }
 }

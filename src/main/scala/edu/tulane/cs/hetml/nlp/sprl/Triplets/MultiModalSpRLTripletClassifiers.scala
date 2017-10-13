@@ -1,6 +1,6 @@
 package edu.tulane.cs.hetml.nlp.sprl.Triplets
 
-import edu.illinois.cs.cogcomp.lbjava.learn.{SparseAveragedPerceptron, SparseNetworkLearner}
+import edu.illinois.cs.cogcomp.lbjava.learn.{SparseAveragedPerceptron, SparseNetworkLearner, SupportVectorMachine}
 import edu.illinois.cs.cogcomp.saul.classifier.Learnable
 import edu.illinois.cs.cogcomp.saul.datamodel.property.Property
 import edu.tulane.cs.hetml.nlp.BaseTypes._
@@ -133,7 +133,7 @@ object MultiModalSpRLTripletClassifiers {
   class SingleWordasClassifer(word: String) extends Learnable(wordsegments) {
     def label = wordLabel is word
 
-    override lazy val classifier = new SparseNetworkLearner()
+    override lazy val classifier = new SupportVectorMachine()
 
     override def feature = List(wordSegFeatures)
   }

@@ -17,7 +17,6 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers.{SingleWordasClassifer, _}
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalTripletApp.expName
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import me.tongfei.progressbar.ProgressBar
 
@@ -40,7 +39,7 @@ object WordasClassifierApp extends App {
 
   val allImages =
     if(isTrain)
-      CLEFGoogleNETReaderHelper.trainImages.take(100).toList
+      CLEFGoogleNETReaderHelper.trainImages.toList
     else
       CLEFGoogleNETReaderHelper.testImages.toList
 
@@ -125,7 +124,7 @@ object WordasClassifierApp extends App {
         wordsegments.populate(trainInstances, isTrain)
         val c = new SingleWordasClassifer(w)
         c.modelSuffix = w
-        c.modelDir = s"models/mSpRL/wordclassifer/"
+        c.modelDir = s"models/mSpRL/WordClassiferSVM/"
         c.learn(iterations)
         c.save()
         trainInstances.clear()
@@ -145,7 +144,7 @@ object WordasClassifierApp extends App {
     testSegments.foreach(s => {
       val segWithFeatures = allsegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
       if(s.refExp!=null) {
-        val filterRefExp = if(useAnntotatedClef) filterRefExpression(s.refExp.trim) else s.filteredTokens.trim
+        val filterRefExp = if(useAnntotatedClef) filterRefExpression(s.refExp.trim) else s.filteredTokens.distinct.trim
 
         //Create all possible combinations M x N
         val  seg_pairs = filterRefExp.split("\\s+").flatMap(tok => {
@@ -154,7 +153,7 @@ object WordasClassifierApp extends App {
           })
         }).toList
 
-        tokenPhraseMap.put(s.getAssociatedImageID + "_" + s.getSegmentId, seg_pairs)
+        tokenPhraseMap.put(s.getAssociatedImageID + "_" + s.getSegmentId + "_" + s.refExp, seg_pairs)
         testInstances ++= seg_pairs
       }
     })
@@ -166,10 +165,16 @@ object WordasClassifierApp extends App {
     val outStreamCombined = new FileOutputStream(s"$resultsDir/WordasClassifierCombined.txt", false)
     var acc = 0.0
     var count = 0
-
+    var wrong = 0
     tokenPhraseMap.foreach{
-      case (segId, wordSegList) =>
-        computeMatrix(wordSegList)
+      case (uniqueId, wordSegList) =>
+        val predictedSegId = computeMatrix(wordSegList)
+        val row = uniqueId.split("_")
+        if(row(1).toInt == predictedSegId) {
+          count += 1
+        } else {
+          wrong += 1
+        }
     }
 
     //    testInstances.groupBy(t=> t.getWord).foreach({
@@ -195,17 +200,21 @@ object WordasClassifierApp extends App {
 //        }
 //        wordsegments.clear
 //    })
-    println("Overall acc: " + acc/count)
-    ReportHelper.saveEvalResults(outStreamCombined, "Combined Results", combinedResults, Seq("false"))
-    outStream.close()
-    outStreamCombined.close()
+    println("Correct : " + count + "Wrong: " + wrong)
+//    println("Overall acc: " + acc/count)
+//    ReportHelper.saveEvalResults(outStreamCombined, "Combined Results", combinedResults, Seq("false"))
+//    outStream.close()
+//    outStreamCombined.close()
   }
 
-  def computeMatrix(instances: List[WordSegment]): Unit = {
+  def computeMatrix(instances: List[WordSegment]): Int = {
+
     val scoresMatrix = instances.groupBy(i => i.getWord).map(w => {
       computeScore(w._1, w._2)
     }).toList
     val vector = combineScores(scoresMatrix)
+    val regionId = vector.indexOf(vector.max) + 1
+    regionId
   }
 
   def computeScore(word: String, instances: List[WordSegment]): List[Double] = {
@@ -213,7 +222,7 @@ object WordasClassifierApp extends App {
     val w = instances.map(i => {
       try {
         c.modelSuffix = word
-        c.modelDir = s"models/mSpRL/wordclassifer/"
+        c.modelDir = s"models/mSpRL/WordClassiferSVM/"
         c.load()
         c.classifier.classify(i)
         val scores = c.classifier.scores(i)
@@ -222,6 +231,7 @@ object WordasClassifierApp extends App {
           val scaleScores = new Sigmoid()
           val res = scaleScores.normalize(scores)
           var trueValue = res.toArray.filter(s => s.value.equalsIgnoreCase("true"))
+          val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
           trueValue(0).score
         }
         else {
