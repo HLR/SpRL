@@ -15,6 +15,7 @@ public class CLEFAnnotationReader {
 
     public List<Image> testImages;
     public List<Segment> testSegments;
+    private List<String> allphrases;
 
     PrintWriter printToFile;
     PrintWriter printToFileNames;
@@ -33,6 +34,7 @@ public class CLEFAnnotationReader {
 
         testImages = new ArrayList<>();
         testSegments = new ArrayList<>();
+        allphrases = new ArrayList<>();
 
         //Load Referit Text
         loadReferit(directory);
@@ -58,7 +60,11 @@ public class CLEFAnnotationReader {
 
         for (File file : listOfFiles) {
             if (file.isFile()) {
+
                 String fileName = file.getName().replaceFirst("[.][^.]+$", "");
+                // Reading Text used for Annotated
+                allphrases.clear();
+                completeText(directory, fileName);
                 printToFileNames.println(fileName);
                 String line;
                 BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -68,6 +74,9 @@ public class CLEFAnnotationReader {
                     if (words[0].startsWith("T")) { // Tokens
                         if (words[1].startsWith("P")) { // Phrase
                             tokens.put(words[0], words[2]);
+                            String[] spans = words[1].split(" ");
+                            String pharseWithSpan = words[2] + " " + spans[1] + " " + spans [2];
+                            allphrases.remove(pharseWithSpan);
                             pharseRemaining.put(words[0], words[2]);
                         }
                         else if (words[1].startsWith("S")) //Segment
@@ -110,6 +119,38 @@ public class CLEFAnnotationReader {
         printToFile.close();
         printToFileNames.close();
     }
+
+    private void completeText(String directory, String filename) throws IOException {
+        String filePath = directory + "/textData/" + filename + ".txt";
+        File file = new File(filePath);
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        int index = 0;
+        while ((line = reader.readLine()) != null) {
+            if(line.endsWith("-Phrases:")) {
+                // Go to Phrases line
+                index += line.length()+1;
+                line = reader.readLine();
+                String[] phrases = line.trim().split(",");
+                for(String p : phrases) {
+                    int startSpan = index +1;
+                    int endSpan = index +1 + p.trim().length();
+                    String phraseWithSpan = p.trim() + " " + startSpan + " " + endSpan;
+                    allphrases.add(phraseWithSpan);
+                    index +=p.trim().length() + 2;
+                }
+                index += 1;
+            }
+            else {
+                if (line.length()!=0)
+                    index += line.length();
+                else
+                    index += 2;
+            }
+        }
+
+    }
+
     private void loadTestImage(String directory) throws IOException {
         String file = directory + "/Output/ClefImage.txt";
         BufferedReader reader = new BufferedReader(new FileReader(file));
