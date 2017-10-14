@@ -29,7 +29,7 @@ object MultiModalSpRLTripletClassifiers {
     List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
       tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(tripletImageConfirms)
+        case FeatureSets.BaseLineWithImage => List()
         case FeatureSets.WordEmbedding => List(tripletTrVector, tripletLmVector)
         case FeatureSets.WordEmbeddingPlusImage => List(tripletTrVector, tripletLmVector)
         case _ => List[Property[Relation]]()
@@ -68,7 +68,7 @@ object MultiModalSpRLTripletClassifiers {
     }
 
     override def feature = (phraseFeatures ++ List(lemma, headWordLemma))
-      .diff(List(isImageConceptExactMatch))
+      .diff(List())
   }
 
   object IndicatorRoleClassifier extends Learnable(phrases) {
@@ -82,7 +82,7 @@ object MultiModalSpRLTripletClassifiers {
     }
 
     override def feature = (phraseFeatures(FeatureSets.BaseLine) ++ List(headSubCategorization))
-      .diff(List(headWordPos, headWordFrom, headDependencyRelation, isImageConceptExactMatch))
+      .diff(List(headWordPos, headWordFrom, headDependencyRelation))
   }
 
   object TripletRelationClassifier extends Learnable(triplets) {

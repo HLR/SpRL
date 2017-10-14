@@ -155,12 +155,12 @@ object TripletSentenceLevelConstraints {
 
   val roleConstraints = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTrajector(x) and boostLandmark(x) and roleIntegrity(x) and boostTrajectorByImage(x)
+    x: Sentence => boostTrajector(x) and boostLandmark(x) and roleIntegrity(x) //and boostTrajectorByImage(x)
   }
 
   val tripletConstraints = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTripletByRoles(x) and boostTripletByGeneralType(x) and boostTripletByImage(x)
+    x: Sentence => boostTripletByRoles(x) and boostTripletByGeneralType(x) //and boostTripletByImage(x)
   }
 
   val generalConstraints = ConstrainedClassifier.constraint[Sentence] {
