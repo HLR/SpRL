@@ -98,6 +98,7 @@ object WordasClassifierApp extends App {
   val trainInstances = new ListBuffer[WordSegment]()
 
   if(isTrain) {
+    println("Training...")
     // Generate Training Instances for words
     val words = wordFrequency.filter(w => w._2 >= 40).keys
 
@@ -124,7 +125,7 @@ object WordasClassifierApp extends App {
         wordsegments.populate(trainInstances, isTrain)
         val c = new SingleWordasClassifer(w)
         c.modelSuffix = w
-        c.modelDir = s"models/mSpRL/WordClassiferSVM/"
+        c.modelDir = s"models/mSpRL/WordClassiferClefAnn/"
         c.learn(iterations)
         c.save()
         trainInstances.clear()
@@ -135,6 +136,7 @@ object WordasClassifierApp extends App {
 
   if(!isTrain) {
 
+    println("Testing...")
     val testInstances = new ListBuffer[WordSegment]()
     val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
     val testSegments = if (useAnntotatedClef)ClefAnnReader.testSegments.toList else allsegments
@@ -144,7 +146,7 @@ object WordasClassifierApp extends App {
     testSegments.foreach(s => {
       val segWithFeatures = allsegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
       if(s.refExp!=null) {
-        val filterRefExp = if(useAnntotatedClef) filterRefExpression(s.refExp.trim) else s.filteredTokens.distinct.trim
+        val filterRefExp = if(useAnntotatedClef) filterRefExpression(s.refExp.distinct.trim) else s.filteredTokens.distinct.trim
 
         //Create all possible combinations M x N
         val  seg_pairs = filterRefExp.split("\\s+").flatMap(tok => {
@@ -152,22 +154,25 @@ object WordasClassifierApp extends App {
             new WordSegment(tok, sf, s.getSegmentId==sf.getSegmentId)
           })
         }).toList
-
-        tokenPhraseMap.put(s.getAssociatedImageID + "_" + s.getSegmentId + "_" + s.refExp, seg_pairs)
-        testInstances ++= seg_pairs
+        if(seg_pairs.nonEmpty) {
+          tokenPhraseMap.put(s.getAssociatedImageID + "_" + s.getSegmentId + "_" + s.refExp, seg_pairs)
+          testInstances ++= seg_pairs
+        }
       }
     })
 
     // Populate whole testdata in DataModel
     wordsegments.populate(testInstances)
 
-    val outStream = new FileOutputStream(s"$resultsDir/WordasClassifier.txt", false)
-    val outStreamCombined = new FileOutputStream(s"$resultsDir/WordasClassifierCombined.txt", false)
-    var acc = 0.0
+//    val outStream = new FileOutputStream(s"$resultsDir/WordasClassifier.txt", false)
+//    val outStreamCombined = new FileOutputStream(s"$resultsDir/WordasClassifierCombined.txt", false)
+//    var acc = 0.0
+
     var count = 0
     var wrong = 0
     tokenPhraseMap.foreach{
       case (uniqueId, wordSegList) =>
+        println(uniqueId)
         val predictedSegId = computeMatrix(wordSegList)
         val row = uniqueId.split("_")
         if(row(1).toInt == predictedSegId) {
@@ -210,6 +215,7 @@ object WordasClassifierApp extends App {
   def computeMatrix(instances: List[WordSegment]): Int = {
 
     val scoresMatrix = instances.groupBy(i => i.getWord).map(w => {
+      println(w)
       computeScore(w._1, w._2)
     }).toList
     val vector = combineScores(scoresMatrix)
@@ -222,12 +228,11 @@ object WordasClassifierApp extends App {
     val w = instances.map(i => {
       try {
         c.modelSuffix = word
-        c.modelDir = s"models/mSpRL/WordClassiferSVM/"
+        c.modelDir = s"models/mSpRL/WordClassiferClefAnn/"
         c.load()
         c.classifier.classify(i)
         val scores = c.classifier.scores(i)
         if(scores.size()>0) {
-          scores.toArray.foreach(s => println(s.value + "-" + s.score))
           val scaleScores = new Sigmoid()
           val res = scaleScores.normalize(scores)
           var trueValue = res.toArray.filter(s => s.value.equalsIgnoreCase("true"))

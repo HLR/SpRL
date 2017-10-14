@@ -83,10 +83,15 @@ public class CLEFAnnotationReader {
 
                         // Referit Key
                         String referitKey = fileName + "_" + segCodeText[0] + ".jpg";
-                        String[] oldData = referit.get(referitKey).split("~");
-
-                        // Our Text in Referit
-                        String newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~" + oldData[1] + "~" + oldData[2];
+                        String newData;
+                        if(referit.get(referitKey)!=null) {
+                            String[] oldData = referit.get(referitKey).split("~");
+                            // Our Text in Referit
+                            newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~" + oldData[1] + "~" + oldData[2];
+                        } else {
+                            //Segment Description doesn't exist in ReferIt Dataset
+                            newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~0.0~0.0";
+                        }
                         //Save the new generated data to file
                         printToFile.println(newData);
                     }
