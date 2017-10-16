@@ -125,7 +125,7 @@ object WordasClassifierApp extends App {
         wordsegments.populate(trainInstances, isTrain)
         val c = new SingleWordasClassifer(w)
         c.modelSuffix = w
-        c.modelDir = s"models/mSpRL/WordClassiferClefAnn/"
+        c.modelDir = s"models/mSpRL/wordclassifer/"
         c.learn(iterations)
         c.save()
         trainInstances.clear()
@@ -135,11 +135,16 @@ object WordasClassifierApp extends App {
   }
 
   if(!isTrain) {
-
     println("Testing...")
     val testInstances = new ListBuffer[WordSegment]()
-    val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
-    val testSegments = if (useAnntotatedClef)ClefAnnReader.testSegments.toList else allsegments
+
+    val testSegments =
+      if (useAnntotatedClef) {
+        val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
+        ClefAnnReader.testSegments.toList
+      }
+      else
+        allsegments
 
     // Generate Test Instances for each word
     val tokenPhraseMap = mutable.HashMap[String, List[WordSegment]]()
@@ -164,10 +169,6 @@ object WordasClassifierApp extends App {
     // Populate whole testdata in DataModel
     wordsegments.populate(testInstances)
 
-//    val outStream = new FileOutputStream(s"$resultsDir/WordasClassifier.txt", false)
-//    val outStreamCombined = new FileOutputStream(s"$resultsDir/WordasClassifierCombined.txt", false)
-//    var acc = 0.0
-
     var count = 0
     var wrong = 0
     tokenPhraseMap.foreach{
@@ -181,8 +182,10 @@ object WordasClassifierApp extends App {
           wrong += 1
         }
     }
+    println("Correct : " + count + "Wrong: " + wrong)
 
-    //    testInstances.groupBy(t=> t.getWord).foreach({
+//    var acc = 0.0
+//    testInstances.groupBy(t=> t.getWord).foreach({
 //      w =>
 //        try {
 //          val c = new SingleWordasClassifer(w._1)
@@ -205,7 +208,7 @@ object WordasClassifierApp extends App {
 //        }
 //        wordsegments.clear
 //    })
-    println("Correct : " + count + "Wrong: " + wrong)
+
 //    println("Overall acc: " + acc/count)
 //    ReportHelper.saveEvalResults(outStreamCombined, "Combined Results", combinedResults, Seq("false"))
 //    outStream.close()
@@ -218,7 +221,8 @@ object WordasClassifierApp extends App {
       println(w)
       computeScore(w._1, w._2)
     }).toList
-    val vector = combineScores(scoresMatrix)
+    val norm = normalizeScores(scoresMatrix)
+    val vector = combineScores(norm)
     val regionId = vector.indexOf(vector.max) + 1
     regionId
   }
@@ -228,16 +232,17 @@ object WordasClassifierApp extends App {
     val w = instances.map(i => {
       try {
         c.modelSuffix = word
-        c.modelDir = s"models/mSpRL/WordClassiferClefAnn/"
+        c.modelDir = s"models/mSpRL/wordclassifer/"
         c.load()
         c.classifier.classify(i)
         val scores = c.classifier.scores(i)
         if(scores.size()>0) {
-          val scaleScores = new Sigmoid()
-          val res = scaleScores.normalize(scores)
-          var trueValue = res.toArray.filter(s => s.value.equalsIgnoreCase("true"))
           val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
-          trueValue(0).score
+          orgValue(0).score
+//          val scaleScores = new Sigmoid()
+//          val res = scaleScores.normalize(scores)
+//          var trueValue = res.toArray.filter(s => s.value.equalsIgnoreCase("true"))
+//          trueValue(0).score
         }
         else {
           0.0
@@ -249,6 +254,11 @@ object WordasClassifierApp extends App {
       }
     })
     w
+  }
+
+  def normalizeScores(scoreMatrix: List[List[Double]]):List[List[Double]] = {
+    //scoreMatrix.map(w=> w.map(s=>if(s == 0) 0.0 else Math.exp(s)/w.map(x => Math.exp(x)).sum))
+    scoreMatrix.map(w=> w.map(s=>if(s == 0) 0.0 else s/w.map(Math.abs).sum))
   }
 
   def combineScores(scoreMatrix: List[List[Double]]): List[Double] = {
