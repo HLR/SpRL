@@ -1,14 +1,12 @@
 package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 
-import java.io.FileOutputStream
+import java.io.{FileOutputStream, PrintWriter}
 import java.util
 
-import edu.illinois.cs.cogcomp.lbjava.learn.Sigmoid
 import edu.illinois.cs.cogcomp.saul.classifier.Results
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors
 import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
-import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper.convertToEval
 import edu.tulane.cs.hetml.vision._
 
@@ -37,6 +35,14 @@ object WordasClassifierApp extends App {
   val wordFrequency = new HashMap[String, Int]()
   val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
 
+  val languageHelper = new LanguageHelper()
+
+  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/missedWordsAfterReplacing.txt")
+  val replacedWords = new PrintWriter(s"data/mSprl/results/wordclassifier/replacedWords.txt")
+
+  var missedWords = 0
+  var repWords = 0
+
   val allImages =
     if(isTrain)
       CLEFGoogleNETReaderHelper.trainImages.toList
@@ -56,7 +62,7 @@ object WordasClassifierApp extends App {
   allsegments.foreach(s => {
     if (s.refExp != null) {
 
-      var refExp = s.refExp.toLowerCase.replaceAll("[^a-z]", " ").trim
+      var refExp = s.refExp.toLowerCase.replaceAll("[^a-z]", " ").replaceAll("( )+", " ").trim
 
       refExp = filterRefExpression(refExp)
       // Saving filtered tokens for later use
@@ -76,13 +82,14 @@ object WordasClassifierApp extends App {
         pairs.foreach(p => {
           val tokenPair = p._1.getText + "," + p._2
           s.tagged.add(tokenPair)
-
-          // Calculate Word Frequency
-          if (wordFrequency.contains(p._1.getText)) {
-            var value = wordFrequency.get(p._1.getText)
-            wordFrequency.update(p._1.getText, wordFrequency(p._1.getText) + 1)
-          } else {
-            wordFrequency.put(p._1.getText, 1)
+          if(isTrain) {
+            // Calculate Word Frequency
+            if (wordFrequency.contains(p._1.getText)) {
+              var value = wordFrequency.get(p._1.getText)
+              wordFrequency.update(p._1.getText, wordFrequency(p._1.getText) + 1)
+            } else {
+              wordFrequency.put(p._1.getText, 1)
+            }
           }
         })
       }
@@ -90,6 +97,7 @@ object WordasClassifierApp extends App {
     pb.step()
   })
   pb.stop()
+
   // Populate in Data Model
   //images.populate(CLEFGoogleNETReaderHelper.allImages)
   segments.populate(allsegments)
@@ -136,6 +144,10 @@ object WordasClassifierApp extends App {
 
   if(!isTrain) {
     println("Testing...")
+
+    // RefExp Trained words
+    val refexpTrainedWords = new RefExpFilteredWordReader(imageDataPath).filteredWords
+
     val testInstances = new ListBuffer[WordSegment]()
 
     val testSegments =
@@ -151,10 +163,10 @@ object WordasClassifierApp extends App {
     testSegments.foreach(s => {
       val segWithFeatures = allsegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
       if(s.refExp!=null) {
-        val filterRefExp = if(useAnntotatedClef) filterRefExpression(s.refExp.distinct.trim) else s.filteredTokens.distinct.trim
+        val filterRefExp = if(useAnntotatedClef) filterRefExpression(s.refExp.trim) else s.filteredTokens.trim
 
         //Create all possible combinations M x N
-        val  seg_pairs = filterRefExp.split("\\s+").flatMap(tok => {
+        val  seg_pairs = filterRefExp.split("\\s+").distinct.flatMap(tok => {
           segWithFeatures.map(sf => {
             new WordSegment(tok, sf, s.getSegmentId==sf.getSegmentId)
           })
@@ -182,7 +194,13 @@ object WordasClassifierApp extends App {
           wrong += 1
         }
     }
-    println("Correct : " + count + "Wrong: " + wrong)
+    writer.println("Total Missed Count: " + missedWords)
+    val percentage = count * 100.00f / tokenPhraseMap.size
+    println("Correct : " + count + "Wrong: " + wrong + "Percentage: " + percentage)
+    writer.close()
+
+    replacedWords.println("Total Replaced: " + repWords)
+    replacedWords.close()
 
 //    var acc = 0.0
 //    testInstances.groupBy(t=> t.getWord).foreach({
@@ -228,21 +246,21 @@ object WordasClassifierApp extends App {
   }
 
   def computeScore(word: String, instances: List[WordSegment]): List[Double] = {
-    val c = new SingleWordasClassifer(word)
+
+    var countOnce = false
+
     val w = instances.map(i => {
       try {
+        val c = new SingleWordasClassifer(word)
         c.modelSuffix = word
         c.modelDir = s"models/mSpRL/wordclassifer/"
         c.load()
-        c.classifier.classify(i)
+        // Dummy test - to throw execption if classifier doesn't exists
+        val dummy = c.test(List(i))
         val scores = c.classifier.scores(i)
         if(scores.size()>0) {
           val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
           orgValue(0).score
-//          val scaleScores = new Sigmoid()
-//          val res = scaleScores.normalize(scores)
-//          var trueValue = res.toArray.filter(s => s.value.equalsIgnoreCase("true"))
-//          trueValue(0).score
         }
         else {
           0.0
@@ -250,7 +268,29 @@ object WordasClassifierApp extends App {
       }
       catch {
         case _: Throwable =>
-          0.0
+          val result = languageHelper.wordSpellVerifier(word)
+
+          if (result!="true") {
+            val c = new SingleWordasClassifer(result)
+            replacedWords.println(word + " ->" + result)
+            repWords += 1
+
+            c.modelSuffix = result
+            c.modelDir = s"models/mSpRL/wordclassifer/"
+            c.load()
+            val scores = c.classifier.scores(i)
+            if(scores.size()>0) {
+              val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
+              orgValue(0).score
+            } else
+              0.0
+          } else if(!countOnce) {
+            writer.println(i.getWord + " Missed")
+            missedWords += 1
+            countOnce = true
+            0.0
+          } else
+            0.0
       }
     })
     w

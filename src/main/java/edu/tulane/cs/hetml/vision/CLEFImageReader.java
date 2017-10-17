@@ -488,6 +488,7 @@ public class CLEFImageReader {
 
     /*******************************************************/
     private void getSegmentsOntology(String file) throws IOException {
+
         File d = new File(file);
 
         if (d.exists()) {
