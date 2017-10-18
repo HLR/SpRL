@@ -9,7 +9,7 @@ import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors
 import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper.convertToEval
 import edu.tulane.cs.hetml.vision._
-
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
@@ -17,7 +17,7 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers.{SingleWordasClassifer, _}
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import me.tongfei.progressbar.ProgressBar
-
+import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 import scala.collection.mutable
 
 /** Created by Umar on 2017-10-04.
@@ -36,18 +36,21 @@ object WordasClassifierApp extends App {
   val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
 
   val languageHelper = new LanguageHelper()
+  val wordToClassifier = new mutable.HashMap[String, String]()
 
   val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/missedWordsAfterReplacing.txt")
+  val writerGoogleW2V = new PrintWriter(s"data/mSprl/results/wordclassifier/googleW2CPredictions.txt")
   val replacedWords = new PrintWriter(s"data/mSprl/results/wordclassifier/replacedWords.txt")
 
   var missedWords = 0
+  var predictedWordCount = 0
   var repWords = 0
 
   val allImages =
     if(isTrain)
       CLEFGoogleNETReaderHelper.trainImages.toList
     else
-      CLEFGoogleNETReaderHelper.testImages.toList
+      CLEFGoogleNETReaderHelper.testImages.take(100).toList
 
   val allsegments =
     if(!useAnntotatedClef) {
@@ -117,7 +120,7 @@ object WordasClassifierApp extends App {
 
       if (filteredSegments.nonEmpty) {
         filteredSegments.foreach(i => {
-          trainInstances += new WordSegment(w, i, true)
+          trainInstances += new WordSegment(w, i, true, false, "")
             // Create Negative Examples - Max 5 from same Image
             val ImageSegs = allsegments.filter(t => t.getAssociatedImageID.equals(i.getAssociatedImageID) &&
               (if (t.filteredTokens != null) !t.filteredTokens.split(" ").exists(tok => tok.matches(w)) else false))
@@ -125,7 +128,7 @@ object WordasClassifierApp extends App {
               val len = if (ImageSegs.size < 5) ImageSegs.size else 5
               for (iter <- 0 until len) {
                 val negSeg = ImageSegs(iter)
-                trainInstances += new WordSegment(w, negSeg, false)
+                trainInstances += new WordSegment(w, negSeg, false, false, "")
               }
             }
         })
@@ -145,9 +148,6 @@ object WordasClassifierApp extends App {
   if(!isTrain) {
     println("Testing...")
 
-    // RefExp Trained words
-    val refexpTrainedWords = new RefExpFilteredWordReader(imageDataPath).filteredWords
-
     val testInstances = new ListBuffer[WordSegment]()
 
     val testSegments =
@@ -164,11 +164,23 @@ object WordasClassifierApp extends App {
       val segWithFeatures = allsegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
       if(s.refExp!=null) {
         val filterRefExp = if(useAnntotatedClef) filterRefExpression(s.refExp.trim) else s.filteredTokens.trim
+        val d = new Document(s.getAssociatedImageID)
+        val senID = s.getAssociatedImageID + "_" + s.getSegmentId.toString
+        val sen = new Sentence(d, senID, 0, filterRefExp.length, filterRefExp)
+        val phrases = sentenceToPhraseGenerating(sen)
+        val toks = phrases.flatMap(LanguageBaseTypeSensors.phraseToTokenGenerating)
+        val headWords = phrases.map(p=> p -> getHeadword(p)).toMap
+
+
+        //Applying postag
+        val pos = LanguageBaseTypeSensors.getPos(sen).zip(toks).map(x=>x._2.getText->x._1).toMap
 
         //Create all possible combinations M x N
-        val  seg_pairs = filterRefExp.split("\\s+").distinct.flatMap(tok => {
+        //
+        val  seg_pairs = toks.groupBy(t=> t.getText).map(t=> t._2.head).flatMap(tok => {
+          val tokHeadWord = headWords(tok.getPhrase)
           segWithFeatures.map(sf => {
-            new WordSegment(tok, sf, s.getSegmentId==sf.getSegmentId)
+            new WordSegment(tok.getText, sf, s.getSegmentId==sf.getSegmentId, tok.getText==tokHeadWord.getText, pos(tok.getText))
           })
         }).toList
         if(seg_pairs.nonEmpty) {
@@ -198,6 +210,9 @@ object WordasClassifierApp extends App {
     val percentage = count * 100.00f / tokenPhraseMap.size
     println("Correct : " + count + "Wrong: " + wrong + "Percentage: " + percentage)
     writer.close()
+
+    writerGoogleW2V.println("Total Predicted Count: " + predictedWordCount)
+    writerGoogleW2V.close()
 
     replacedWords.println("Total Replaced: " + repWords)
     replacedWords.close()
@@ -236,8 +251,8 @@ object WordasClassifierApp extends App {
   def computeMatrix(instances: List[WordSegment]): Int = {
 
     val scoresMatrix = instances.groupBy(i => i.getWord).map(w => {
-      println(w)
-      computeScore(w._1, w._2)
+      println(w._1)
+      computeScore(w._1, w._2, w._2.head.getPos)
     }).toList
     val norm = normalizeScores(scoresMatrix)
     val vector = combineScores(norm)
@@ -245,57 +260,100 @@ object WordasClassifierApp extends App {
     regionId
   }
 
-  def computeScore(word: String, instances: List[WordSegment]): List[Double] = {
+  def computeScore(word: String, instances: List[WordSegment], postag : String): List[Double] = {
 
     var countOnce = false
 
     val w = instances.map(i => {
-      try {
-        val c = new SingleWordasClassifer(word)
-        c.modelSuffix = word
-        c.modelDir = s"models/mSpRL/wordclassifer/"
-        c.load()
-        // Dummy test - to throw execption if classifier doesn't exists
-        val dummy = c.test(List(i))
-        val scores = c.classifier.scores(i)
-        if(scores.size()>0) {
-          val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
-          orgValue(0).score
+      val score = loadClassifier(word, i)
+      if(score!=0.0)
+        score
+      else if(languageHelper.wordSpellVerifier(word)!="true") {
+        useSpellingClassifier(word, i)
+      }
+      else {
+        val predictedWord = getClosetClassifier(word, postag)
+        if(predictedWord!="") {
+          loadClassifier(predictedWord, i)
         }
-        else {
+        else if(!countOnce) {
+          writer.println(i.getWord + " Missed")
+          missedWords += 1
+          countOnce = true
           0.0
         }
-      }
-      catch {
-        case _: Throwable =>
-          val result = languageHelper.wordSpellVerifier(word)
-
-          if (result!="true") {
-            val c = new SingleWordasClassifer(result)
-            replacedWords.println(word + " ->" + result)
-            repWords += 1
-
-            c.modelSuffix = result
-            c.modelDir = s"models/mSpRL/wordclassifer/"
-            c.load()
-            val scores = c.classifier.scores(i)
-            if(scores.size()>0) {
-              val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
-              orgValue(0).score
-            } else
-              0.0
-          } else if(!countOnce) {
-            writer.println(i.getWord + " Missed")
-            missedWords += 1
-            countOnce = true
-            0.0
-          } else
-            0.0
+        else
+          0.0
       }
     })
     w
   }
 
+  def loadClassifier(word: String, i: WordSegment) : Double ={
+    val c = new SingleWordasClassifer(word)
+    c.modelSuffix = word
+    c.modelDir = s"models/mSpRL/wordclassifer/"
+    c.load()
+    val scores = c.classifier.scores(i)
+    if(scores.size()>0) {
+      val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
+      if (i.isHead)
+        orgValue(0).score * 2
+      else
+        orgValue(0).score
+    }
+    else {
+      0.0
+    }
+  }
+
+  def getClosetClassifier(word: String, pos: String) : String = {
+    // RefExp Trained words
+    if(wordToClassifier.contains(word))
+      return wordToClassifier(word)
+
+    val refexpTrainedWords = new RefExpFilteredWordReader(imageDataPath).filteredWords
+    val threshold = if(pos.toUpperCase.contains("NN")) 0.50 else 0.99
+
+    val scoreVector = refexpTrainedWords.map(r => {
+      getGoogleSimilarity(r, word)
+    })
+
+    val filtered = scoreVector.filter(s => s > threshold)
+    filtered.foreach(f => {
+      writerGoogleW2V.println(s"Word Classifier ${word} -> possible predictions ${refexpTrainedWords.get(scoreVector.indexOf(f))} -> score ${f}")
+    })
+
+    if(scoreVector.max > threshold) {
+      val index = scoreVector.indexOf(scoreVector.max)
+      val predictedWord = refexpTrainedWords.get(index)
+      predictedWordCount += 1
+      writerGoogleW2V.println(s"Word Classifier ${word} -> Pos ${pos} -> predicted Classifier ${predictedWord}")
+      wordToClassifier.put(word, predictedWord)
+      predictedWord
+    }
+    else {
+      wordToClassifier.put(word, "")
+      ""
+    }
+  }
+  def useSpellingClassifier(word: String, i: WordSegment) : Double = {
+    val result = languageHelper.wordSpellVerifier(word)
+    val c = new SingleWordasClassifer(result)
+    replacedWords.println(word + " ->" + result)
+    repWords += 1
+
+    c.modelSuffix = result
+    c.modelDir = s"models/mSpRL/wordclassifer/"
+    c.load()
+    val scores = c.classifier.scores(i)
+    if(scores.size()>0) {
+      val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
+      orgValue(0).score
+    }
+    else
+      0.0
+  }
   def normalizeScores(scoreMatrix: List[List[Double]]):List[List[Double]] = {
     //scoreMatrix.map(w=> w.map(s=>if(s == 0) 0.0 else Math.exp(s)/w.map(x => Math.exp(x)).sum))
     scoreMatrix.map(w=> w.map(s=>if(s == 0) 0.0 else s/w.map(Math.abs).sum))
