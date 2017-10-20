@@ -73,7 +73,7 @@ public class CLEFGoogleNETReader {
                 allImages.add(i);
                 String key = row[0].trim() + "_" + row[1].trim() + ".jpg";
                 if(segRefExp.get(key)!=null) {
-                    Segment s = new Segment(row[0].trim(), Integer.parseInt(row[1].trim()), row[2].trim(), segRefExp.get(key));
+                    Segment s = new Segment(row[0].trim(), Integer.parseInt(row[1].trim()), row[2].trim(), segRefExp.get(key), true);
                     allSegments.add(s);
                 }
             }

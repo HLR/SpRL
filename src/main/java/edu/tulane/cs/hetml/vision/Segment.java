@@ -2,6 +2,8 @@ package edu.tulane.cs.hetml.vision;
 
 
 
+import org.bytedeco.javacpp.presets.opencv_core;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,14 +17,16 @@ public class Segment {
     private String segmentConcept;
     private String imageId;
     public List<String> tagged;
-    public String refExp;
+    public String referItExpression;
     public String filteredTokens;
+    private boolean isMatching;
 
-    public Segment(String ImageId, int segmentId, String segmentFeatures, String refExp) {
+    public Segment(String ImageId, int segmentId, String segmentFeatures, String referItExpression, boolean isMatching) {
         this.imageId = ImageId;
         this.segmentId = segmentId;
         this.segmentFeatures = segmentFeatures;
-        this.refExp = refExp;
+        this.referItExpression = referItExpression;
+        this.isMatching = isMatching;
         this.tagged = new ArrayList<>();
     }
 
@@ -58,5 +62,21 @@ public class Segment {
     public String getSegmentConcept()
     {
         return segmentConcept;
+    }
+
+    public String getExpression() {
+        return referItExpression;
+    }
+
+    public boolean isExpressionAndSegmentMatching() {
+        return isMatching;
+    }
+
+    public void setFilteredTokens(String filteredTokens) {
+        this.filteredTokens = filteredTokens;
+    }
+
+    public void setTagged(List<String> tagged) {
+        this.tagged = tagged;
     }
 }

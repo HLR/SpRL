@@ -168,7 +168,7 @@ public class CLEFAnnotationReader {
         String line;
         while ((line = reader.readLine()) != null) {
             String[] segInfo = line.split("\\~");
-            Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]),"",segInfo[2]);
+            Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]),"",segInfo[2],false);
             testSegments.add(s);
         }
     }

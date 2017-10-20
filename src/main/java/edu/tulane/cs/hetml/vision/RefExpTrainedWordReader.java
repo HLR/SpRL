@@ -7,11 +7,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RefExpFilteredWordReader {
+public class RefExpTrainedWordReader {
 
     public List<String> filteredWords;
 
-    public RefExpFilteredWordReader(String directory) throws IOException {
+    public RefExpTrainedWordReader(String directory) throws IOException {
         String file = directory +  "/TrainedWords.txt";
         File d = new File(file);
 
