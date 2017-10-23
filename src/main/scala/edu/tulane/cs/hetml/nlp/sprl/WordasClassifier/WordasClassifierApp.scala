@@ -9,15 +9,15 @@ import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors
 import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper.convertToEval
 import edu.tulane.cs.hetml.vision._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import me.tongfei.progressbar.ProgressBar
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import scala.collection.mutable
 
 /** Created by Umar on 2017-10-04.
@@ -52,9 +52,9 @@ object WordasClassifierApp extends App {
 
   val allImages =
     if(isTrain)
-      CLEFGoogleNETReaderHelper.trainImages.take(100).toList
+      CLEFGoogleNETReaderHelper.trainImages.toList
     else
-      CLEFGoogleNETReaderHelper.testImages.take(100).toList
+      CLEFGoogleNETReaderHelper.testImages.toList
 
   val allsegments =
     if(!useAnntotatedClef) {
@@ -107,7 +107,7 @@ object WordasClassifierApp extends App {
 
   // Populate in Data Model
   //images.populate(CLEFGoogleNETReaderHelper.allImages)
-  segments.populate(allsegments)
+  //segments.populate(allsegments)
 
   // word-segment pair instances
   val trainInstances = new ListBuffer[WordSegment]()

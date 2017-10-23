@@ -3,9 +3,12 @@ package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 import java.io._
 
 import edu.illinois.cs.cogcomp.saul.datamodel.DataModel
+import edu.tulane.cs.hetml.nlp.BaseTypes.Sentence
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierClassifiers.SingleWordasClassifer
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator.imageDataPath
 import edu.tulane.cs.hetml.vision._
+import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierSensors._
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 
@@ -13,11 +16,27 @@ import scala.collection.mutable
   */
 object WordasClassifierDataModel extends DataModel {
 
+  val sentences = node[Sentence]
+  val images = node[Image]
+  val segments = node[Segment]
   val wordsegments = node[WordSegment]
-  val expressionsegments = node[Segment]
+  val expressionsegments = node[ExpressionSegment]
 
   val trainedWordClassifier = new mutable.HashMap[String, SingleWordasClassifer]()
   val classifierDirectory = "models/mSpRL/wordclassifer/"
+
+  /*
+  Edges
+   */
+  val imageToSegment = edge(images, segments)
+  imageToSegment.addSensor(imageToSegmentMatching _)
+
+  val expressionSegmentToSegment = edge(expressionsegments, segments)
+  expressionSegmentToSegment.addSensor(expressionToSegmentMatching _)
+
+  val expressionSegmentToImage = edge(expressionsegments, images)
+  expressionSegmentToImage.addSensor(expressionToImageMatching _)
+
 
   val wordLabel = property(wordsegments) {
     w: WordSegment =>
@@ -33,33 +52,30 @@ object WordasClassifierDataModel extends DataModel {
   }
 
   val expressionLabel = property(expressionsegments) {
-    e: Segment => e.isExpressionAndSegmentMatching
+    e: ExpressionSegment => e.isExpressionAndSegmentMatching
   }
 
   val expressionSegFeatures = property(expressionsegments, ordered = true) {
-    e: Segment =>
-      e.getSegmentFeatures.split(" ").toList.map(_.toDouble)
+    e: ExpressionSegment =>
+      e.getSegment.getSegmentFeatures.split(" ").toList.map(_.toDouble)
   }
 
   val expressionScore = property(expressionsegments) {
-    e: Segment =>
+    e: ExpressionSegment =>
       expressionScoreArray(e).max
   }
 
   val expressionScoreArray = property(expressionsegments, ordered = true) {
-    e: Segment =>
-      val scores = e.filteredTokens.split(" ").map(w => {
+    e: ExpressionSegment =>
+      val scores = e.getExpression.split(" ").map(w => {
         if(trainedWordClassifier.contains(w)) {
-          val i = new WordSegment(w, e, e.isExpressionAndSegmentMatching, false, "")
+          val i = new WordSegment(w, e.getSegment, e.isExpressionAndSegmentMatching, false, "")
           getWordClassifierScore(w, i)
         }
         else
           0.0
       }).toList
-      val noramlizeScores = scores.map(s => {
-        if(s == 0) 0.0 else s / scores.map(Math.abs).sum
-      })
-      noramlizeScores
+      scores
   }
 
   def getWordClassifierScore(word: String, i: WordSegment) : Double ={
@@ -77,7 +93,7 @@ object WordasClassifierDataModel extends DataModel {
     refexpTrainedWords.foreach(word => {
       val c = new SingleWordasClassifer(word)
       c.modelSuffix = word
-      c.modelDir = s"models/mSpRL/wordclassifer/"
+      c.modelDir = classifierDirectory
       c.load()
       trainedWordClassifier.put(word, c)
     })

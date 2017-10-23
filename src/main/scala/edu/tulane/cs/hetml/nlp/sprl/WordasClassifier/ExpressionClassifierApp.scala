@@ -1,26 +1,18 @@
 package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 
-import java.io.PrintWriter
-
-import edu.illinois.cs.cogcomp.saul.classifier.Results
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors
-import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
-import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper.convertToEval
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierDataModel.loadWordClassifiers
+import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import edu.tulane.cs.hetml.vision._
 import me.tongfei.progressbar.ProgressBar
 
 import scala.collection.JavaConversions._
-import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, HashMap, ListBuffer}
+import scala.collection.mutable.ListBuffer
 
-/** Created by Umar on 2017-10-04.
+/** Created by Umar on 2017-10-20.
   */
 
 object ExpressionClassifierApp extends App {
@@ -48,14 +40,12 @@ object ExpressionClassifierApp extends App {
       CLEFGoogleNETReaderHelper.allSegments.toList
     }
 
+  loadWordClassifiers()
+
   val pb = new ProgressBar("Processing Data", allsegments.size)
   pb.start()
 
-  val trainInstances = new ListBuffer[Segment]()
-  val wordInstances = new ListBuffer[WordSegment]()
-
-  wordInstances += new WordSegment("hello", allsegments(0), false, false, "")
-  wordInstances += new WordSegment("dummy", allsegments(1), false, false, "")
+  val instances = new ListBuffer[ExpressionSegment]()
 
   allsegments.foreach(s => {
     if (s.referItExpression != null) {
@@ -73,7 +63,7 @@ object ExpressionClassifierApp extends App {
         })
 
         // Create Positive Example
-        trainInstances += s
+        instances += new ExpressionSegment(s.filteredTokens, s, true)
 
         // Create Negative Example(s)
         val ImageSegs = allsegments.filter(t => t.getAssociatedImageID.equals(s.getAssociatedImageID) &&
@@ -84,19 +74,12 @@ object ExpressionClassifierApp extends App {
           for (iter <- 0 until len) {
             val negSeg = ImageSegs(iter)
             if (negSeg.referItExpression != "" && negSeg.referItExpression.length > 1) {
-              if(negSeg.filteredTokens!=null)
-                trainInstances += new Segment(negSeg.getAssociatedImageID, negSeg.getSegmentId, negSeg.getSegmentFeatures,
-                negSeg.getExpression, false)
+              if(negSeg.filteredTokens!=null) {
+                instances += new ExpressionSegment(negSeg.filteredTokens, negSeg, false)
+              }
               else {
                 val exp = negSeg.referItExpression.toLowerCase.replaceAll("[^a-z]", " ").replaceAll("( )+", " ").trim
-                val newSeg = new Segment(negSeg.getAssociatedImageID, negSeg.getSegmentId, negSeg.getSegmentFeatures,
-                  negSeg.getExpression, false)
-                newSeg.filteredTokens = exp
-                getPostags(newSeg).foreach(p => {
-                  val tokenPair = p._1.getText + "," + p._2
-                  newSeg.tagged.add(tokenPair)
-                })
-                trainInstances += newSeg
+                instances += new ExpressionSegment(exp, negSeg, false)
               }
             }
           }
@@ -107,12 +90,10 @@ object ExpressionClassifierApp extends App {
   })
   pb.stop()
 
-  wordsegments.populate(wordInstances)
-  segments.populate(trainInstances)
+  expressionsegments.populate(instances, isTrain)
 
   if(isTrain) {
     println("Training...")
-    loadWordClassifiers()
     ExpressionasClassifer.learn(iterations)
     ExpressionasClassifer.save()
   }
