@@ -52,9 +52,9 @@ object WordasClassifierApp extends App {
 
   val allImages =
     if(isTrain)
-      CLEFGoogleNETReaderHelper.trainImages.toList
+      CLEFGoogleNETReaderHelper.trainImages.take(100).toList
     else
-      CLEFGoogleNETReaderHelper.testImages.toList
+      CLEFGoogleNETReaderHelper.testImages.take(100).toList
 
   val allsegments =
     if(!useAnntotatedClef) {
@@ -271,7 +271,7 @@ object WordasClassifierApp extends App {
     refexpTrainedWords.foreach(word => {
       val c = new SingleWordasClassifer(word)
       c.modelSuffix = word
-      c.modelDir = s"models/mSpRL/wordclassifer/"
+      c.modelDir = classifierDirectory
       c.load()
       trainedWordClassifier.put(word, c)
     })
