@@ -1,5 +1,7 @@
 package edu.tulane.cs.hetml.vision;
 
+import edu.tulane.cs.hetml.nlp.BaseTypes.*;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -14,7 +16,10 @@ public class CLEFGoogleNETReader {
     public List<Image> trainImages;
     public List<Image> testImages;
     public List<Segment> allSegments;
-    private Hashtable<String, String> segRefExp = new Hashtable<String, String>();
+    public Hashtable<String, String> segRefExp = new Hashtable<String, String>();
+
+    public List<Document> allDocuments;
+    public List<Sentence> allSentences;
 
     public CLEFGoogleNETReader(String directory) throws IOException {
 
@@ -31,6 +36,8 @@ public class CLEFGoogleNETReader {
         trainImages = new ArrayList<>();
         testImages = new ArrayList<>();
         allSegments = new ArrayList<>();
+        allDocuments = new ArrayList<>();
+        allSentences = new ArrayList<>();
 
         loadImages(directory + "/W2CtrainImages.txt", true);
 
@@ -40,7 +47,8 @@ public class CLEFGoogleNETReader {
 
         getFeatures(directory);
 
-        segRefExp.clear();
+        convertReferExpression();
+
     }
 
     private void loadImages(String file, Boolean isTrain) throws IOException {
@@ -96,6 +104,22 @@ public class CLEFGoogleNETReader {
 
             } else {
                 segRefExp.put(segReferitText[0], " ");
+            }
+        }
+    }
+
+    public void convertReferExpression() {
+
+        for (String key : segRefExp.keySet()) {
+            String text = segRefExp.get(key);
+            text = text.toLowerCase().replaceAll("[^a-z]", " ").replaceAll("( )+", " ").trim();
+            if(text!="" && text.length()>1 && text!=null) {
+                String[] docID = key.split("\\.");
+                Document d = new Document(docID[0]);
+                Sentence sen = new Sentence(d, docID[0], 0, text.length(), text);
+
+                allDocuments.add(d);
+                allSentences.add(sen);
             }
         }
     }

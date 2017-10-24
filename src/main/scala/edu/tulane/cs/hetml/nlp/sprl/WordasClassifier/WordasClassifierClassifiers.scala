@@ -14,7 +14,7 @@ object WordasClassifierClassifiers {
     override def feature = List(wordSegFeatures)
   }
 
-  object ExpressionasClassifer extends Learnable(expressionsegments) {
+  object ExpressionasClassifer extends Learnable(expressionSegmentPairs) {
     def label = expressionLabel
 
     override lazy val classifier = new SparseNetworkLearner()

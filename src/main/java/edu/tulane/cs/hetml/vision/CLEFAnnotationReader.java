@@ -1,7 +1,5 @@
 package edu.tulane.cs.hetml.vision;
 
-import org.bytedeco.javacpp.presets.opencv_core;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Hashtable;

@@ -10,10 +10,4 @@ object WordExpressionSegmentConstraintClassifiers {
 
   val erSolver = new GurobiHook()
 
-  object LMConstraintClassifier extends ConstrainedClassifier[ExpressionSegment, Segment](ExpressionasClassifer) {
-    def subjectTo = roleConstraints
-
-    override val solver = erSolver
-    override val pathToHead = Some(-expressionSegmentToSegment)
-  }
 }

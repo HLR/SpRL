@@ -63,6 +63,8 @@ object WordasClassifierApp extends App {
       CLEFGoogleNETReaderHelper.allSegments.toList
     }
 
+  val allRefExp = CLEFGoogleNETReaderHelper.segRefExp
+
   val pb = new ProgressBar("Processing Data", allsegments.size)
   pb.start()
 
