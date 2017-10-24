@@ -22,7 +22,7 @@ object WordasClassifierDataModel extends DataModel {
   val images = node[Image]
   val segments = node[Segment]
   val wordsegments = node[WordSegment]
-  val expressionSegmentPairs = node[Relation]((r: Relation) => r.getId)
+  val expressionSegmentPairs = node[Relation]
 
   val trainedWordClassifier = new mutable.HashMap[String, SingleWordasClassifer]()
   val classifierDirectory = "models/mSpRL/wordclassifer/"
@@ -97,7 +97,10 @@ object WordasClassifierDataModel extends DataModel {
   def getRelationSegment(r: Relation) : Segment = {
     val imgsegID = r.getArgumentId(0).split("_")
     val s = segments().filter(s => s.getSegmentId == Integer.parseInt(imgsegID(1)) && s.getAssociatedImageID==imgsegID(0))
-    s.head
+    if(s.nonEmpty)
+      s.head
+    else
+      null
   }
 
   def getExpressionScore(r: Relation) : List[Double] = {
@@ -106,7 +109,7 @@ object WordasClassifierDataModel extends DataModel {
     val seg = getRelationSegment(r)
     val isRel = if(r.getArgumentId(1)=="1") true else false
     val scores = sen.getText.split(" ").map(w => {
-      if(trainedWordClassifier.contains(w)) {
+      if(trainedWordClassifier.contains(w) && seg!=null) {
         val i = new WordSegment(w, seg, isRel, false, "")
         getWordClassifierScore(w, i)
       }

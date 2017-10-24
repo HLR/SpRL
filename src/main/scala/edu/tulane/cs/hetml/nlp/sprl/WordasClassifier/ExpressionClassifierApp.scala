@@ -29,7 +29,7 @@ object ExpressionClassifierApp extends App {
 
   val allImages =
     if(isTrain)
-      CLEFGoogleNETReaderHelper.trainImages.take(10).toList
+      CLEFGoogleNETReaderHelper.trainImages.toList
     else
       CLEFGoogleNETReaderHelper.testImages.toList
 
@@ -41,12 +41,12 @@ object ExpressionClassifierApp extends App {
     }
 
   val allDocuments = CLEFGoogleNETReaderHelper.allDocuments.filter(s => {
-    val imgID = s.getId.split("_")
-    allImages.exists(i=> i.getId==imgID(0))
+    val imgSegId = s.getId.split("_")
+    allImages.exists(i=> i.getId==imgSegId(0))
   })
 
-  val allSentence = CLEFGoogleNETReaderHelper.allSentences.filter(s => {
-    val senID = s.getId.split("_")
+  val allSentence = CLEFGoogleNETReaderHelper.allSentences.filter(d => {
+    val senID = d.getId.split("_")
     allImages.exists(i=> i.getId==senID(0))
   })
 
@@ -112,11 +112,8 @@ object ExpressionClassifierApp extends App {
 
   if(isTrain) {
     println("Training...")
-    expressionSegmentPairs().foreach(e => println(expressionLabel(e)))
-    expressionSegmentPairs().foreach(e => println(expressionScoreArray(e)))
 
     ExpressionasClassifer.learn(iterations)
-
     ExpressionasClassifer.save()
   }
 
