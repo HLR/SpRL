@@ -26,7 +26,7 @@ object ExpressionClassifierApp extends App {
 
   val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
   val classifierDirectory = s"models/mSpRL/expressionClassifer/"
-
+  println("Start Reading Data from Files...")
   val allImages =
     if(isTrain)
       CLEFGoogleNETReaderHelper.trainImages.toList
@@ -57,59 +57,6 @@ object ExpressionClassifierApp extends App {
   documents.populate(allDocuments, isTrain)
   sentences.populate(allSentence, isTrain)
 
-
-
-
-/*  val pb = new ProgressBar("Processing Data", allsegments.size)
-  pb.start()
-
-  val instances = new ListBuffer[ExpressionSegment]()
-
-  allsegments.foreach(s => {
-    if (s.referItExpression != null) {
-
-      val refExp = s.referItExpression.toLowerCase.replaceAll("[^a-z]", " ").replaceAll("( )+", " ").trim
-
-      // Saving filtered tokens for later use
-      s.filteredTokens = refExp
-
-      if (refExp != "" && refExp.length > 1) {
-
-        getPostags(s).foreach(p => {
-          val tokenPair = p._1.getText + "," + p._2
-          s.tagged.add(tokenPair)
-        })
-
-        // Create Positive Example
-        instances += new ExpressionSegment(s.filteredTokens, s, true)
-
-        // Create Negative Example(s)
-        val ImageSegs = allsegments.filter(t => t.getAssociatedImageID.equals(s.getAssociatedImageID) &&
-          t.getSegmentId != s.getSegmentId)
-
-        if (ImageSegs.nonEmpty) {
-          val len = if (ImageSegs.size < 5) ImageSegs.size else 5
-          for (iter <- 0 until len) {
-            val negSeg = ImageSegs(iter)
-            if (negSeg.referItExpression != "" && negSeg.referItExpression.length > 1) {
-              if(negSeg.filteredTokens!=null) {
-                instances += new ExpressionSegment(negSeg.filteredTokens, negSeg, false)
-              }
-              else {
-                val exp = negSeg.referItExpression.toLowerCase.replaceAll("[^a-z]", " ").replaceAll("( )+", " ").trim
-                instances += new ExpressionSegment(exp, negSeg, false)
-              }
-            }
-          }
-        }
-      }
-    }
-    pb.step()
-  })
-  pb.stop()
-*/
-  //expressionsegments.populate(instances, isTrain)
-
   if(isTrain) {
     println("Training...")
 
@@ -121,16 +68,5 @@ object ExpressionClassifierApp extends App {
     println("Testing...")
     ExpressionasClassifer.load()
     ExpressionasClassifer.test()
-  }
-
-  def getPostags(s: Segment): List[(Token, String)] ={
-    val d = new Document(s.getAssociatedImageID)
-    val senID = s.getAssociatedImageID + "_" + s.getSegmentId.toString
-    val sen = new Sentence(d, senID, 0, s.filteredTokens.length, s.filteredTokens)
-    val toks = LanguageBaseTypeSensors.sentenceToTokenGenerating(sen)
-    //Applying postag
-    val pos = LanguageBaseTypeSensors.getPos(sen)
-    //Generating token-postag Pair
-    toks.zip(pos).toList
   }
 }

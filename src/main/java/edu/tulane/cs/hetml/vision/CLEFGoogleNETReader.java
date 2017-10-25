@@ -47,7 +47,7 @@ public class CLEFGoogleNETReader {
 
         getFeatures(directory);
 
-        convertReferExpression();
+        generateNLPBaseClasses();
 
     }
 
@@ -108,19 +108,13 @@ public class CLEFGoogleNETReader {
         }
     }
 
-    public void convertReferExpression() {
-
-        for (String key : segRefExp.keySet()) {
-            String text = segRefExp.get(key);
-            text = text.toLowerCase().replaceAll("[^a-z]", " ").replaceAll("( )+", " ").trim();
-            if(text!="" && text.length()>1 && text!=null) {
-                String[] docID = key.split("\\.");
-                Document d = new Document(docID[0]);
-                Sentence sen = new Sentence(d, docID[0], 0, text.length(), text);
-
-                allDocuments.add(d);
-                allSentences.add(sen);
-            }
+    public void generateNLPBaseClasses() {
+        for (Segment s :  allSegments) {
+            String ID = s.getAssociatedImageID() + "_" + s.getSegmentId();
+            Document d = new Document(ID);
+            Sentence sen = new Sentence(d, ID, 0, s.referItExpression.length(), s.referItExpression);
+            allDocuments.add(d);
+            allSentences.add(sen);
         }
     }
 }
