@@ -7,8 +7,9 @@ import edu.illinois.cs.cogcomp.saul.classifier.Results
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors
 import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
-import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper.convertToEval
+import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper._
 import edu.tulane.cs.hetml.vision._
+
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
@@ -17,7 +18,9 @@ import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import me.tongfei.progressbar.ProgressBar
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
+import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
+
 import scala.collection.mutable
 
 /** Created by Umar on 2017-10-04.
@@ -28,6 +31,7 @@ object WordasClassifierApp extends App {
   // Preprocess RefExp
   val stopWords = Array("the", "an", "a")
   var combinedResults = Seq[SpRLEvaluation]()
+  var allResults = Seq[SpRLEvaluation]()
 
   val relWords = Array("below", "above", "between", "not", "behind", "under", "underneath", "front of", "right of",
     "left of", "ontop of", "next to", "middle of")
@@ -199,34 +203,66 @@ object WordasClassifierApp extends App {
       }
     })
 
-    // Populate whole testdata in DataModel
-    wordsegments.populate(testInstances)
-
+    val outStream = new FileOutputStream(s"$resultsDir/wordclassifier/WordasClassifier.txt", false)
+    val outStreamCombined = new FileOutputStream(s"$resultsDir/wordclassifier/WordasClassifierCombined.txt", false)
+    var acc = 0.0
     var count = 0
-    var wrong = 0
-    tokenPhraseMap.foreach{
-      case (uniqueId, wordSegList) =>
-        println(uniqueId)
-        val predictedSegId = computeMatrix(wordSegList)
-        val row = uniqueId.split("_")
-        if(row(1).toInt == predictedSegId) {
-          count += 1
-        } else {
-          wrong += 1
+    testInstances.groupBy(t=> t.getWord).foreach({
+      w =>
+        try {
+          val c = new SingleWordasClassifer(w._1)
+          c.modelSuffix = w._1
+          c.modelDir = s"models/mSpRL/wordclassifer/"
+          wordsegments.populate(w._2, false)
+          c.load()
+          val result = c.test()
+          ReportHelper.saveEvalResults(outStream, w._1, result)
+          val correct = result.perLabel.map(x=>x.correctSize).sum
+          acc += correct / (w._2.size + 0.0)
+          count += w._2.size
+          println(correct / (w._2.size + 0.0))
+          combineResults(result, w._1)
         }
-    }
+        catch {
+          case _: Throwable =>
+            println("Word " + w._1 + "Classifier not found")
+            allResults = mergeResults(List(new SpRLEvaluation(w._1, 100, 0, 0, w._2.size, 0)), allResults)
+        }
+        wordsegments.clear
+    })
 
-    val percentage = count * 100.00f / tokenPhraseMap.size
-    println("Correct : " + count + "Wrong: " + wrong + "Percentage: " + percentage)
+    println("Overall acc: " + acc/count)
+    ReportHelper.saveEvalResults(outStreamCombined, "Combined Results", combinedResults, Seq("false"))
+    outStream.close()
+    outStreamCombined.close()
+    //wordsegments.populate(testInstances)
 
-    writer.println("Total Missed Count: " + missedWords)
-    writer.close()
 
-    writerGoogleW2V.println("Total Predicted Count: " + predictedWordCount)
-    writerGoogleW2V.close()
+//    var count = 0
+//    var wrong = 0
+//    tokenPhraseMap.foreach{
+//      case (uniqueId, wordSegList) =>
+//        println(uniqueId)
+//        val predictedSegId = computeMatrix(wordSegList)
+//        val row = uniqueId.split("_")
+//        if(row(1).toInt == predictedSegId) {
+//          count += 1
+//        } else {
+//          wrong += 1
+//        }
+//    }
 
-    replacedWords.println("Total Replaced: " + repWords)
-    replacedWords.close()
+//    val percentage = count * 100.00f / tokenPhraseMap.size
+//    println("Correct : " + count + "Wrong: " + wrong + "Percentage: " + percentage)
+//
+//    writer.println("Total Missed Count: " + missedWords)
+//    writer.close()
+//
+//    writerGoogleW2V.println("Total Predicted Count: " + predictedWordCount)
+//    writerGoogleW2V.close()
+//
+//    replacedWords.println("Total Replaced: " + repWords)
+//    replacedWords.close()
   }
 
   def computeMatrix(instances: List[WordSegment]): Int = {

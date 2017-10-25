@@ -17,12 +17,11 @@ import edu.tulane.cs.hetml.nlp.BaseTypes._
 object WordasClassifierDataModel extends DataModel {
 
   val documents = node[Document]
-  val sentences = node[Sentence]
-  val phrases = node[Phrase]
-  val images = node[Image]
-  val segments = node[Segment]
+  val sentences = node[Sentence]((s: Sentence) => s.getId)
+  val images = node[Image]((i: Image) => i.getId)
+  val segments = node[Segment]((s: Segment) => s.getUniqueId)
   val wordsegments = node[WordSegment]
-  val expressionSegmentPairs = node[Relation]
+  val expressionSegmentPairs = node[Relation]((r: Relation) => r.getId)
 
   val trainedWordClassifier = new mutable.HashMap[String, SingleWordasClassifer]()
   val classifierDirectory = "models/mSpRL/wordclassifer/"
@@ -42,6 +41,11 @@ object WordasClassifierDataModel extends DataModel {
   val sentenceToSegmentSentencePairs = edge(sentences, expressionSegmentPairs)
   sentenceToSegmentSentencePairs.addSensor(sentenceToSegmentSentencePairsMatching _)
 
+  val expsegpairToFirstArg = edge(expressionSegmentPairs, sentences)
+  expsegpairToFirstArg.addSensor(relationToFirstArgumentMatching _)
+
+  val expsegpairToSecondArg = edge(expressionSegmentPairs, segments)
+  expsegpairToSecondArg.addSensor(relationToSecondArgumentMatching _)
 
   val wordLabel = property(wordsegments) {
     w: WordSegment =>
@@ -57,11 +61,12 @@ object WordasClassifierDataModel extends DataModel {
   }
 
   val expressionLabel = property(expressionSegmentPairs) {
-    r: Relation => if(r.getArgumentId(1)=="1") "true" else "false"
+    r: Relation => if(r.getArgumentId(2)=="1") "true" else "false"
   }
 
   val expressionSegFeatures = property(expressionSegmentPairs, ordered = true) {
-    r: Relation => getRelationSegment(r).getSegmentFeatures.split(" ").toList.map(_.toDouble)
+    r: Relation => val s = (expressionSegmentPairs(r) ~> expsegpairToSecondArg).head
+        s.getSegmentFeatures.split(" ").toList.map(_.toDouble)
   }
 
   val expressionScore = property(expressionSegmentPairs) {
@@ -94,20 +99,10 @@ object WordasClassifierDataModel extends DataModel {
     })
   }
 
-  def getRelationSegment(r: Relation) : Segment = {
-    val imgsegID = r.getArgumentId(0).split("_")
-    val s = segments().filter(s => s.getSegmentId == Integer.parseInt(imgsegID(1)) && s.getAssociatedImageID==imgsegID(0))
-    if(s.nonEmpty)
-      s.head
-    else
-      null
-  }
-
   def getExpressionScore(r: Relation) : List[Double] = {
-    val senID = r.getArgumentId(0)
-    val sen  = (sentences().filter(s => s.getId==senID)).head
-    val seg = getRelationSegment(r)
-    val isRel = if(r.getArgumentId(1)=="1") true else false
+    val sen  = (expressionSegmentPairs(r) ~> expsegpairToFirstArg).head
+    val seg = (expressionSegmentPairs(r) ~> expsegpairToSecondArg).head
+    val isRel = if(r.getArgumentId(2)=="1") true else false
     val scores = sen.getText.split(" ").map(w => {
       if(trainedWordClassifier.contains(w) && seg!=null) {
         val i = new WordSegment(w, seg, isRel, false, "")

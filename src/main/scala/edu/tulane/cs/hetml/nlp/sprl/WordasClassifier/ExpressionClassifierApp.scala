@@ -29,7 +29,7 @@ object ExpressionClassifierApp extends App {
   println("Start Reading Data from Files...")
   val allImages =
     if(isTrain)
-      CLEFGoogleNETReaderHelper.trainImages.toList
+      CLEFGoogleNETReaderHelper.trainImages.take(100).toList
     else
       CLEFGoogleNETReaderHelper.testImages.toList
 

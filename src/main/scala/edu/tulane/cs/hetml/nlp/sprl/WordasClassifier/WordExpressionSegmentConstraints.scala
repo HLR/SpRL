@@ -16,11 +16,12 @@ object WordExpressionSegmentConstraints {
       a = new FirstOrderConstant(true)
       val expSegs = (sentences(s) ~> sentenceToSegmentSentencePairs).toList
 
-      // The segments assigned to a expression in a sentence should be at most 1
+      // The segment should be assigned to one expression
       expSegs.groupBy(_.getArgumentId(0).split("_")(0)).foreach(segExp => {
         a and segExp._2._atmost(1)(x => ExpressionasClassifer on x is "true")
       })
 
+      // The expression should be assigned to one segment
       expSegs.groupBy(_.getArgumentId(0)).foreach(expSeg => {
         a and expSeg._2._atmost(1)(x => ExpressionasClassifer on x is "true")
       })
@@ -33,10 +34,17 @@ object WordExpressionSegmentConstraints {
 //      a = new FirstOrderConstant(true)
 //      (sentences(s) ~> sentenceToSegmentSentencePairs).foreach {
 //        x =>
-//          a = a and (
-//            ((ExpressionasClassifer on x) is "true") <==>
-//              ((getWordasClassifierPredication(x)).equals("true"))
-//            )
+//          val words = s.getText.split(" ").toList.filter(w => trainedWordClassifier.contains(w))
+//
+//          words.foreach{
+//            w =>
+//              val seg = expressionSegmentPairs(x) ~> AssmeSegment
+//              var ws = new WordSegment(w, s)
+//              val c = trainedWordClassifier(w)
+//              a = a and (
+//                ((ExpressionasClassifer on x) is "true") ==> (c on ws is "true")
+//                )
+//          }
 //      }
 //      a
 //  }
@@ -44,9 +52,5 @@ object WordExpressionSegmentConstraints {
   val expressionConstraints = ConstrainedClassifier.constraint[Sentence]{
 
     x: Sentence => uniqueExpressionSegmentPairs(x)
-  }
-
-  def getWordasClassifierPredication(r: Relation): Boolean = {
-    true
   }
 }

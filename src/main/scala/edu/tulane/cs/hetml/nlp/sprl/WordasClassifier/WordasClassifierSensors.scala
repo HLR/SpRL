@@ -18,20 +18,27 @@ object WordasClassifierSensors {
     d.getId.split("_")(0)==i.getId
   }
 
+  def relationToFirstArgumentMatching(r: Relation, s: Sentence): Boolean = {
+    r.getArgumentId(0) == s.getId
+  }
+
+  def relationToSecondArgumentMatching(r: Relation, s: Segment): Boolean = {
+    r.getArgumentId(1)==s.getUniqueId
+  }
+
   def sentenceToSegmentSentencePairsMatching(sen: Sentence): List[Relation] = {
-    val ID = sen.getId.split("_")
-    val segs = segments().filter(s=> s.getAssociatedImageID==ID(0)).toList
-      //(sentences(sen) ~> -documentToSentence ~> documentToImage ~> imageToSegment).toList
-    val len = if (segs.size > 3) 3 else segs.size
-    segs.take(len).map{
+
+    val imgSegId = sen.getId.split("_")
+    val segs = segments().filter(s=> s.getAssociatedImageID==imgSegId(0)).toList
+    segs.map{
       seg=>
         val r = new Relation()
 
-        val isRel = if (ID(0)==seg.getAssociatedImageID && ID(1)==seg.getSegmentId.toString) "1" else "0"
+        val isRel = if (imgSegId(0)==seg.getAssociatedImageID && imgSegId(1)==seg.getSegmentId.toString) "1" else "0"
         r.setId(sen.getId + "__" + isRel + "__" + seg.getSegmentId)
         r.setArgumentId(0, sen.getId)
-        r.setArgumentId(1, isRel)
-        r.setProperty("isRelation", isRel)
+        r.setArgumentId(1, imgSegId(0) + "_" + imgSegId(1))
+        r.setArgumentId(2, isRel)
         r
     }
   }

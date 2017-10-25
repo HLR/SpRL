@@ -79,4 +79,8 @@ public class Segment {
     public void setTagged(List<String> tagged) {
         this.tagged = tagged;
     }
+
+    public String getUniqueId() {
+        return imageId + "_" + segmentId;
+    }
 }
