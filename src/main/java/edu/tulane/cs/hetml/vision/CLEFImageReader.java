@@ -33,6 +33,8 @@ public class CLEFImageReader {
     public List<Segment> testSegments;
     public List<SegmentRelation> testRelations;
 
+    public List<Segment> allSegments;
+
     private Hashtable<Integer, String> MapCode2Concept = new Hashtable<Integer, String>();
     private Hashtable<String, String> segmentReferitText = new Hashtable<String, String>();
     private Hashtable<String, String> segmentOntology = new Hashtable<String, String>();
@@ -67,6 +69,9 @@ public class CLEFImageReader {
         testImages = new ArrayList<>();
         testSegments = new ArrayList<>();
         testRelations = new ArrayList<>();
+
+        // all Segment
+        allSegments = new ArrayList<>();
 
         path = directory;
         // Load redefined segment relations
@@ -203,8 +208,8 @@ public class CLEFImageReader {
                 getImages(imageFolder);
 
                 //Load all segments
-                String ontologyfile = mainFolder + "/ontology_path.txt";
-                getSegmentsOntology(ontologyfile);
+//                String ontologyfile = mainFolder + "/ontology_path.txt";
+//                getSegmentsOntology(ontologyfile);
 
                 //Load all segments
                 String file = mainFolder + "/features.txt";
@@ -284,9 +289,11 @@ public class CLEFImageReader {
                         segmentFeatures = segmentFeatures.trim().replaceAll(" +", " ");
                         if (trainingData.contains(imageId)) {
                             trainingSegments.add(new Segment(imageId, segmentId, segmentCode, segmentFeatures, segmentConcept, ontologyConcepts, referitText));
+                            allSegments.add(new Segment(imageId, segmentId, segmentCode, null, segmentConcept, null, null));
                         }
                         if (testData.contains(imageId)) {
                             testSegments.add(new Segment(imageId, segmentId, segmentCode, segmentFeatures, segmentConcept, ontologyConcepts, referitText));
+                            allSegments.add(new Segment(imageId, segmentId, segmentCode, null, segmentConcept, null, null));
                         }
                     }
                 }

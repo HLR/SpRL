@@ -19,6 +19,6 @@ object WordasClassifierClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = List(expressionScoreArray, expressionSegFeatures)
+    override def feature = List(expressionScore, expressionSegFeatures)
   }
 }

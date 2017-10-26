@@ -8,7 +8,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.List;
+import java.util.*;
 
 public class CLEFGoogleNETReader {
 
@@ -100,7 +100,8 @@ public class CLEFGoogleNETReader {
         while ((line = reader.readLine()) != null) {
             String[] segReferitText = line.split("\\~");
             if (segReferitText.length > 1) {
-                segRefExp.put(segReferitText[0], segReferitText[1].trim().replaceAll(" +", " "));
+                String exp = removeDuplicates(segReferitText[1]);
+                segRefExp.put(segReferitText[0], exp);
 
             } else {
                 segRefExp.put(segReferitText[0], " ");
@@ -116,5 +117,10 @@ public class CLEFGoogleNETReader {
             allDocuments.add(d);
             allSentences.add(sen);
         }
+    }
+
+    public String removeDuplicates(String s) {
+        s = s.toLowerCase().replaceAll("[^a-z]", " ").replaceAll("( )+", " ").trim();
+        return new LinkedHashSet<String>(Arrays.asList(s.split(" "))).toString().replaceAll("(^\\[|\\]$)", "").replace(", ", " ");
     }
 }

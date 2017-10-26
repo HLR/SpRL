@@ -1,7 +1,6 @@
 package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 
 import edu.tulane.cs.hetml.nlp.BaseTypes._
-import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors
 import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierDataModel._
@@ -31,7 +30,7 @@ object ExpressionClassifierApp extends App {
     if(isTrain)
       CLEFGoogleNETReaderHelper.trainImages.take(100).toList
     else
-      CLEFGoogleNETReaderHelper.testImages.toList
+      CLEFGoogleNETReaderHelper.testImages.take(2000).toList
 
   val allsegments =
     if(!useAnntotatedClef) {

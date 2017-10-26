@@ -8,7 +8,7 @@ import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierClassifiers
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator.imageDataPath
 import edu.tulane.cs.hetml.vision._
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierSensors._
-
+import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import edu.tulane.cs.hetml.nlp.BaseTypes._
@@ -61,7 +61,8 @@ object WordasClassifierDataModel extends DataModel {
   }
 
   val expressionLabel = property(expressionSegmentPairs) {
-    r: Relation => if(r.getArgumentId(2)=="1") "true" else "false"
+    r: Relation =>
+        if(r.getArgumentId(2)=="1") "true" else "false"
   }
 
   val expressionSegFeatures = property(expressionSegmentPairs, ordered = true) {
@@ -70,21 +71,15 @@ object WordasClassifierDataModel extends DataModel {
   }
 
   val expressionScore = property(expressionSegmentPairs) {
-    r: Relation => expressionScoreArray(r).max
+    r: Relation =>
+//      if(isTrain)
+        r.getArgumentId(3).toDouble
+//      else
+//        getExpressionScore(r)
   }
 
-  val expressionScoreArray = property(expressionSegmentPairs, ordered = true) {
+  val expressionScoreVector = property(expressionSegmentPairs, ordered = true) {
     r: Relation => getExpressionScore(r)
-  }
-
-  def getWordClassifierScore(word: String, i: WordSegment) : Double ={
-    val scores = trainedWordClassifier(word).classifier.scores(i)
-    if(scores.size()>0) {
-      val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
-      orgValue(0).score
-    }
-    else
-      0.0
   }
 
   def loadWordClassifiers(): Unit = {
@@ -99,18 +94,51 @@ object WordasClassifierDataModel extends DataModel {
     })
   }
 
-  def getExpressionScore(r: Relation) : List[Double] = {
+  def getExpressionScore(r: Relation) : Double = {
     val sen  = (expressionSegmentPairs(r) ~> expsegpairToFirstArg).head
     val seg = (expressionSegmentPairs(r) ~> expsegpairToSecondArg).head
-    val isRel = if(r.getArgumentId(2)=="1") true else false
-    val scores = sen.getText.split(" ").map(w => {
-      if(trainedWordClassifier.contains(w) && seg!=null) {
-        val i = new WordSegment(w, seg, isRel, false, "")
-        getWordClassifierScore(w, i)
-      }
-      else
-        0.0
+    val allsegs = segments().filter(s => s.getAssociatedImageID==seg.getAssociatedImageID)
+
+    val instances = sen.getText.split(" ").map(w => {
+       allsegs.map(s => new WordSegment(w, s, s.getUniqueId==seg.getUniqueId, false, "")).toList
     }).toList
-    scores
+
+    val scoresMatrix = instances.flatten.groupBy(i => i.getWord).map(w => {
+      computeScore(w._1, w._2)
+    }).toList
+    val norm = normalizeScores(scoresMatrix)
+    val vector = combineScores(norm)
+    val regionId = vector.indexOf(vector.max) + 1
+    vector.max
+  }
+
+  def computeScore(word: String, instances: List[WordSegment]): List[Double] = {
+    instances.map(i => {
+      getWordClassifierScore(word, i)
+    })
+  }
+
+  def getWordClassifierScore(word: String, i: WordSegment) : Double ={
+    if(trainedWordClassifier.contains(word)) {
+      val c = trainedWordClassifier(word)
+      val scores = c.classifier.scores(i)
+      if(scores.size()>0) {
+        val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
+        orgValue(0).score
+      }
+      else {
+        0.0
+      }
+    }
+    else
+      0.0
+  }
+
+  def normalizeScores(scoreMatrix: List[List[Double]]):List[List[Double]] = {
+    scoreMatrix.map(w=> w.map(s=>if(s == 0) 0.0 else s/w.map(Math.abs).sum))
+  }
+
+  def combineScores(scoreMatrix: List[List[Double]]): List[Double] = {
+    scoreMatrix.transpose.map(_.sum)
   }
 }
