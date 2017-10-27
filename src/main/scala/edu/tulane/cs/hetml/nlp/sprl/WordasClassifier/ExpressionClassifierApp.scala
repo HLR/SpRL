@@ -28,7 +28,7 @@ object ExpressionClassifierApp extends App {
   println("Start Reading Data from Files...")
   val allImages =
     if(isTrain)
-      CLEFGoogleNETReaderHelper.trainImages.take(100).toList
+      CLEFGoogleNETReaderHelper.trainImages.toList
     else
       CLEFGoogleNETReaderHelper.testImages.take(2000).toList
 
@@ -66,6 +66,19 @@ object ExpressionClassifierApp extends App {
   if(!isTrain) {
     println("Testing...")
     ExpressionasClassifer.load()
-    ExpressionasClassifer.test()
+    var correct = 0
+    var wrong = 0
+    expressionSegmentTestPairs().foreach(r => {
+      val a = expressionActualSegId(r)
+      val p = expressionPredictedSegId(r)
+      if(a==p)
+        correct += 1
+      else
+        wrong += 1
+    })
+
+    println(s"Total: ${expressionSegmentTestPairs().size}, Correct: ${correct} Wrong: ${wrong} Percentage: ${correct*1.0/expressionSegmentTestPairs().size}")
+
+//    ExpressionasClassifer.test()
   }
 }
