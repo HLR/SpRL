@@ -14,43 +14,44 @@ object WordExpressionSegmentConstraints {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
-      val expSegs = (sentences(s) ~> sentenceToSegmentSentencePairs).toList
+      val expSegs = expressionSegmentPairs().filter(es => es.getArgumentId(1).split("_")(0)==s.getId.split("_")(0)).toList
 
       // The segment should be assigned to one expression
-      expSegs.groupBy(_.getArgumentId(0).split("_")(0)).foreach(segExp => {
+      expSegs.groupBy(_.getArgumentId(0)).foreach(segExp => {
         a and segExp._2._atmost(1)(x => ExpressionasClassifer on x is "true")
       })
 
       // The expression should be assigned to one segment
-      expSegs.groupBy(_.getArgumentId(0)).foreach(expSeg => {
+      expSegs.groupBy(_.getArgumentId(1)).foreach(expSeg => {
         a and expSeg._2._atmost(1)(x => ExpressionasClassifer on x is "true")
       })
       a
   }
 
-//  val integrityExpression = ConstrainedClassifier.constraint[Sentence] {
-//    var a: FirstOrderConstraint = null
-//    s: Sentence =>
-//      a = new FirstOrderConstant(true)
-//      (sentences(s) ~> sentenceToSegmentSentencePairs).foreach {
-//        x =>
-//          val words = s.getText.split(" ").toList.filter(w => trainedWordClassifier.contains(w))
-//
-//          words.foreach{
-//            w =>
-//              val seg = expressionSegmentPairs(x) ~> AssmeSegment
-//              var ws = new WordSegment(w, s)
-//              val c = trainedWordClassifier(w)
-//              a = a and (
-//                ((ExpressionasClassifer on x) is "true") ==> (c on ws is "true")
-//                )
-//          }
-//      }
-//      a
-//  }
+  val integrityExpression = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToSegmentSentencePairs).foreach {
+        x =>
+          val words = s.getText.split(" ").toList.filter(w => trainedWordClassifier.contains(w))
+
+          words.foreach{
+            w =>
+              val seg = expressionSegmentPairs(x) ~> expsegpairToSecondArg head
+              val isRel = if(x.getArgumentId(2)=="isRel") true else false
+              var ws = new WordSegment(w, seg, isRel, false, "")
+              val c = trainedWordClassifier(w)
+              a = a and (
+                 ((ExpressionasClassifer on x) is "true") ==> (c on ws is "true")
+                )
+          }
+      }
+      a
+  }
 
   val expressionConstraints = ConstrainedClassifier.constraint[Sentence]{
 
-    x: Sentence => uniqueExpressionSegmentPairs(x)
+    x: Sentence => uniqueExpressionSegmentPairs(x) and integrityExpression(x)
   }
 }

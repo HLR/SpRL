@@ -2,6 +2,7 @@ package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
+import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordExpressionSegmentConstraintClassifiers.ExpressionasClassiferConstraintClassifier
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
@@ -24,13 +25,13 @@ object ExpressionClassifierApp extends App {
     "left of", "ontop of", "next to", "middle of")
 
   val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
-  val classifierDirectory = s"models/mSpRL/expressionClassifer/"
+  val classifierDirectory = s"models/mSpRL/ExpressionClassiferScoreOnly/"
   println("Start Reading Data from Files...")
   val allImages =
     if(isTrain)
       CLEFGoogleNETReaderHelper.trainImages.toList
     else
-      CLEFGoogleNETReaderHelper.testImages.take(2000).toList
+      CLEFGoogleNETReaderHelper.testImages.take(10).toList
 
   val allsegments =
     if(!useAnntotatedClef) {
@@ -58,17 +59,20 @@ object ExpressionClassifierApp extends App {
 
   if(isTrain) {
     println("Training...")
-
+    ExpressionasClassifer.modelDir = classifierDirectory
     ExpressionasClassifer.learn(iterations)
     ExpressionasClassifer.save()
   }
 
   if(!isTrain) {
     println("Testing...")
+    ExpressionasClassifer.modelDir = classifierDirectory
     ExpressionasClassifer.load()
+
     var correct = 0
     var wrong = 0
-    expressionSegmentTestPairs().foreach(r => {
+    var size = expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel").size
+    expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel").foreach(r => {
       val a = expressionActualSegId(r)
       val p = expressionPredictedSegId(r)
       if(a==p)
@@ -77,8 +81,8 @@ object ExpressionClassifierApp extends App {
         wrong += 1
     })
 
-    println(s"Total: ${expressionSegmentTestPairs().size}, Correct: ${correct} Wrong: ${wrong} Percentage: ${correct*1.0/expressionSegmentTestPairs().size}")
-
+    println(s"Total: ${size}, Correct: ${correct} Wrong: ${wrong} Percentage: ${correct*1.0/size}")
+    ExpressionasClassiferConstraintClassifier.test()
 //    ExpressionasClassifer.test()
   }
 }

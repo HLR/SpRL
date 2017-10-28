@@ -42,7 +42,7 @@ object WordasClassifierSensors {
         r.setId(sen.getId + "__1__" + seg.getSegmentId)
         r.setArgumentId(0, sen.getId)
         r.setArgumentId(1, seg.getUniqueId)
-        r.setArgumentId(2, "1")
+        r.setArgumentId(2, "isRel")
         r.setArgumentId(3, scoreVector(0).toString) // Computed & Normalized Score
         r
     }
@@ -54,27 +54,12 @@ object WordasClassifierSensors {
         r.setId(sen.getId + "__0__" + seg.getSegmentId)
         r.setArgumentId(0, sen.getId)
         r.setArgumentId(1, seg.getUniqueId)
-        r.setArgumentId(2, "0")
+        r.setArgumentId(2, "isNotRel")
         r.setArgumentId(3, scoreVector(index).toString) // Computed & Normalized Score
         index += 1
         r
     }
     posExps ++ negExps
-  }
-
-  def sentenceToSegmentSentenceTestDatasetGenerating(sen: Sentence): List[Relation] = {
-    val segs = segments().filter(s=> s.getUniqueId==sen.getId).toList
-    segs.map{
-      seg=>
-        val r = new Relation()
-
-        val isRel = if (seg.getUniqueId==sen.getId) "1" else "0"
-        r.setId(sen.getId + "__" + isRel + "__" + seg.getSegmentId)
-        r.setArgumentId(0, sen.getId)
-        r.setArgumentId(1, seg.getUniqueId)
-        r.setArgumentId(2, isRel)
-        r
-    }
   }
 
   def getExpressionSegmentScore(sen: Sentence, seg: Segment, negSegs: List[Segment]) : List[Double] = {

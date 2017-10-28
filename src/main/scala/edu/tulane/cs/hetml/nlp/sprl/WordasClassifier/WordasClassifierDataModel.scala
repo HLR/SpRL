@@ -23,7 +23,6 @@ object WordasClassifierDataModel extends DataModel {
   val segments = node[Segment]((s: Segment) => s.getUniqueId)
   val wordsegments = node[WordSegment]
   val expressionSegmentPairs = node[Relation]((r: Relation) => r.getId)
-  val expressionSegmentTestPairs = node[Relation]((r: Relation) => r.getId) // For Testing
 
   val trainedWordClassifier = new mutable.HashMap[String, SingleWordasClassifer]()
   val classifierDirectory = "models/mSpRL/wordclassifer/"
@@ -40,9 +39,6 @@ object WordasClassifierDataModel extends DataModel {
   val documentToImage = edge(documents, images)
   documentToImage.addSensor(documentToImageMatching _)
 
-  val sentenceToSegmentSentenceTestDataPairs = edge(sentences, expressionSegmentTestPairs)
-  sentenceToSegmentSentenceTestDataPairs.addSensor(sentenceToSegmentSentenceTestDatasetGenerating _)
-
   val sentenceToSegmentSentencePairs = edge(sentences, expressionSegmentPairs)
   sentenceToSegmentSentencePairs.addSensor(sentenceToSegmentSentencePairsGenerating _)
 
@@ -51,7 +47,6 @@ object WordasClassifierDataModel extends DataModel {
 
   val expsegpairToSecondArg = edge(expressionSegmentPairs, segments)
     expsegpairToSecondArg.addSensor(relationToSecondArgumentMatching _)
-
 
   val wordLabel = property(wordsegments) {
     w: WordSegment =>
@@ -68,7 +63,7 @@ object WordasClassifierDataModel extends DataModel {
 
   val expressionLabel = property(expressionSegmentPairs) {
     r: Relation =>
-        if(r.getArgumentId(2)=="1") "true" else "false"
+        if(r.getArgumentId(2)=="isRel") "true" else "false"
   }
 
   val expressionSegFeatures = property(expressionSegmentPairs, ordered = true) {
@@ -81,12 +76,12 @@ object WordasClassifierDataModel extends DataModel {
         r.getArgumentId(3).toDouble
   }
 
-  val expressionActualSegId = property(expressionSegmentTestPairs) {
+  val expressionActualSegId = property(expressionSegmentPairs) {
     r: Relation =>
       r.getArgumentId(1).split("_")(1)
   }
 
-  val expressionPredictedSegId = property(expressionSegmentTestPairs) {
+  val expressionPredictedSegId = property(expressionSegmentPairs) {
     r: Relation =>
       getPredictedSegId(r)
   }
