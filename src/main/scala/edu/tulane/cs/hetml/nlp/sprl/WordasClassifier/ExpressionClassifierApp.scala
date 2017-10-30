@@ -1,5 +1,6 @@
 package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 
+import edu.stanford.nlp.tagger.maxent.PairsHolder
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordExpressionSegmentConstraintClassifiers.ExpressionasClassiferConstraintClassifier
@@ -67,10 +68,33 @@ object ExpressionClassifierApp extends App {
   if(!isTrain) {
     println("Testing...")
     //ExpressionasClassifer.modelDir = classifierDirectory
+    var count = 0;
     ExpressionasClassifer.load()
     //ExpressionasClassifer.test()
+    val totalGroups = expressionSegmentPairs().groupBy(_.getArgumentId(0))
+    totalGroups.foreach(e => {
+      val PredictedSegId = getMaxScoreSeg(e._1, e._2.toList)
+      val ActualSegId = Integer.parseInt(e._1.split("_")(1))
+      if(PredictedSegId==ActualSegId) {
+        count +=1
+      }
+    })
+    val total = totalGroups.size
+    println(s"Total: ${total} Correct: ${count} Percentage: ${count*1.0/total}")
+
     ExpressionasClassiferConstraintClassifier.test()
+
     //ExpressionasClassiferConstraintClassifier.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))
     //ExpressionasClassifer.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))
+  }
+
+  def getMaxScoreSeg(exp: String,relations: List[Relation]): Int = {
+    var Id = -1
+    relations.foreach(r=> {
+      if(ExpressionasClassiferConstraintClassifier(r)=="true") {
+        Id = Integer.parseInt(r.getArgumentId(1).split("_")(1))
+      }
+    })
+    Id
   }
 }

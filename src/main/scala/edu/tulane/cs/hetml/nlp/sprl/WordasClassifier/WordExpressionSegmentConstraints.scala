@@ -39,31 +39,20 @@ object WordExpressionSegmentConstraints {
         x =>
           val words = s.getText.split(" ").toList.filter(w => trainedWordClassifier.contains(w))
 
-          a = a and ((ExpressionasClassifer on x) is "true") ==> words._atleast(1){
+          a = a and words._atleast(1){
             w =>
               val seg = expressionSegmentPairs(x) ~> expsegpairToSecondArg head
               val isRel = if (x.getArgumentId(2) == "isRel") true else false
               val ws = new WordSegment(w, seg, isRel, false, "")
               val c = trainedWordClassifier(w)
               c on ws is "true"
-          }
-
-//          words.foreach{
-//            w =>
-//              val seg = expressionSegmentPairs(x) ~> expsegpairToSecondArg head
-//              val isRel = if(x.getArgumentId(2)=="isRel") true else false
-//              var ws = new WordSegment(w, seg, isRel, false, "")
-//              val c = trainedWordClassifier(w)
-//              a = a and (
-//                 ((ExpressionasClassifer on x) is "true") ==> (c on ws is "true")
-//                )
-//          }
+          } ==> ((ExpressionasClassifer on x) is "true")
       }
       a
   }
 
   val expressionConstraints = ConstrainedClassifier.constraint[Sentence]{
 
-    x: Sentence => integrityExpression(x) and uniqueExpressionSegmentPairs(x)
+    x: Sentence => uniqueExpressionSegmentPairs(x) //integrityExpression(x) //and
   }
 }

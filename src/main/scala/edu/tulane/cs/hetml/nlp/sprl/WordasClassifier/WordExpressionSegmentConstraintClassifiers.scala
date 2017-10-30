@@ -10,7 +10,7 @@ import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordExpressionSegmentConstr
 
 object WordExpressionSegmentConstraintClassifiers {
 
-  val erSolver = new OJalgoHook()
+  val erSolver = new GurobiHook()
   object ExpressionasClassiferConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](ExpressionasClassifer) {
     def subjectTo = expressionConstraints
 
