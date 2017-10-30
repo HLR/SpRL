@@ -31,7 +31,7 @@ object ExpressionClassifierApp extends App {
     if(isTrain)
       CLEFGoogleNETReaderHelper.trainImages.toList
     else
-      CLEFGoogleNETReaderHelper.testImages.take(10).toList
+      CLEFGoogleNETReaderHelper.testImages.toList
 
   val allsegments =
     if(!useAnntotatedClef) {
@@ -66,23 +66,11 @@ object ExpressionClassifierApp extends App {
 
   if(!isTrain) {
     println("Testing...")
-    ExpressionasClassifer.modelDir = classifierDirectory
+    //ExpressionasClassifer.modelDir = classifierDirectory
     ExpressionasClassifer.load()
-
-    var correct = 0
-    var wrong = 0
-    var size = expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel").size
-    expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel").foreach(r => {
-      val a = expressionActualSegId(r)
-      val p = expressionPredictedSegId(r)
-      if(a==p)
-        correct += 1
-      else
-        wrong += 1
-    })
-
-    println(s"Total: ${size}, Correct: ${correct} Wrong: ${wrong} Percentage: ${correct*1.0/size}")
+    //ExpressionasClassifer.test()
     ExpressionasClassiferConstraintClassifier.test()
-//    ExpressionasClassifer.test()
+    //ExpressionasClassiferConstraintClassifier.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))
+    //ExpressionasClassifer.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))
   }
 }

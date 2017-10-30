@@ -17,13 +17,16 @@ object WordExpressionSegmentConstraints {
       val expSegs = expressionSegmentPairs().filter(es => es.getArgumentId(1).split("_")(0)==s.getId.split("_")(0)).toList
 
       // The segment should be assigned to one expression
-      expSegs.groupBy(_.getArgumentId(0)).foreach(segExp => {
-        a and segExp._2._atmost(1)(x => ExpressionasClassifer on x is "true")
+      val g1 = expSegs.groupBy(_.getArgumentId(0))
+
+      g1.foreach(segExp => {
+        a = a and segExp._2._atmost(1)(x => ExpressionasClassifer on x is "true")
       })
 
       // The expression should be assigned to one segment
-      expSegs.groupBy(_.getArgumentId(1)).foreach(expSeg => {
-        a and expSeg._2._atmost(1)(x => ExpressionasClassifer on x is "true")
+      val g2 = expSegs.groupBy(_.getArgumentId(1))
+      g2.foreach(expSeg => {
+        a = a and expSeg._2._atmost(1)(x => ExpressionasClassifer on x is "true")
       })
       a
   }
@@ -36,22 +39,31 @@ object WordExpressionSegmentConstraints {
         x =>
           val words = s.getText.split(" ").toList.filter(w => trainedWordClassifier.contains(w))
 
-          words.foreach{
+          a = a and ((ExpressionasClassifer on x) is "true") ==> words._atleast(1){
             w =>
               val seg = expressionSegmentPairs(x) ~> expsegpairToSecondArg head
-              val isRel = if(x.getArgumentId(2)=="isRel") true else false
-              var ws = new WordSegment(w, seg, isRel, false, "")
+              val isRel = if (x.getArgumentId(2) == "isRel") true else false
+              val ws = new WordSegment(w, seg, isRel, false, "")
               val c = trainedWordClassifier(w)
-              a = a and (
-                 ((ExpressionasClassifer on x) is "true") ==> (c on ws is "true")
-                )
+              c on ws is "true"
           }
+
+//          words.foreach{
+//            w =>
+//              val seg = expressionSegmentPairs(x) ~> expsegpairToSecondArg head
+//              val isRel = if(x.getArgumentId(2)=="isRel") true else false
+//              var ws = new WordSegment(w, seg, isRel, false, "")
+//              val c = trainedWordClassifier(w)
+//              a = a and (
+//                 ((ExpressionasClassifer on x) is "true") ==> (c on ws is "true")
+//                )
+//          }
       }
       a
   }
 
   val expressionConstraints = ConstrainedClassifier.constraint[Sentence]{
 
-    x: Sentence => uniqueExpressionSegmentPairs(x) and integrityExpression(x)
+    x: Sentence => integrityExpression(x) and uniqueExpressionSegmentPairs(x)
   }
 }
