@@ -76,14 +76,14 @@ object WordasClassifierDataModel extends DataModel {
         r.getArgumentId(3).toDouble
   }
 
-  val expressionActualSegId = property(expressionSegmentPairs) {
+  val expressionActualRelation = property(expressionSegmentPairs) {
     r: Relation =>
-      r.getArgumentId(1).split("_")(1)
+      if(r.getArgumentId(2)=="isRel") true else false
   }
 
-  val expressionPredictedSegId = property(expressionSegmentPairs) {
+  val expressionPredictedRelation = property(expressionSegmentPairs) {
     r: Relation =>
-      getPredictedSegId(r)
+      if(getPredictedSegId(r)==r.getArgumentId(1).split("_")(1)) true else false
   }
 
   def loadWordClassifiers(): Unit = {
@@ -103,20 +103,32 @@ object WordasClassifierDataModel extends DataModel {
     val allSenSegPairs = expressionSegmentPairs().filter(i => i.getArgumentId(0)==r.getArgumentId(0))
 
     val scoresVector = allSenSegPairs.map(i => {
-      getExpressionClassifierScore(i)
+      getExpressionWordClassifierScore(i)
     }).toList
     val predictedSegId = scoresVector.indexOf(scoresVector.max) + 1
     predictedSegId.toString
   }
 
-  def getExpressionClassifierScore(r: Relation) : Double = {
-    val scores = ExpressionasClassifer.classifier.scores(r)
-    if(scores.size()>0) {
-      val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
-      orgValue(0).score
-    }
-    else {
-      0.0
-    }
+  def getExpressionWordClassifierScore(r: Relation) : Double = {
+    val sen = expressionSegmentPairs(r) ~> expsegpairToFirstArg head
+    val seg = expressionSegmentPairs(r) ~> expsegpairToSecondArg head
+    val isRel = if (r.getArgumentId(2) == "isRel") true else false
+    val scores = sen.getText.split(" ").map(w => {
+      if(trainedWordClassifier.contains(w)) {
+        val c = trainedWordClassifier(w)
+        val ws = new WordSegment(w, seg, isRel, false, "")
+        val score = c.classifier.scores(ws)
+        if(score.size()>0) {
+          val orgValue = score.toArray.filter(s => s.value.equalsIgnoreCase("true"))
+          orgValue(0).score
+        }
+        else {
+          0.0
+        }
+      }
+      else
+        0.0
+    })
+    scores.sum
   }
 }

@@ -53,6 +53,6 @@ object WordExpressionSegmentConstraints {
 
   val expressionConstraints = ConstrainedClassifier.constraint[Sentence]{
 
-    x: Sentence => uniqueExpressionSegmentPairs(x) //integrityExpression(x) //and
+    x: Sentence => uniqueExpressionSegmentPairs(x) and integrityExpression(x)
   }
 }

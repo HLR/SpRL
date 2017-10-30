@@ -32,7 +32,7 @@ object ExpressionClassifierApp extends App {
     if(isTrain)
       CLEFGoogleNETReaderHelper.trainImages.toList
     else
-      CLEFGoogleNETReaderHelper.testImages.toList
+      CLEFGoogleNETReaderHelper.testImages.take(200).toList
 
   val allsegments =
     if(!useAnntotatedClef) {
@@ -71,18 +71,19 @@ object ExpressionClassifierApp extends App {
     var count = 0;
     ExpressionasClassifer.load()
     //ExpressionasClassifer.test()
-    val totalGroups = expressionSegmentPairs().groupBy(_.getArgumentId(0))
-    totalGroups.foreach(e => {
-      val PredictedSegId = getMaxScoreSeg(e._1, e._2.toList)
-      val ActualSegId = Integer.parseInt(e._1.split("_")(1))
-      if(PredictedSegId==ActualSegId) {
-        count +=1
-      }
-    })
-    val total = totalGroups.size
-    println(s"Total: ${total} Correct: ${count} Percentage: ${count*1.0/total}")
+//    val totalGroups = expressionSegmentPairs().groupBy(_.getArgumentId(0))
+//    totalGroups.foreach(e => {
+//      val PredictedSegId = getMaxScoreSeg(e._1, e._2.toList)
+//      val ActualSegId = Integer.parseInt(e._1.split("_")(1))
+//      if(PredictedSegId==ActualSegId) {
+//        count +=1
+//      }
+//    })
+//    val total = totalGroups.size
+//    println(s"Total: ${total} Correct: ${count} Percentage: ${count*1.0/total}")
 
-    ExpressionasClassiferConstraintClassifier.test()
+    ExpressionasClassifer.test(expressionSegmentPairs(), expressionPredictedRelation, expressionActualRelation)
+//    ExpressionasClassiferConstraintClassifier.test()
 
     //ExpressionasClassiferConstraintClassifier.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))
     //ExpressionasClassifer.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))
