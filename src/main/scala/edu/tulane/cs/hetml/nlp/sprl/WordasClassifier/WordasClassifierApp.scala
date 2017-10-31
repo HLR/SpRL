@@ -45,7 +45,7 @@ object WordasClassifierApp extends App {
   val trainedWordClassifier = new mutable.HashMap[String, SingleWordasClassifer]()
   val classifierDirectory = s"models/mSpRL/wordclassifer/"
 
-
+  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/Word-as-Classifier-InstanceResults.txt")
 //  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/missedWordsAfterReplacing.txt")
 //  val writerGoogleW2V = new PrintWriter(s"data/mSprl/results/wordclassifier/googleW2CPredictions.txt")
 //  val replacedWords = new PrintWriter(s"data/mSprl/results/wordclassifier/replacedWords.txt")
@@ -242,15 +242,18 @@ object WordasClassifierApp extends App {
     var wrong = 0
     tokenPhraseMap.foreach{
       case (uniqueId, wordSegList) =>
-        println(uniqueId)
-        val predictedSegId = computeMatrix(wordSegList)
         val row = uniqueId.split("_")
+        writer.println(row(0) + "_" + row(1))
+//        println(uniqueId)
+        val predictedSegId = computeMatrix(wordSegList)
+        writer.println(predictedSegId)
         if(row(1).toInt == predictedSegId) {
           count += 1
         } else {
           wrong += 1
         }
     }
+    writer.close()
 
     val percentage = count * 100.00f / tokenPhraseMap.size
     println("Correct : " + count + "Wrong: " + wrong + "Percentage: " + percentage)
@@ -272,6 +275,7 @@ object WordasClassifierApp extends App {
     }).toList
     val norm = normalizeScores(scoresMatrix)
     val vector = combineScores(norm)
+    writer.println(vector.map(_.toDouble))
     val regionId = vector.indexOf(vector.max) + 1
     regionId
   }
@@ -281,26 +285,27 @@ object WordasClassifierApp extends App {
     var countOnce = false
 
     val w = instances.map(i => {
-      val score = getWordClassifierScore(word, i)
-      if(score!=0.0)
-        score
-      else if(languageHelper.wordSpellVerifier(word)!="true") {
-        useSpellingClassifier(word, i)
-      }
-      else {
-        val predictedWord = getClosetClassifier(word, postag)
-        if(predictedWord!="") {
-          getWordClassifierScore(predictedWord, i)
-        }
-        else if(!countOnce) {
-          //writer.println(i.getWord + " Missed")
-          missedWords += 1
-          countOnce = true
-          0.0
-        }
-        else
-          0.0
-      }
+//      val score = getWordClassifierScore(word, i)
+//      if(score!=0.0)
+//        score
+//      else if(languageHelper.wordSpellVerifier(word)!="true") {
+//        useSpellingClassifier(word, i)
+//      }
+//      else {
+//        val predictedWord = getClosetClassifier(word, postag)
+//        if(predictedWord!="") {
+//          getWordClassifierScore(predictedWord, i)
+//        }
+//        else if(!countOnce) {
+//          //writer.println(i.getWord + " Missed")
+//          missedWords += 1
+//          countOnce = true
+//          0.0
+//        }
+//        else
+//          0.0
+//      }
+      getWordClassifierScore(word, i)
     })
     w
   }

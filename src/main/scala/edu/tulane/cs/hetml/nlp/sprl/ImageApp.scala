@@ -12,11 +12,16 @@ import scala.collection.JavaConversions._
 object ImageApp extends App {
 
 
-  val languageHelper = new LanguageHelper()
-  val a =languageHelper.wordSpellVerifier("buildinng")
+//  val languageHelper = new LanguageHelper()
+//  val a =languageHelper.wordSpellVerifier("buildinng")
+//
+//  val sim = getGoogleSimilarity("", "")
+//  println(a)
 
-  val sim = getGoogleSimilarity("", "")
-  println(a)
+val expData = new RefExpTrainedWordReader()
+  expData.ExpClsOutput("data/mSprl/saiapr_tc-12")
+  expData.WordClsOutput("data/mSprl/saiapr_tc-12")
+  expData.findDiff()
 
   //  val readFullData = true
 //

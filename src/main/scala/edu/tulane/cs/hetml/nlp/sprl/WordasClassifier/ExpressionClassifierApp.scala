@@ -1,5 +1,7 @@
 package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 
+import java.io.PrintWriter
+
 import edu.stanford.nlp.tagger.maxent.PairsHolder
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
@@ -24,6 +26,8 @@ object ExpressionClassifierApp extends App {
 
   val relWords = Array("below", "above", "between", "not", "behind", "under", "underneath", "front of", "right of",
     "left of", "ontop of", "next to", "middle of")
+
+  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/EC-InstanceResults.txt")
 
   val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
   val classifierDirectory = s"models/mSpRL/ExpressionClassiferScoreOnly/"
@@ -70,32 +74,24 @@ object ExpressionClassifierApp extends App {
     //ExpressionasClassifer.modelDir = classifierDirectory
     var count = 0;
     ExpressionasClassifer.load()
-    //ExpressionasClassifer.test()
-//    val totalGroups = expressionSegmentPairs().groupBy(_.getArgumentId(0))
-//    totalGroups.foreach(e => {
-//      val PredictedSegId = getMaxScoreSeg(e._1, e._2.toList)
-//      val ActualSegId = Integer.parseInt(e._1.split("_")(1))
-//      if(PredictedSegId==ActualSegId) {
-//        count +=1
-//      }
-//    })
-//    val total = totalGroups.size
-//    println(s"Total: ${total} Correct: ${count} Percentage: ${count*1.0/total}")
+//    ExpressionasClassifer.test()
 
-    ExpressionasClassifer.test(expressionSegmentPairs(), expressionPredictedRelation, expressionActualRelation)
+    expressionSegmentPairs().filter(e => e.getArgumentId(2)=="isRel").foreach(e => {
+      val PredictedSegId = expressionPredictedRelation(e)
+      val ActualSegId = expressionActualRelation(e)
+      println(PredictedSegId + "__" + ActualSegId)
+      if(PredictedSegId==ActualSegId) {
+        count +=1
+      }
+    })
+    writer.close()
+    val total = 9954 //expressionSegmentPairs().size
+    println(s"Total: ${total} Correct: ${count} Percentage: ${count*100.00/total}")
+
+//    ExpressionasClassifer.test(expressionSegmentPairs(), expressionPredictedRelation, expressionActualRelation)
 //    ExpressionasClassiferConstraintClassifier.test()
 
     //ExpressionasClassiferConstraintClassifier.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))
     //ExpressionasClassifer.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))
-  }
-
-  def getMaxScoreSeg(exp: String,relations: List[Relation]): Int = {
-    var Id = -1
-    relations.foreach(r=> {
-      if(ExpressionasClassiferConstraintClassifier(r)=="true") {
-        Id = Integer.parseInt(r.getArgumentId(1).split("_")(1))
-      }
-    })
-    Id
   }
 }

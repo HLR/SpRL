@@ -86,6 +86,11 @@ object WordasClassifierDataModel extends DataModel {
       if(getPredictedSegId(r)==r.getArgumentId(1).split("_")(1)) true else false
   }
 
+  val expressionPredictedScoreVector = property(expressionSegmentPairs) {
+    r: Relation =>
+      getPredictedScoreVector(r)
+  }
+
   def loadWordClassifiers(): Unit = {
     val refexpTrainedWords = new RefExpTrainedWordReader(imageDataPath).filteredWords
 
@@ -100,7 +105,7 @@ object WordasClassifierDataModel extends DataModel {
 
   def getPredictedSegId(r: Relation) : String = {
 
-    val allSenSegPairs = expressionSegmentPairs().filter(i => i.getArgumentId(0)==r.getArgumentId(0))
+    val allSenSegPairs = expressionSegmentPairs().filter(i => i.getArgumentId(0)==r.getArgumentId(0)).toList.sortWith(sortBySegId)
 
     val scoresVector = allSenSegPairs.map(i => {
       getExpressionWordClassifierScore(i)
@@ -109,26 +114,21 @@ object WordasClassifierDataModel extends DataModel {
     predictedSegId.toString
   }
 
-  def getExpressionWordClassifierScore(r: Relation) : Double = {
-    val sen = expressionSegmentPairs(r) ~> expsegpairToFirstArg head
-    val seg = expressionSegmentPairs(r) ~> expsegpairToSecondArg head
-    val isRel = if (r.getArgumentId(2) == "isRel") true else false
-    val scores = sen.getText.split(" ").map(w => {
-      if(trainedWordClassifier.contains(w)) {
-        val c = trainedWordClassifier(w)
-        val ws = new WordSegment(w, seg, isRel, false, "")
-        val score = c.classifier.scores(ws)
-        if(score.size()>0) {
-          val orgValue = score.toArray.filter(s => s.value.equalsIgnoreCase("true"))
-          orgValue(0).score
-        }
-        else {
-          0.0
-        }
-      }
-      else
-        0.0
+  def getPredictedScoreVector(r: Relation) : List[Double] = {
+
+    val allSenSegPairs = expressionSegmentPairs().filter(i => i.getArgumentId(0)==r.getArgumentId(0)).toList.sortWith(sortBySegId)
+
+    val scores = allSenSegPairs.map(i => {
+      getExpressionWordClassifierScore(i)
     })
-    scores.sum
+    scores
+  }
+
+  def getExpressionWordClassifierScore(r: Relation) : Double = {
+    r.getArgumentId(3).toDouble
+  }
+
+  def sortBySegId(r1: Relation, r2: Relation) = {
+    Integer.parseInt(r1.getArgumentId(1).split("_")(1)) < Integer.parseInt(r2.getArgumentId(1).split("_")(1))
   }
 }
