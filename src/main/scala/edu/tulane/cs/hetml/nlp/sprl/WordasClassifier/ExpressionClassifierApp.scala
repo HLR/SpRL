@@ -32,7 +32,7 @@ object ExpressionClassifierApp extends App {
     if(isTrain)
       CLEFGoogleNETReaderHelper.trainImages.toList
     else
-      CLEFGoogleNETReaderHelper.testImages.take(200).toList
+      CLEFGoogleNETReaderHelper.testImages.toList
 
   val allsegments =
     if(!useAnntotatedClef) {
