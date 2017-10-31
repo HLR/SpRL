@@ -47,8 +47,8 @@ object TripletSentenceLevelConstraints {
 
           a = a and
             (
-              (TrajectorRoleClassifier on p is "Trajector") ==> pairs._exists(pair => sim on pair is "true")
-            )
+               pairs._exists(pair => sim on pair is "true")==>
+              (TrajectorRoleClassifier on p is "Trajector") or (LandmarkRoleClassifier on p is "Landmark"))
       }
       a
   }
@@ -100,7 +100,7 @@ object TripletSentenceLevelConstraints {
           val lm = (triplets(x) ~> tripletToThirdArg ~> -segmentPhrasePairToPhrase).toList
 
           a = a and (
-            tr._exists(t => (sim on t) is "true")
+            tr._exists(t => (sim on t) is "true") and lm._exists(t => (sim on t) is "true")
               ==>
               (TripletRelationClassifier on x is "Relation")
             )
@@ -153,14 +153,36 @@ object TripletSentenceLevelConstraints {
       a
   }
 
+  val uniqueSegmentAssignment = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      val segPhrases = (sentences(s) ~> sentenceToPhrase ~> -segmentPhrasePairToPhrase).toList
+
+      // The segments assigned to a phrase in a sentence should be at most 1
+      segPhrases.groupBy(_.getArgumentId(0)).foreach {
+        phraseSegments => a = a and phraseSegments._2._atmost(1)(x => sim on x is "true")
+      }
+
+      // The phrases assigned to a segment in a sentence should be at most 1
+      segPhrases.groupBy(_.getArgumentId(1)).foreach {
+        segmentPhrases => a = a and segmentPhrases._2._atmost(1)(x => sim on x is "true")
+      }
+
+      a
+  }
+
   val roleConstraints = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTrajector(x) and boostLandmark(x) and roleIntegrity(x) //and boostTrajectorByImage(x)
+    x: Sentence => boostTrajector(x) and boostLandmark(x) and roleIntegrity(x) and
+      boostTrajectorByImage(x) and uniqueSegmentAssignment(x)
   }
 
   val tripletConstraints = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTripletByRoles(x) and boostTripletByGeneralType(x) //and boostTripletByImage(x)
+    x: Sentence =>
+      boostTripletByRoles(x) and boostTripletByGeneralType(x) and boostTripletByImage(x) and
+        boostTrajectorByImage(x) and uniqueSegmentAssignment(x)
   }
 
   val generalConstraints = ConstrainedClassifier.constraint[Sentence] {
