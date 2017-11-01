@@ -30,7 +30,7 @@ object ExpressionClassifierApp extends App {
 //  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/EC-InstanceResults.txt")
 
   val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
-  val classifierDirectory = s"models/mSpRL/ExpressionClassiferScoreOnly/"
+  val classifierDirectory = s"models/mSpRL/ExpressionClassiferScoreVector/"
   println("Start Reading Data from Files...")
   val allImages =
     if(isTrain)
@@ -71,7 +71,7 @@ object ExpressionClassifierApp extends App {
 
   if(!isTrain) {
     println("Testing...")
-    //ExpressionasClassifer.modelDir = classifierDirectory
+    ExpressionasClassifer.modelDir = classifierDirectory
     var count = 0;
     ExpressionasClassifer.load()
     ExpressionasClassifer.test()
