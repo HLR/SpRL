@@ -24,7 +24,7 @@ object WordasClassifierDataModel extends DataModel {
   val wordsegments = node[WordSegment]
   val expressionSegmentPairs = node[Relation]((r: Relation) => r.getId)
 
-  val trainedWordClassifier = new mutable.HashMap[String, SingleWordasClassifer]()
+  val trainedWordClassifier = new mutable.LinkedHashMap[String, SingleWordasClassifer]()
   val classifierDirectory = "models/mSpRL/wordclassifer/"
 
   /*
@@ -88,7 +88,7 @@ object WordasClassifierDataModel extends DataModel {
 
   val expressionPredictedScoreVector = property(expressionSegmentPairs) {
     r: Relation =>
-      getPredictedScoreVector(r)
+      getExpressionPredictedScoreVector(r)
   }
 
   def loadWordClassifiers(): Unit = {
@@ -114,21 +114,46 @@ object WordasClassifierDataModel extends DataModel {
     predictedSegId.toString
   }
 
-  def getPredictedScoreVector(r: Relation) : List[Double] = {
+  def getExpressionPredictedScoreVector(r: Relation) : List[Double] = {
 
     val allSenSegPairs = expressionSegmentPairs().filter(i => i.getArgumentId(0)==r.getArgumentId(0)).toList.sortWith(sortBySegId)
 
-    val scores = allSenSegPairs.map(i => {
+    allSenSegPairs.map(i => {
       getExpressionWordClassifierScore(i)
     })
-    scores
   }
 
+  def getWordClassifierScoreVector(r: Relation) : List[Double] = {
+
+    val sen = expressionSegmentPairs(r) ~> expsegpairToFirstArg head
+    val seg = expressionSegmentPairs(r) ~> expsegpairToSecondArg head
+    val s = sen.getText.split(" ").map(w => {
+      val ws = new WordSegment(w, seg, false, false, "")
+      getWordClassifierScore(w, ws)
+    })
+    List()
+  }
   def getExpressionWordClassifierScore(r: Relation) : Double = {
     r.getArgumentId(3).toDouble
   }
 
   def sortBySegId(r1: Relation, r2: Relation) = {
     Integer.parseInt(r1.getArgumentId(1).split("_")(1)) < Integer.parseInt(r2.getArgumentId(1).split("_")(1))
+  }
+
+  def getWordClassifierScore(word: String, i: WordSegment) : (Int, Double) = {
+    if(trainedWordClassifier.contains(word)) {
+      val c = trainedWordClassifier(word)
+      val scores = c.classifier.scores(i)
+      if(scores.size()>0) {
+        val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
+        (0, orgValue(0).score)
+      }
+      else {
+        (-1, 0.0)
+      }
+    }
+    else
+      (-1, 0.0)
   }
 }

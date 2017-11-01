@@ -27,7 +27,7 @@ object ExpressionClassifierApp extends App {
   val relWords = Array("below", "above", "between", "not", "behind", "under", "underneath", "front of", "right of",
     "left of", "ontop of", "next to", "middle of")
 
-  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/EC-InstanceResults.txt")
+//  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/EC-InstanceResults.txt")
 
   val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
   val classifierDirectory = s"models/mSpRL/ExpressionClassiferScoreOnly/"
@@ -74,19 +74,7 @@ object ExpressionClassifierApp extends App {
     //ExpressionasClassifer.modelDir = classifierDirectory
     var count = 0;
     ExpressionasClassifer.load()
-//    ExpressionasClassifer.test()
-
-    expressionSegmentPairs().filter(e => e.getArgumentId(2)=="isRel").foreach(e => {
-      val PredictedSegId = expressionPredictedRelation(e)
-      val ActualSegId = expressionActualRelation(e)
-      println(PredictedSegId + "__" + ActualSegId)
-      if(PredictedSegId==ActualSegId) {
-        count +=1
-      }
-    })
-    writer.close()
-    val total = 9954 //expressionSegmentPairs().size
-    println(s"Total: ${total} Correct: ${count} Percentage: ${count*100.00/total}")
+    ExpressionasClassifer.test()
 
 //    ExpressionasClassifer.test(expressionSegmentPairs(), expressionPredictedRelation, expressionActualRelation)
 //    ExpressionasClassiferConstraintClassifier.test()
