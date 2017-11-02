@@ -62,6 +62,8 @@ public class CLEFAnnotationReader {
                 String fileName = file.getName().replaceFirst("[.][^.]+$", "");
                 // Reading Text used for Annotated
                 allphrases.clear();
+                tokens.clear();
+                pharseRemaining.clear();
                 completeText(directory, fileName);
                 printToFileNames.println(fileName);
                 String line;
@@ -103,15 +105,16 @@ public class CLEFAnnotationReader {
                         printToFile.println(newData);
                     }
                 }
-                for(String s : pharseRemaining.keySet()) {
-                    // Writing Remaining Phrases
-                    // 0 index doesn't exists
-                    String referitKey = fileName + "_0.jpg";
-
-                    String newData = fileName + "~" + "0" + "~" + pharseRemaining.get(s) + "~0.0"  + "~0.0";
-                    //Save the new generated data to file
-                    printToFile.println(newData);
-                }
+                // Remaining Phrases with no Image Relation
+//                for(String s : pharseRemaining.keySet()) {
+//                    // Writing Remaining Phrases
+//                    // 0 index doesn't exists
+//                    String referitKey = fileName + "_0.jpg";
+//
+//                    String newData = fileName + "~" + "0" + "~" + pharseRemaining.get(s) + "~0.0"  + "~0.0";
+//                    //Save the new generated data to file
+//                    printToFile.println(newData);
+//                }
             }
         }
         printToFile.close();
@@ -166,6 +169,7 @@ public class CLEFAnnotationReader {
         String line;
         while ((line = reader.readLine()) != null) {
             String[] segInfo = line.split("\\~");
+            System.out.println(line);
             Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]),"",segInfo[2],false);
             testSegments.add(s);
         }

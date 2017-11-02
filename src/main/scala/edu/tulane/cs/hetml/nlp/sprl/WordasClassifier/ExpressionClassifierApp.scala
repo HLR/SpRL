@@ -74,10 +74,10 @@ object ExpressionClassifierApp extends App {
     ExpressionasClassifer.modelDir = classifierDirectory
     var count = 0;
     ExpressionasClassifer.load()
-    ExpressionasClassifer.test()
+    //ExpressionasClassifer.test()
 
-//    ExpressionasClassifer.test(expressionSegmentPairs(), expressionPredictedRelation, expressionActualRelation)
-//    ExpressionasClassiferConstraintClassifier.test()
+    //ExpressionasClassifer.test(expressionSegmentPairs(), expressionPredictedRelation, expressionActualRelation)
+    ExpressionasClassiferConstraintClassifier.test()
 
     //ExpressionasClassiferConstraintClassifier.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))
     //ExpressionasClassifer.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))

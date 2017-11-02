@@ -186,13 +186,13 @@ object WordasClassifierApp extends App {
         val headWords = phrases.map(p=> p -> getHeadword(p)).toMap
 
         //Applying postag
-        val pos = LanguageBaseTypeSensors.getPos(sen).zip(toks).map(x=>x._2.getText->x._1).toMap
+//        val pos = LanguageBaseTypeSensors.getPos(sen).zip(toks).map(x=>x._2.getText->x._1).toMap
 
         //Create all possible combinations M x N
         val  seg_pairs = toks.groupBy(t=> t.getText).map(t=> t._2.head).flatMap(tok => {
           val tokHeadWord = headWords(tok.getPhrase)
           segWithFeatures.map(sf => {
-            new WordSegment(tok.getText, sf, s.getSegmentId==sf.getSegmentId, tok.getText==tokHeadWord.getText, pos(tok.getText))
+            new WordSegment(tok.getText, sf, s.getSegmentId==sf.getSegmentId, tok.getText==tokHeadWord.getText, "")
           })
         }).toList
 
