@@ -47,8 +47,9 @@ object TripletSentenceLevelConstraints {
 
           a = a and
             (
-               pairs._exists(pair => sim on pair is "true")==>
-              (TrajectorRoleClassifier on p is "Trajector") or (LandmarkRoleClassifier on p is "Landmark"))
+
+              (TrajectorRoleClassifier on p is "Trajector") or (LandmarkRoleClassifier on p is "Landmark")) ==>
+              pairs._exists(pair => sim on pair is "true")
       }
       a
   }
@@ -174,8 +175,9 @@ object TripletSentenceLevelConstraints {
 
   val roleConstraints = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTrajector(x) and boostLandmark(x) and roleIntegrity(x) and
-      boostTrajectorByImage(x) and uniqueSegmentAssignment(x)
+    x: Sentence =>
+      boostTrajector(x) and boostLandmark(x) and roleIntegrity(x) and
+        boostTrajectorByImage(x) and uniqueSegmentAssignment(x)
   }
 
   val tripletConstraints = ConstrainedClassifier.constraint[Sentence] {

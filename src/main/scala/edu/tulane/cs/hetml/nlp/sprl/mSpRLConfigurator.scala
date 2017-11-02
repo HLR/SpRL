@@ -20,5 +20,5 @@ object mSpRLConfigurator {
                                                   * training and loads them from the disk*/
   val iterations = 50
   val useConstraints = true
-  val populateImages = model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
+  val populateImages = true// model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
 }

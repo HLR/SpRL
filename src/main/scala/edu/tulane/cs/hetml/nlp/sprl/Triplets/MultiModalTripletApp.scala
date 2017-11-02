@@ -1,8 +1,9 @@
 package edu.tulane.cs.hetml.nlp.sprl.Triplets
 
-import java.io.{File, FileOutputStream}
+import java.io.{File, FileOutputStream, PrintStream}
 
 import edu.illinois.cs.cogcomp.saul.util.Logging
+import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation}
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.{CandidateGenerator, FeatureSets, ReportHelper}
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
@@ -141,6 +142,12 @@ object MultiModalTripletApp extends App with Logging {
 
       val region = TripletRegionClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
+
+      report(x => TripletRelationClassifier(x),
+        x => TrajectorRoleClassifier(x),
+        x => LandmarkRoleClassifier(x),
+        x => IndicatorRoleClassifier(x)
+      )
     }
     else {
 
@@ -184,8 +191,41 @@ object MultiModalTripletApp extends App with Logging {
       val region = TripletRegionConstraintClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
 
+      report(x => TripletRelationConstraintClassifier(x),
+        x => TRConstraintClassifier(x),
+        x => LMConstraintClassifier(x),
+        x => IndicatorRoleClassifier(x)
+      )
     }
 
   }
+
+  def report(rel: Relation => String, tr: Phrase => String, lm: Phrase => String, sp: Phrase => String) = {
+    val writer = new PrintStream(s"$resultsDir/error_report_$expName$suffix.txt")
+
+    triplets().foreach { r =>
+      val predicted = rel(r)
+      val actual = tripletIsRelation(r)
+      val t = triplets(r) ~> tripletToFirstArg head
+      val s = triplets(r) ~> tripletToSecondArg head
+      val l = triplets(r) ~> tripletToThirdArg head
+
+      val tCorrect = "trajector".equalsIgnoreCase(tr(t))
+      val sCorrect = "indicator".equalsIgnoreCase(sp(s))
+      val lCorrect = if(l == dummyPhrase) false else "landmark".equalsIgnoreCase(lm(l))
+
+      val sent = triplets(r) ~> -sentenceToTriplets head
+      val segments = (sentences(sent) ~> -documentToSentence ~> documentToImage ~> imageToSegment)
+        .map(x => x.getSegmentId + ":" + x.getSegmentCode +":" + x.getSegmentConcept).mkString(",")
+      val docId = (triplets(r) ~> -sentenceToTriplets ~> -documentToSentence).head.getId
+      //docId, sentId, sent, actual rel, predicted rel, tr text, sp text, lm text
+      //tr correct, sp correct, lm correct, segments[id, code, text]
+      val line = s"$docId\t\t${sent.getId}\t\t${sent.getText}\t\t${actual}" +
+        s"\t\t${predicted}\t\t${t.getText}\t\t${s.getText}\t\t${l.getText}\t\t${tCorrect}" +
+        s"\t\t${sCorrect}\t\t${lCorrect}\t\t${segments}"
+      writer.println(line)
+    }
+  }
+
 }
 
