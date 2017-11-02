@@ -1,0 +1,136 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="analysis.css">
+</head>
+
+<body>
+    <input type='file' id="file">
+    <button id="reset">reset</button>
+    <hr/>
+    <div id="dataset">
+        <table class="ko-grid" cellspacing="0">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Model Name</th>
+                    <th>Accuracy</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody data-bind="foreach: models">
+                <tr>
+                    <td>
+                        <input class="select-model" type="checkbox" data-bind="attr: {'data-index': $index}" />
+                    </td>
+                    <td data-bind="text: name"></td>
+                    <td data-bind="text: accuracy"></td>
+                    <td data-bind="text: precision"></td>
+                    <td data-bind="text: recall"></td>
+                    <td data-bind="text: f1"></td>
+                    <td data-bind="click: $parent.removeModel">delete</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <button data-bind="click: compare()">compare</button>
+    <button data-bind="click: explore()">explore</button>
+    <hr/>
+    <div>
+        <div style="display:inline-block">
+            <input type="checkbox" data-bind="click: toggleExploreTP(), attr:{checked: exploreTP()}" checked="checked" /> TP
+            <input type="checkbox" data-bind="click: toggleExploreTN(), attr:{checked: exploreTN()}" checked="checked" /> TN
+            <input type="checkbox" data-bind="click: toggleExploreFP(), attr:{checked: exploreFP()}" checked="checked" /> FP
+            <input type="checkbox" data-bind="click: toggleExploreFN(), attr:{checked: exploreFN()}" checked="checked" /> FN
+            <table class="ko-grid" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>type</th>
+                        <th>actual</th>
+                        <th>predicted</th>
+                        <th>tr</th>
+                        <th>sp</th>
+                        <th>lm</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: exploreData">
+                    <tr data-bind="css: $parent.currentRel().index === index ? 'selected':'', click: $parent.showRelDetail">
+                        <td data-bind="text: errortype"></td>
+                        <td data-bind="text: actualRel"></td>
+                        <td data-bind="text: predictedRel"></td>
+                        <td>
+                            <span data-bind="text: trApproved=='true' ?'&#10004;':'&times;'"></span>
+                            <span data-bind="text: tr"></span>
+                        </td>
+                        <td>
+                            <span data-bind="text: spApproved=='true' ?'&#10004;':'&times;'"></span>
+                            <span data-bind="text: sp"></span>
+                        </td>
+                        <td>
+                            <span data-bind="text: lmApproved=='true' ?'&#10004;':'&times;'"></span>
+                            <span data-bind="text: lm"></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <button data-bind="click: prevExplorePage()">prev</button>
+            <button data-bind="click: nextExplorePage()">next</button>
+            <br/> page
+            <span data-bind="text: explorePage"></span> from
+            <span data-bind="text: exploreTotal"></span>
+        </div>
+        <div data-bind="css: currentRel().index<0 ? 'hidden':''" style="display:inline-block; vertical-align:top; margin-top:20px; margin-left:30px; width:600px">
+            <table class="details">
+                <tr><td>docId</td><td data-bind="text: currentRel().image"></td><td rowspan="4"><img data-bind="attr:{src: '../data/mSpRL/' + currentRel().image}"/></td></tr>
+                <tr><td>sentId</td><td data-bind="text: currentRel().sentId"></td></tr>
+                <tr><td>sent</td><td data-bind="text: currentRel().sent"></td></tr>
+                <tr><td>segments</td><td data-bind="foreach: currentRel().segments">
+                    <div data-bind="text: $data"></div>
+                    </td></tr>
+            </table>
+        </div>
+    </div>
+    <script type="text/javascript" src="jquery-3.2.1.min.js"></script>
+    <script type='text/javascript' src='knockout-3.4.2.js'></script>
+    <script type="text/javascript" src="app.js"></script>
+    <script type="text/javascript">
+
+        $(function () {
+
+            $("#file").change(function (e) {
+                var reader = new FileReader();
+                var text = "";
+                var file = e.target.files[0];
+                reader.onload = function (e) {
+                    loadData(e.target.result, file.name);
+                };
+                reader.readAsText(file);
+            });
+            $("#reset").click(function () {
+                $("#file").val("");
+            });
+
+            $("#dataset").on("click", ".select-model", function () {
+                var index = parseInt($(this).data("index"));
+                app.setSelected(index, $(this).is(":checked"));
+            })
+
+            function loadData(text, fileName) {
+                var lines = text.split("\n");
+                var data = []
+                for (var l in lines) {
+                    if (lines[l] === "")
+                        continue;
+                    data.push(new Instance(lines[l], l + 1));
+                }
+                app.addModel(new Model(fileName, data));
+            }
+        });
+
+    </script>
+</body>
+
+</html>
