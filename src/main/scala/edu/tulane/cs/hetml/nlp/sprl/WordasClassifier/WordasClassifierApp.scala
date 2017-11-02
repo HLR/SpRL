@@ -45,7 +45,7 @@ object WordasClassifierApp extends App {
   val trainedWordClassifier = new mutable.HashMap[String, SingleWordasClassifer]()
   val classifierDirectory = s"models/mSpRL/wordclassifer/"
 
-  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/Word-as-Classifier-InstanceResults.txt")
+  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/W2C-Output.txt")
 //  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/missedWordsAfterReplacing.txt")
 //  val writerGoogleW2V = new PrintWriter(s"data/mSprl/results/wordclassifier/googleW2CPredictions.txt")
 //  val replacedWords = new PrintWriter(s"data/mSprl/results/wordclassifier/replacedWords.txt")
@@ -186,13 +186,14 @@ object WordasClassifierApp extends App {
         val headWords = phrases.map(p=> p -> getHeadword(p)).toMap
 
         //Applying postag
-        val pos = LanguageBaseTypeSensors.getPos(sen).zip(toks).map(x=>x._2.getText->x._1).toMap
+//        val pos = LanguageBaseTypeSensors.getPos(sen).zip(toks).map(x=>x._2.getText->x._1).toMap
 
         //Create all possible combinations M x N
         val  seg_pairs = toks.groupBy(t=> t.getText).map(t=> t._2.head).flatMap(tok => {
           val tokHeadWord = headWords(tok.getPhrase)
           segWithFeatures.map(sf => {
-            new WordSegment(tok.getText, sf, s.getSegmentId==sf.getSegmentId, tok.getText==tokHeadWord.getText, pos(tok.getText))
+            new WordSegment(tok.getText, sf, s.getSegmentId==sf.getSegmentId, tok.getText==tokHeadWord.getText, "")
+            //new WordSegment(tok.getText, sf, s.getSegmentId==sf.getSegmentId, tok.getText==tokHeadWord.getText, pos(tok.getText))
           })
         }).toList
 
@@ -243,8 +244,7 @@ object WordasClassifierApp extends App {
     tokenPhraseMap.foreach{
       case (uniqueId, wordSegList) =>
         val row = uniqueId.split("_")
-        writer.println(row(0) + "_" + row(1))
-//        println(uniqueId)
+        println(uniqueId)
         val predictedSegId = computeMatrix(wordSegList)
         writer.println(predictedSegId)
         if(row(1).toInt == predictedSegId) {

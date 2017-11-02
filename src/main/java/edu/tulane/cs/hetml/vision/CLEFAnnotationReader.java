@@ -54,11 +54,15 @@ public class CLEFAnnotationReader {
         printToFileNames = new PrintWriter( directory + "/Output/ClefImage.txt");
 
         File folder = new File(directory);
-        File[] listOfFiles = folder.listFiles();
+        File[] listOfFiles = folder.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return !name.equals(".DS_Store");
+            }
+        });
 
         for (File file : listOfFiles) {
             if (file.isFile()) {
-
                 String fileName = file.getName().replaceFirst("[.][^.]+$", "");
                 // Reading Text used for Annotated
                 allphrases.clear();

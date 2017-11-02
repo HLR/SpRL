@@ -42,7 +42,7 @@ object ExpressionClassifierApp extends App {
     if(!useAnntotatedClef) {
         CLEFGoogleNETReaderHelper.allSegments.filter(s => {allImages.exists(i=> i.getId==s.getAssociatedImageID)})
     } else {
-      CLEFGoogleNETReaderHelper.allSegments.toList
+        CLEFGoogleNETReaderHelper.allSegments.toList
     }
 
   val allDocuments = CLEFGoogleNETReaderHelper.allDocuments.filter(s => {
@@ -56,9 +56,24 @@ object ExpressionClassifierApp extends App {
   })
 
   loadWordClassifiers()
+  val clefSegments =
+    if(useAnntotatedClef) {
+      val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
+      ClefAnnReader.testSegments.toList
+    } else
+      List()
 
+  if(useAnntotatedClef) {
+    clefSegments.foreach({
+      cS =>
+        val segWithFeatures = allsegments.filter(seg => seg.getUniqueId.equals(cS.getUniqueId))
+        cS.segmentFeatures = segWithFeatures(0).segmentFeatures
+    })
+  }
+
+  val segmentDataset = if(!useAnntotatedClef) allsegments else clefSegments
   images.populate(allImages, isTrain)
-  segments.populate(allsegments, isTrain)
+  segments.populate(segmentDataset, isTrain)
   documents.populate(allDocuments, isTrain)
   sentences.populate(allSentence, isTrain)
 

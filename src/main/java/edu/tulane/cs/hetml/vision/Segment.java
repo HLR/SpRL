@@ -13,7 +13,7 @@ import java.util.List;
 public class Segment {
     private int segmentId;
     private int segmentCode;
-    private String segmentFeatures;
+    public String segmentFeatures;
     private String segmentConcept;
     private String imageId;
     public List<String> tagged;

@@ -80,10 +80,10 @@ public class CLEFGoogleNETReader {
                 Image i = new Image(row[0].trim(), row[0].trim());
                 allImages.add(i);
                 String key = row[0].trim() + "_" + row[1].trim() + ".jpg";
-                if(segRefExp.get(key)!=null) {
+//                if(segRefExp.get(key)!=null) {
                     Segment s = new Segment(row[0].trim(), Integer.parseInt(row[1].trim()), row[2].trim(), segRefExp.get(key), true);
                     allSegments.add(s);
-                }
+//                }
             }
             reader.close();
         }
@@ -113,7 +113,10 @@ public class CLEFGoogleNETReader {
         for (Segment s :  allSegments) {
             String ID = s.getAssociatedImageID() + "_" + s.getSegmentId();
             Document d = new Document(ID);
-            Sentence sen = new Sentence(d, ID, 0, s.referItExpression.length(), s.referItExpression);
+            int len = 0;
+            if(s.referItExpression!=null)
+                len = s.referItExpression.length();
+            Sentence sen = new Sentence(d, ID, 0, len, s.referItExpression);
             allDocuments.add(d);
             allSentences.add(sen);
         }
