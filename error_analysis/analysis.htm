@@ -36,15 +36,16 @@
             </tbody>
         </table>
     </div>
-    <button data-bind="click: compare()">compare</button>
-    <button data-bind="click: explore()">explore</button>
+    <button data-bind="click: compare">compare</button>
+    <button data-bind="click: explore">explore</button>
     <hr/>
     <div>
         <div style="display:inline-block">
-            <input type="checkbox" data-bind="click: toggleExploreTP(), attr:{checked: exploreTP()}" checked="checked" /> TP
-            <input type="checkbox" data-bind="click: toggleExploreTN(), attr:{checked: exploreTN()}" checked="checked" /> TN
-            <input type="checkbox" data-bind="click: toggleExploreFP(), attr:{checked: exploreFP()}" checked="checked" /> FP
-            <input type="checkbox" data-bind="click: toggleExploreFN(), attr:{checked: exploreFN()}" checked="checked" /> FN
+            <input type="checkbox" data-bind="click: toggleExploreTP(), attr:{checked: exploreTP()}" /> TP
+            <input type="checkbox" data-bind="click: toggleExploreTN(), attr:{checked: exploreTN()}" /> TN
+            <input type="checkbox" data-bind="click: toggleExploreFP(), attr:{checked: exploreFP()}" /> FP
+            <input type="checkbox" data-bind="click: toggleExploreFN(), attr:{checked: exploreFN()}" /> FN
+            <input type="checkbox" data-bind="click: toggleAllRolesCorrect(), attr:{checked: allRolesCorrect()}" /> All roles correct
             <table class="ko-grid" cellspacing="0">
                 <thead>
                     <tr>
@@ -62,25 +63,26 @@
                         <td data-bind="text: actualRel"></td>
                         <td data-bind="text: predictedRel"></td>
                         <td>
-                            <span data-bind="text: trApproved=='true' ?'&#10004;':'&times;'"></span>
+                            <span data-bind="text: trApproved ?'&#10004;':'&times;'"></span>
                             <span data-bind="text: tr"></span>
                         </td>
                         <td>
-                            <span data-bind="text: spApproved=='true' ?'&#10004;':'&times;'"></span>
+                            <span data-bind="text: spApproved ?'&#10004;':'&times;'"></span>
                             <span data-bind="text: sp"></span>
                         </td>
                         <td>
-                            <span data-bind="text: lmApproved=='true' ?'&#10004;':'&times;'"></span>
+                            <span data-bind="text: lmApproved ?'&#10004;':'&times;'"></span>
                             <span data-bind="text: lm"></span>
                         </td>
                     </tr>
                 </tbody>
             </table>
-            <button data-bind="click: prevExplorePage()">prev</button>
-            <button data-bind="click: nextExplorePage()">next</button>
+            <button data-bind="click: prevExplorePage">prev</button>
+            <button data-bind="click: nextExplorePage">next</button>
             <br/> page
-            <span data-bind="text: explorePage"></span> from
+            <span data-bind="text: explorePage() + 1"></span> from
             <span data-bind="text: exploreTotal"></span>
+            (<span data-bind="text: exploreTotalRels"></span>)
         </div>
         <div data-bind="css: currentRel().index<0 ? 'hidden':''" style="display:inline-block; vertical-align:top; margin-top:20px; margin-left:30px; width:600px">
             <table class="details">

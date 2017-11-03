@@ -78,13 +78,13 @@ object MultiModalSpRLDataModel extends DataModel {
   imageToSegment.addSensor(imageToSegmentMatching _)
 
   val segmentRelationsToSegments = edge(segmentRelations, segments)
-  segmentRelationsToSegments.addSensor(segmentRelationToSegmentMatching _)
+  //segmentRelationsToSegments.addSensor(segmentRelationToSegmentMatching _)
 
   val segmentToSegmentPhrasePair = edge(segments, segmentPhrasePairs)
-  segmentToSegmentPhrasePair.addSensor(segmentToSegmentPhrasePairs _)
+  //segmentToSegmentPhrasePair.addSensor(segmentToSegmentPhrasePairs _)
 
   val segmentPhrasePairToPhrase = edge(segmentPhrasePairs, phrases)
-  segmentPhrasePairToPhrase.addSensor(SegmentPhrasePairToPhraseMatching _)
+  //segmentPhrasePairToPhrase.addSensor(SegmentPhrasePairToPhraseMatching _)
 
   /*
   Properties
@@ -406,6 +406,26 @@ object MultiModalSpRLDataModel extends DataModel {
     x: Relation =>
       x.getProperty("Relation") match {
         case "true" => "Relation"
+        case _ => "None"
+      }
+  }
+
+  val tripletIsTr = property(triplets, cache = true) {
+    x: Relation =>
+      x.getProperty("Relation") match {
+        case "true" =>
+          val (first, second, third) = getTripletArguments(x)
+          trajectorRole(first)
+        case _ => "None"
+      }
+  }
+
+  val tripletIsLm = property(triplets, cache = true) {
+    x: Relation =>
+      x.getProperty("Relation") match {
+        case "true" =>
+          val (first, second, third) = getTripletArguments(x)
+          landmarkRole(third)
         case _ => "None"
       }
   }

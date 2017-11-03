@@ -9,9 +9,9 @@ var Instance = function (line, i) {
     this.tr = parts[5];
     this.sp = parts[6];
     this.lm = parts[7];
-    this.trApproved = parts[8];
-    this.spApproved = parts[9];
-    this.lmApproved = parts[10];
+    this.trApproved = parts[8] == 'true';
+    this.spApproved = parts[9] == 'true';
+    this.lmApproved = parts[10] == 'true';
     this.segments = parts[11].split(",");
     this.index = i;
     this.image = this.docId.substr(0, this.docId.lastIndexOf(".")) + ".jpg";
@@ -45,13 +45,15 @@ var App = function () {
     self.models = ko.observableArray([]);
     self.exploreData = ko.observableArray([]);
     self.explorePage = ko.observable(0);
-    self.pageSize = 10;
+    self.pageSize = 20;
     self.exploreTotal = ko.observable(0);
+    self.exploreTotalRels = ko.observable(0);
     self.exploreTP = ko.observable(true);
     self.exploreTN = ko.observable(true);
-    self.exploreFP = ko.observable(false);
+    self.exploreFP = ko.observable(true);
     self.exploreFN = ko.observable(false);
-    self.currentRel = ko.observable({index:-1})
+    self.currentRel = ko.observable({index:-1});
+    self.allRolesCorrect = ko.observable(true);
 
     self.addModel = function (m) {
         self.models.push(m);
@@ -72,6 +74,8 @@ var App = function () {
         self.exploreData([]);
         if (selected) {
             var d = selected.data.filter(function (item) {
+                if(self.allRolesCorrect() && !(item.trApproved && item.spApproved && item.lmApproved))
+                    return false;
                 if (self.exploreTP() && item.tp)
                     return true;
                 if (self.exploreTN() && item.tn)
@@ -83,11 +87,18 @@ var App = function () {
                 return false;
             });
 
+            self.exploreTotalRels(d.length);
             self.exploreTotal(Math.ceil(d.length / self.pageSize));
             var from = self.explorePage() * self.pageSize;
             var to = Math.min(d.length, (self.explorePage() + 1) * self.pageSize);
             self.exploreData(d.slice(from, to));
         }
+    }
+
+
+    self.toggleAllRolesCorrect = function () {
+        self.allRolesCorrect(!self.allRolesCorrect());
+        self.explore();
     }
 
     self.toggleExploreTP = function () {
@@ -111,7 +122,7 @@ var App = function () {
     }
 
     self.nextExplorePage = function () {
-        self.explorePage(Math.min(self.explorePage() + 1, self.exploreTotal()));
+        self.explorePage(Math.min(self.explorePage() + 1, self.exploreTotal() - 1));
         self.explore();
     }
 
