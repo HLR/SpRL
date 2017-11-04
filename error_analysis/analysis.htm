@@ -6,49 +6,89 @@
 
 <body>
     <input type='file' id="file">
-    <button id="reset">reset</button>
+    <button id="reset" data-bind="click: reset">reset</button>
     <hr/>
-    <div id="dataset">
-        <table class="ko-grid" cellspacing="0">
-            <thead>
+    <div>
+        <div id="dataset" style="display:inline-block;vertical-align:top">
+            <table class="ko-grid" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Model Name</th>
+                        <th>Accuracy</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: models">
+                    <tr>
+                        <td>
+                            <input class="select-model" type="checkbox" data-bind="attr: {'data-index': $index}" />
+                        </td>
+                        <td data-bind="text: name"></td>
+                        <td data-bind="text: accuracy"></td>
+                        <td data-bind="text: precision"></td>
+                        <td data-bind="text: recall"></td>
+                        <td data-bind="text: f1"></td>
+                        <td data-bind="click: $parent.removeModel">delete</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="comparison" style="display:inline-block;vertical-align:top; padding-left:20px">
+            <table class="ko-grid" cellspacing="0">
                 <tr>
                     <th></th>
-                    <th>Model Name</th>
-                    <th>Accuracy</th>
-                    <th>Precision</th>
-                    <th>Recall</th>
-                    <th>F1</th>
-                    <th></th>
+                    <th>b correct</th>
+                    <th>b incorrect</th>
                 </tr>
-            </thead>
-            <tbody data-bind="foreach: models">
                 <tr>
+                    <th>a correct</th>
                     <td>
-                        <input class="select-model" type="checkbox" data-bind="attr: {'data-index': $index}" />
+                        <input type="checkbox" data-bind="click: toggleCC, attr:{checked: CC}" />
+                        <span data-bind="text: comparison().cc.length"></span>
                     </td>
-                    <td data-bind="text: name"></td>
-                    <td data-bind="text: accuracy"></td>
-                    <td data-bind="text: precision"></td>
-                    <td data-bind="text: recall"></td>
-                    <td data-bind="text: f1"></td>
-                    <td data-bind="click: $parent.removeModel">delete</td>
+                    <td>
+                        <input type="checkbox" data-bind="click: toggleCI, attr:{checked: CI}" />
+                        <span data-bind="text: comparison().ci.length"></span>
+                    </td>
                 </tr>
-            </tbody>
-        </table>
+                <tr>
+                    <th>a incorrect</th>
+                    <td>
+                        <input type="checkbox" data-bind="click: toggleIC, attr:{checked: IC}" />
+                        <span data-bind="text: comparison().ic.length"></span>
+                    </td>
+                    <td>
+                        <input type="checkbox" data-bind="click: toggleII, attr:{checked: II}" />
+                        <span data-bind="text: comparison().ii.length"></span>
+                    </td>
+                </tr>
+            </table>
+            a:
+            <span data-bind="text: comparison().first.name"></span>
+            <br/> b:
+            <span data-bind="text: comparison().second.name"></span>
+            <br/>
+        </div>
     </div>
     <button data-bind="click: compare">compare</button>
     <button data-bind="click: explore">explore</button>
     <hr/>
     <div>
         <div style="display:inline-block">
-            <input type="checkbox" data-bind="click: toggleExploreTP(), attr:{checked: exploreTP()}" /> TP
-            <input type="checkbox" data-bind="click: toggleExploreTN(), attr:{checked: exploreTN()}" /> TN
-            <input type="checkbox" data-bind="click: toggleExploreFP(), attr:{checked: exploreFP()}" /> FP
-            <input type="checkbox" data-bind="click: toggleExploreFN(), attr:{checked: exploreFN()}" /> FN
-            <input type="checkbox" data-bind="click: toggleAllRolesCorrect(), attr:{checked: allRolesCorrect()}" /> All roles correct
+            <input type="checkbox" data-bind="click: toggleTP, attr:{checked: TP}" /> TP
+            <input type="checkbox" data-bind="click: toggleTN, attr:{checked: TN}" /> TN
+            <input type="checkbox" data-bind="click: toggleFP, attr:{checked: FP}" /> FP
+            <input type="checkbox" data-bind="click: toggleFN, attr:{checked: FN}" /> FN
+            <input type="checkbox" data-bind="click: toggleAllRolesCorrect, attr:{checked: allRolesCorrect}" /> All roles correct
+            <input type="checkbox" data-bind="click: toggleDiffRole, attr:{checked: diffRole}" /> Different role predictions
             <table class="ko-grid" cellspacing="0">
                 <thead>
                     <tr>
+                        <th>index</th>
                         <th>type</th>
                         <th>actual</th>
                         <th>predicted</th>
@@ -57,46 +97,64 @@
                         <th>lm</th>
                     </tr>
                 </thead>
-                <tbody data-bind="foreach: exploreData">
+                <tbody data-bind="foreach: data">
                     <tr data-bind="css: $parent.currentRel().index === index ? 'selected':'', click: $parent.showRelDetail">
+                        <td data-bind="text: index"></td>
                         <td data-bind="text: errortype"></td>
                         <td data-bind="text: actualRel"></td>
-                        <td data-bind="text: predictedRel"></td>
+                        <td data-bind="text: $parent.predicted($data)"></td>
                         <td>
-                            <span data-bind="text: trApproved ?'&#10004;':'&times;'"></span>
+                            <span data-bind="text: $parent.trApproved($data)"></span>
                             <span data-bind="text: tr"></span>
                         </td>
                         <td>
-                            <span data-bind="text: spApproved ?'&#10004;':'&times;'"></span>
+                            <span data-bind="text: $parent.spApproved($data)"></span>
                             <span data-bind="text: sp"></span>
                         </td>
                         <td>
-                            <span data-bind="text: lmApproved ?'&#10004;':'&times;'"></span>
+                            <span data-bind="text: $parent.lmApproved($data)"></span>
                             <span data-bind="text: lm"></span>
                         </td>
                     </tr>
                 </tbody>
             </table>
-            <button data-bind="click: prevExplorePage">prev</button>
-            <button data-bind="click: nextExplorePage">next</button>
+            <button data-bind="click: prevPage">prev</button>
+            <button data-bind="click: nextPage">next</button>
             <br/> page
-            <span data-bind="text: explorePage() + 1"></span> from
-            <span data-bind="text: exploreTotal"></span>
-            (<span data-bind="text: exploreTotalRels"></span>)
+            <span data-bind="text: page() + 1"></span> from
+            <span data-bind="text: total"></span>
+            (
+            <span data-bind="text: totalRels"></span>)
         </div>
         <div data-bind="css: currentRel().index<0 ? 'hidden':''" style="display:inline-block; vertical-align:top; margin-top:20px; margin-left:30px; width:600px">
             <table class="details">
-                <tr><td>docId</td><td data-bind="text: currentRel().image"></td><td rowspan="4"><img data-bind="attr:{src: '../data/mSpRL/' + currentRel().image}"/></td></tr>
-                <tr><td>sentId</td><td data-bind="text: currentRel().sentId"></td></tr>
-                <tr><td>sent</td><td data-bind="text: currentRel().sent"></td></tr>
-                <tr><td>segments</td><td data-bind="foreach: currentRel().segments">
-                    <div data-bind="text: $data"></div>
-                    </td></tr>
+                <tr>
+                    <td>docId</td>
+                    <td data-bind="text: currentRel().image"></td>
+                    <td rowspan="4">
+                        <img data-bind="attr:{src: '../data/mSpRL/' + currentRel().image}" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>sentId</td>
+                    <td data-bind="text: currentRel().sentId"></td>
+                </tr>
+                <tr>
+                    <td>sent</td>
+                    <td data-bind="text: currentRel().sent"></td>
+                </tr>
+                <tr>
+                    <td>segments</td>
+                    <td data-bind="foreach: currentRel().segments">
+                        <div data-bind="text: $data"></div>
+                    </td>
+                </tr>
             </table>
         </div>
     </div>
     <script type="text/javascript" src="jquery-3.2.1.min.js"></script>
     <script type='text/javascript' src='knockout-3.4.2.js'></script>
+    <script type="text/javascript" src="types.js"></script>
     <script type="text/javascript" src="app.js"></script>
     <script type="text/javascript">
 
@@ -123,10 +181,10 @@
             function loadData(text, fileName) {
                 var lines = text.split("\n");
                 var data = []
-                for (var l in lines) {
+                for (var l = 0; l < lines.length; l++) {
                     if (lines[l] === "")
                         continue;
-                    data.push(new Instance(lines[l], l + 1));
+                    data.push(new Instance(lines[l], l));
                 }
                 app.addModel(new Model(fileName, data));
             }
