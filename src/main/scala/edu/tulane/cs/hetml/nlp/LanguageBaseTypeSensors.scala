@@ -143,11 +143,20 @@ object LanguageBaseTypeSensors extends Logging {
   }
 
   def isBefore(t1: NlpBaseElement, t2: NlpBaseElement): Boolean = {
-    getStartTokenId(t1) < getStartTokenId(t2)
+    t1.getStart < t2.getStart
   }
 
   def getTokenDistance(t1: NlpBaseElement, t2: NlpBaseElement): Int = {
-    Math.abs(getStartTokenId(t1) - getStartTokenId(t2))
+    val d1 = Math.abs(getStartTokenId(t1) - getEndTokenId(t2))
+    val d2 = Math.abs(getStartTokenId(t2) - getEndTokenId(t1))
+    Math.min(d1, d2)
+  }
+
+  def getPhraseDistance(p1: Phrase, p2: Phrase): Int = {
+    val start = Math.min(p1.getEnd, p2.getEnd)
+    val end = Math.max(p1.getStart, p2.getStart)
+    val count = getPhrases(getSentence(p1)).count(p=> p.getStart>= start && p.getEnd <= end)
+    count
   }
 
   def getCandidateRelations[T <: NlpBaseElement](argumentInstances: List[T]*): List[Relation] = {

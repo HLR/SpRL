@@ -77,21 +77,22 @@
     <button data-bind="click: compare">compare</button>
     <button data-bind="click: explore">explore</button>
     <hr/>
-    <div>
+    <input type="checkbox" data-bind="click: toggleTP, attr:{checked: TP}" /> TP
+    <input type="checkbox" data-bind="click: toggleTN, attr:{checked: TN}" /> TN
+    <input type="checkbox" data-bind="click: toggleFP, attr:{checked: FP}" /> FP
+    <input type="checkbox" data-bind="click: toggleFN, attr:{checked: FN}" /> FN
+    <input type="checkbox" data-bind="click: toggleAllRolesCorrect, attr:{checked: allRolesCorrect}" /> All roles correct
+    <input type="checkbox" data-bind="click: toggleDiffRole, attr:{checked: diffRole}" /> Different role predictions
+    <input type="checkbox" data-bind="click: toggleDiffRel, attr:{checked: diffRel}" /> Different relation predictions
+<div>
         <div style="display:inline-block">
-            <input type="checkbox" data-bind="click: toggleTP, attr:{checked: TP}" /> TP
-            <input type="checkbox" data-bind="click: toggleTN, attr:{checked: TN}" /> TN
-            <input type="checkbox" data-bind="click: toggleFP, attr:{checked: FP}" /> FP
-            <input type="checkbox" data-bind="click: toggleFN, attr:{checked: FN}" /> FN
-            <input type="checkbox" data-bind="click: toggleAllRolesCorrect, attr:{checked: allRolesCorrect}" /> All roles correct
-            <input type="checkbox" data-bind="click: toggleDiffRole, attr:{checked: diffRole}" /> Different role predictions
             <table class="ko-grid" cellspacing="0">
                 <thead>
                     <tr>
                         <th>index</th>
                         <th>type</th>
-                        <th>actual</th>
-                        <th>predicted</th>
+                        <th>label</th>
+                        <th>rel</th>
                         <th>tr</th>
                         <th>sp</th>
                         <th>lm</th>
@@ -106,6 +107,7 @@
                         <td>
                             <span data-bind="text: $parent.trApproved($data)"></span>
                             <span data-bind="text: tr"></span>
+                            (<span data-bind="text: trDis"></span>)
                         </td>
                         <td>
                             <span data-bind="text: $parent.spApproved($data)"></span>
@@ -114,6 +116,7 @@
                         <td>
                             <span data-bind="text: $parent.lmApproved($data)"></span>
                             <span data-bind="text: lm"></span>
+                            (<span data-bind="text: lmDis"></span>)
                         </td>
                     </tr>
                 </tbody>
@@ -126,7 +129,7 @@
             (
             <span data-bind="text: totalRels"></span>)
         </div>
-        <div data-bind="css: currentRel().index<0 ? 'hidden':''" style="display:inline-block; vertical-align:top; margin-top:20px; margin-left:30px; width:600px">
+        <div data-bind="css: currentRel().index<0 ? 'hidden':''" style="display:inline-block; vertical-align:top; margin-left:5px; width:600px">
             <table class="details">
                 <tr>
                     <td>docId</td>
@@ -165,7 +168,8 @@
                 var text = "";
                 var file = e.target.files[0];
                 reader.onload = function (e) {
-                    loadData(e.target.result, file.name);
+                    var name = file.name.replace('error_report_triplet_', '').replace('.txt', '');
+                    loadData(e.target.result, name);
                 };
                 reader.readAsText(file);
             });

@@ -410,26 +410,6 @@ object MultiModalSpRLDataModel extends DataModel {
       }
   }
 
-  val tripletIsTr = property(triplets, cache = true) {
-    x: Relation =>
-      x.getProperty("Relation") match {
-        case "true" =>
-          val (first, second, third) = getTripletArguments(x)
-          trajectorRole(first)
-        case _ => "None"
-      }
-  }
-
-  val tripletIsLm = property(triplets, cache = true) {
-    x: Relation =>
-      x.getProperty("Relation") match {
-        case "true" =>
-          val (first, second, third) = getTripletArguments(x)
-          landmarkRole(third)
-        case _ => "None"
-      }
-  }
-
   val tripletGeneralType = property(triplets) {
     r: Relation => if (r.containsProperty("GeneralType")) r.getProperty("GeneralType") else "None"
   }
@@ -608,6 +588,60 @@ object MultiModalSpRLDataModel extends DataModel {
       }
       else
         false
+  }
+
+  val tripletTrBeforeSp = property(pairs, cache = true) {
+    r: Relation =>
+      val (first, second, _) = getTripletArguments(r)
+      if (first == dummyPhrase)
+        ""
+      else
+        isBefore(first, second).toString
+  }
+
+  val tripletDistanceTrSp = property(pairs, cache = true) {
+    r: Relation =>
+      val (first, second, _) = getTripletArguments(r)
+      if (first == dummyPhrase)
+        -1
+      else
+        getPhraseDistance(first, second)
+  }
+
+  val tripletLmBeforeSp = property(pairs, cache = true) {
+    r: Relation =>
+      val (_, second, third) = getTripletArguments(r)
+      if (third == dummyPhrase)
+        ""
+      else
+        isBefore(third, second).toString
+  }
+
+  val tripletDistanceLmSp = property(pairs, cache = true) {
+    r: Relation =>
+      val (_, second, third) = getTripletArguments(r)
+      if (third == dummyPhrase)
+        -1
+      else
+        getPhraseDistance(third, second)
+  }
+
+  val tripletTrBeforeLm = property(pairs, cache = true) {
+    r: Relation =>
+      val (first, _, third) = getTripletArguments(r)
+      if (third == dummyPhrase)
+        ""
+      else
+        isBefore(first, third).toString
+  }
+
+  val tripletDistanceTrLm = property(pairs, cache = true) {
+    r: Relation =>
+      val (first, _, third) = getTripletArguments(r)
+      if (third == dummyPhrase)
+        -1
+      else
+        getTokenDistance(first, third)
   }
 
   val tripletHeadWordForm = property(triplets, cache = true) {

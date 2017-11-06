@@ -1,32 +1,45 @@
 var Instance = function (line, i) {
-    var parts = line.split("\t\t");
-    this.docId = "";
-    this.docId = parts[0];
-    this.sentId = parts[1];
-    this.sent = parts[2];
-    this.actualRel = parts[3];
-    this.predictedRel = parts[4];
-    this.tr = parts[5];
-    this.sp = parts[6];
-    this.lm = parts[7];
-    this.trApproved = parts[8] == 'true';
-    this.spApproved = parts[9] == 'true';
-    this.lmApproved = parts[10] == 'true';
-    this.segments = parts[11].split(",");
-    this.index = i;
-    this.image = this.docId.substr(0, this.docId.lastIndexOf(".")) + ".jpg";
-    this.image = this.image.substr(0, this.image.lastIndexOf("/")) + "/segmented_images" + this.image.substr(this.image.lastIndexOf("/"));
-    this.image = this.image.replace("annotations", "saiapr_tc-12");
+    var self = this;
+    self.parts = line.split("\t\t");
+    self.docId = "";
+    self.docId = parts(0);
+    self.sentId = parts(1);
+    self.sent = parts(2);
+    self.actualRel = parts(3);
+    self.predictedRel = parts(4);
+    self.tr = parts(5);
+    self.sp = parts(6);
+    self.lm = parts(7);
+    self.trApproved = parts(8) == 'true';
+    self.spApproved = parts(9) == 'true';
+    self.lmApproved = parts(10) == 'true';
+    self.segments = parts(11).split(",");
+    self.trDis = parts(12);
+    self.lmDis = parts(13);
+    self.index = i;
+    self.image = self.docId.substr(0, self.docId.lastIndexOf(".")) + ".jpg";
+    self.image = self.image.substr(0, self.image.lastIndexOf("/")) + "/segmented_images" + self.image.substr(self.image.lastIndexOf("/"));
+    self.image = self.image.replace("annotations", "saiapr_tc-12");
 
-    this.tp = this.actualRel === "Relation" && this.predictedRel === "Relation";
-    this.tn = this.actualRel === "None" && this.predictedRel === "None";
-    this.fp = this.actualRel === "None" && this.predictedRel === "Relation";
-    this.fn = this.actualRel === "Relation" && this.predictedRel === "None";
-    this.correct = this.tp || this.tn;
-    this.errortype = this.tp ? "tp" : this.tn ? "tn" : this.fp ? "fp" : "fn";
+    self.tp = self.actualRel === "Relation" && self.predictedRel === "Relation";
+    self.tn = self.actualRel === "None" && self.predictedRel === "None";
+    self.fp = self.actualRel === "None" && self.predictedRel === "Relation";
+    self.fn = self.actualRel === "Relation" && self.predictedRel === "None";
+    self.correct = self.tp || self.tn;
+    self.errortype = self.tp ? "tp" : self.tn ? "tn" : self.fp ? "fp" : "fn";
 
-    this.equalRoles = function(d){
-        return this.trApproved == d.trApproved && this.lmApproved == d.lmApproved && this.spApproved == d.spApproved;
+    self.equalRoles = function(d){
+        return self.trApproved == d.trApproved && self.lmApproved == d.lmApproved && self.spApproved == d.spApproved;
+    }
+
+    self.equalRels = function(d){
+        return self.predictedRel == d.predictedRel;
+    }
+
+    function parts(i){
+        if(i >= self.parts.length)
+            return "";
+        return self.parts[i];
     }
 };
 
@@ -58,17 +71,19 @@ var Model = function (name, data) {
             
         };
         for (var i =0; i<self.data.length; i++) {
-            if (this.data[i].correct) {
+            if (self.data[i].correct) {
                 if(m.data[i].correct){
                     c.cc.push(i);
-                }else{
+                }
+                else{
                     c.ci.push(i);
                 }
             }
             else{
                 if(m.data[i].correct){
                     c.ic.push(i);
-                }else{
+                }
+                else{
                     c.ii.push(i);
                 }  
             }

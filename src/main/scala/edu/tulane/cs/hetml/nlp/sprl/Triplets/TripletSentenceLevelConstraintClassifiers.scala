@@ -12,21 +12,21 @@ object TripletSentenceLevelConstraintClassifiers {
   val erSolver = new GurobiHook()
 
   object LMConstraintClassifier extends ConstrainedClassifier[Phrase, Sentence](LandmarkRoleClassifier) {
-    def subjectTo = roleConstraints
+    def subjectTo = tripletConstraints
 
     override val solver = erSolver
     override val pathToHead = Some(-sentenceToPhrase)
   }
 
   object TRConstraintClassifier extends ConstrainedClassifier[Phrase, Sentence](TrajectorRoleClassifier) {
-    def subjectTo = roleConstraints
+    def subjectTo = tripletConstraints
 
     override val solver = erSolver
     override val pathToHead = Some(-sentenceToPhrase)
   }
 
   object IndicatorConstraintClassifier extends ConstrainedClassifier[Phrase, Sentence](IndicatorRoleClassifier) {
-    def subjectTo = roleConstraints
+    def subjectTo = tripletConstraints
 
     override val solver = erSolver
     override val pathToHead = Some(-sentenceToPhrase)
@@ -40,21 +40,21 @@ object TripletSentenceLevelConstraintClassifiers {
   }
 
   object TripletGeneralTypeConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletGeneralTypeClassifier) {
-    def subjectTo = generalConstraints
+    def subjectTo = tripletConstraints
 
     override val solver = erSolver
     override val pathToHead = Some(-sentenceToTriplets)
   }
 
   object TripletDirectionConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletDirectionClassifier) {
-    def subjectTo = directionConstraints
+    def subjectTo = tripletConstraints
 
     override val solver = erSolver
     override val pathToHead = Some(-sentenceToTriplets)
   }
 
   object TripletRegionConstraintClassifier extends ConstrainedClassifier[Relation, Sentence](TripletRegionClassifier) {
-    def subjectTo = regionConstraints
+    def subjectTo = tripletConstraints
 
     override val solver = erSolver
     override val pathToHead = Some(-sentenceToTriplets)

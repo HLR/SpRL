@@ -15,6 +15,7 @@ var App = function () {
     self.IC = ko.observable(false);
     self.II = ko.observable(false);
     self.diffRole = ko.observable(false);
+    self.diffRel = ko.observable(false);
     self.currentRel = ko.observable({ index: -1 });
     self.allRolesCorrect = ko.observable(false);
     self.comparison = ko.observable({
@@ -51,7 +52,10 @@ var App = function () {
                 if (self.comparison().first !== {} && self.comparison().second !== {}) {
                     if (self.diffRole() && self.models()[0].data[i].equalRoles(self.models()[1].data[i]))
                         return false;
-                    if (self.CC() && self.comparison().cc.indexOf(i) < 0)
+                    if (self.diffRel() && self.models()[0].data[i].equalRels(self.models()[1].data[i]))
+                        return false;
+                    
+                        if (self.CC() && self.comparison().cc.indexOf(i) < 0)
                         return false;
 
                     if (self.CI() && self.comparison().ci.indexOf(i) < 0)
@@ -145,6 +149,12 @@ var App = function () {
         return true;
     };
 
+    self.toggleDiffRel = function () {
+        self.diffRel(!self.diffRel());
+        self.explore();
+        return true;
+    };
+
     self.nextPage = function () {
         self.page(Math.min(self.page() + 1, self.total() - 1));
         self.explore();
@@ -198,7 +208,7 @@ var App = function () {
     self.predicted = function (rel) {
         var str = "";
         for (i in self.models()) {
-            str += self.models()[i].data[rel.index].predictedRel + " ";
+            str += self.models()[i].data[rel.index].tp || self.models()[i].data[rel.index].tn ? '\u2713' : '\u00D7';
         }
         return str;
     }

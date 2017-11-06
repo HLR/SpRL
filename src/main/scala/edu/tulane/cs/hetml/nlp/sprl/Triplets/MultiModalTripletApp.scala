@@ -209,6 +209,8 @@ object MultiModalTripletApp extends App with Logging {
       val t = triplets(r) ~> tripletToFirstArg head
       val s = triplets(r) ~> tripletToSecondArg head
       val l = triplets(r) ~> tripletToThirdArg head
+      val tDis = tripletDistanceTrSp(r)
+      val lDis = tripletDistanceLmSp(r)
 
       val tCorrect = "trajector".equalsIgnoreCase(tr(t))
       val sCorrect = "indicator".equalsIgnoreCase(sp(s))
@@ -222,7 +224,7 @@ object MultiModalTripletApp extends App with Logging {
       //tr correct, sp correct, lm correct, segments[id, code, text]
       val line = s"$docId\t\t${sent.getId}\t\t${sent.getText}\t\t${actual}" +
         s"\t\t${predicted}\t\t${t.getText}\t\t${s.getText}\t\t${l.getText}\t\t${tCorrect}" +
-        s"\t\t${sCorrect}\t\t${lCorrect}\t\t${segments}"
+        s"\t\t${sCorrect}\t\t${lCorrect}\t\t${segments}\t\t$tDis\t\t$lDis"
       writer.println(line)
     }
   }
