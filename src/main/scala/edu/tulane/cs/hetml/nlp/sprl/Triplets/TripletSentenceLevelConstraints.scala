@@ -97,7 +97,7 @@ object TripletSentenceLevelConstraints {
           a = a and (
             (
               (TripletGeneralTypeClassifier on x) isNot "None"
-              ) <==>
+              ) ==>
               (TripletRelationClassifier on x is "Relation")
             )
       }
