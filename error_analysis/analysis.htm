@@ -81,10 +81,12 @@
     <input type="checkbox" data-bind="click: toggleTN, attr:{checked: TN}" /> TN
     <input type="checkbox" data-bind="click: toggleFP, attr:{checked: FP}" /> FP
     <input type="checkbox" data-bind="click: toggleFN, attr:{checked: FN}" /> FN
+    <input type="checkbox" data-bind="click: toggleTrMatched, attr:{checked: trMatched}" /> Tr Matched
+    <input type="checkbox" data-bind="click: toggleLmMatched, attr:{checked: lmMatched}" /> Lm Matched 
     <input type="checkbox" data-bind="click: toggleAllRolesCorrect, attr:{checked: allRolesCorrect}" /> All roles correct
     <input type="checkbox" data-bind="click: toggleDiffRole, attr:{checked: diffRole}" /> Different role predictions
     <input type="checkbox" data-bind="click: toggleDiffRel, attr:{checked: diffRel}" /> Different relation predictions
-<div>
+    <div>
         <div style="display:inline-block">
             <table class="ko-grid" cellspacing="0">
                 <thead>
@@ -107,7 +109,8 @@
                         <td>
                             <span data-bind="text: $parent.trApproved($data)"></span>
                             <span data-bind="text: tr"></span>
-                            (<span data-bind="text: trDis"></span>)
+                            (
+                            <span data-bind="text: trDis"></span>)
                         </td>
                         <td>
                             <span data-bind="text: $parent.spApproved($data)"></span>
@@ -116,7 +119,8 @@
                         <td>
                             <span data-bind="text: $parent.lmApproved($data)"></span>
                             <span data-bind="text: lm"></span>
-                            (<span data-bind="text: lmDis"></span>)
+                            (
+                            <span data-bind="text: lmDis"></span>)
                         </td>
                     </tr>
                 </tbody>
@@ -134,7 +138,7 @@
                 <tr>
                     <td>docId</td>
                     <td data-bind="text: currentRel().image"></td>
-                    <td rowspan="4">
+                    <td rowspan="5">
                         <img data-bind="attr:{src: '../data/mSpRL/' + currentRel().image}" />
                     </td>
                 </tr>
@@ -149,6 +153,12 @@
                 <tr>
                     <td>segments</td>
                     <td data-bind="foreach: currentRel().segments">
+                        <div data-bind="text: $data"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>matchings</td>
+                    <td data-bind="foreach: currentRel().matchings">
                         <div data-bind="text: $data"></div>
                     </td>
                 </tr>

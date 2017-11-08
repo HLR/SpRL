@@ -14,7 +14,7 @@ import org.deeplearning4j.models.word2vec.Word2Vec
 import scala.collection.immutable.HashMap
 import scala.collection.JavaConversions._
 import scala.util.matching.Regex
-import MultiModalSpRLDataModel._
+import MultiModalSpRLDataModel.{_}
 
 object MultiModalSpRLSensors {
 
@@ -81,10 +81,12 @@ object MultiModalSpRLSensors {
     d.getPropertyFirstValue("IMAGE").endsWith("/" + i.getLabel)
   }
 
+  val matchingCandidates = List("NN", "JJR", "JJ", "NNP", "NNS")
+
   def segmentToSegmentPhrasePairs(s: Segment): List[Relation] = {
-    val image = images().filter(i=>i.getId == s.getAssociatedImageID)
+    val image = images().filter(i => i.getId == s.getAssociatedImageID)
     val phrases = (images(image) ~> -documentToImage ~> documentToSentence ~> sentenceToPhrase)
-      .filter(p => p != dummyPhrase)
+      .filter(p => p != dummyPhrase && matchingCandidates.exists(x => headWordPos(p).toUpperCase().contains(x)))
       .toList
     phrases.map {
       p =>
@@ -92,9 +94,13 @@ object MultiModalSpRLSensors {
         r.setId(p.getId + "__" + s.getSegmentId)
         r.setArgumentId(0, p.getId)
         r.setArgumentId(1, s.getSegmentId.toString)
+        val head = getHeadword(p)
+        val sim = s.getSegmentConcept.split('-').map(x => getSimilarity(x, head.getText)).max
+        r.setProperty("similarity", "0")//sim.toString)
         r
     }
   }
+
   def SegmentPhrasePairToPhraseMatching(pair: Relation, phrase: Phrase): Boolean = {
     pair.getArgumentId(0) == phrase.getId
   }

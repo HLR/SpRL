@@ -14,6 +14,8 @@ var App = function () {
     self.CI = ko.observable(false);
     self.IC = ko.observable(false);
     self.II = ko.observable(false);
+    self.trMatched = ko.observable(false);
+    self.lmMatched = ko.observable(false);
     self.diffRole = ko.observable(false);
     self.diffRel = ko.observable(false);
     self.currentRel = ko.observable({ index: -1 });
@@ -49,13 +51,19 @@ var App = function () {
                 if (self.allRolesCorrect() && !(item.trApproved && item.spApproved && item.lmApproved))
                     return false;
 
+                if (self.trMatched() && !item.trMatched)
+                    return false;
+
+                if (self.lmMatched() && !item.lmMatched)
+                    return false;
+
                 if (self.comparison().first !== {} && self.comparison().second !== {}) {
                     if (self.diffRole() && self.models()[0].data[i].equalRoles(self.models()[1].data[i]))
                         return false;
                     if (self.diffRel() && self.models()[0].data[i].equalRels(self.models()[1].data[i]))
                         return false;
-                    
-                        if (self.CC() && self.comparison().cc.indexOf(i) < 0)
+
+                    if (self.CC() && self.comparison().cc.indexOf(i) < 0)
                         return false;
 
                     if (self.CI() && self.comparison().ci.indexOf(i) < 0)
@@ -115,6 +123,18 @@ var App = function () {
 
     self.toggleII = function () {
         self.II(!self.II());
+        self.explore();
+        return true;
+    };
+
+    self.toggleTrMatched = function () {
+        self.trMatched(!self.trMatched());
+        self.explore();
+        return true;
+    };
+
+    self.toggleLmMatched = function () {
+        self.lmMatched(!self.lmMatched());
         self.explore();
         return true;
     };

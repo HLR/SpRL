@@ -25,7 +25,7 @@ class SegmentPhraseSimilarityClassifier extends Learner("sprl.SegmentPhraseSimil
     val concept = seg.getSegmentConcept
     val sim = getSimilarity(phraseHead, concept)
     val result: ScoreSet = new ScoreSet
-    result.put("false", 0)
+    result.put("false", 0.2)
     result.put("true", sim)
     result
   }

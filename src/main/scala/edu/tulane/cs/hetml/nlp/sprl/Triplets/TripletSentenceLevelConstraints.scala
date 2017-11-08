@@ -7,7 +7,6 @@ import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator
-import me.tongfei.progressbar.ProgressBar
 
 import scala.collection.JavaConversions._
 
@@ -72,9 +71,8 @@ object TripletSentenceLevelConstraints {
 
           a = a and
             (
-
-              (TrajectorRoleClassifier on p is "Trajector") or (LandmarkRoleClassifier on p is "Landmark")) ==>
-              pairs._exists(pair => sim on pair is "true")
+              pairs._exists(pair => sim on pair is "true") ==>
+              (TrajectorRoleClassifier on p is "Trajector") or (LandmarkRoleClassifier on p is "Landmark"))
       }
       a
   }
@@ -114,8 +112,7 @@ object TripletSentenceLevelConstraints {
           val lm = (triplets(x) ~> tripletToThirdArg ~> -segmentPhrasePairToPhrase).toList
 
           a = a and (
-            tr._exists(t => (sim on t) is "true") and lm._exists(t => (sim on t) is "true")
-              ==>
+            tr._exists(t => (sim on t) is "true") and lm._exists(t => (sim on t) is "true") ==>
               (TripletRelationClassifier on x is "Relation")
             )
       }
@@ -188,10 +185,11 @@ object TripletSentenceLevelConstraints {
           boostRegion(x) //and
           //noDuplicates(x)
 
-      if (mSpRLConfigurator.imageConstraints)
-        a = a and
-          boostTripletByImage(x) and
-          boostTrajectorByImage(x) and uniqueSegmentAssignment(x)
+//      if (mSpRLConfigurator.imageConstraints)
+//        a = a and
+//          boostTripletByImage(x) and
+//          //boostTrajectorByImage(x) and
+//          uniqueSegmentAssignment(x)
       a
   }
 

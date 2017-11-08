@@ -17,6 +17,7 @@ object MultiModalTripletApp extends App with Logging {
   val expName = "triplet_" + ((model, useConstraints) match {
     case (FeatureSets.BaseLine, false) => "BM"
     case (FeatureSets.BaseLineWithImage, false) => "BM+I"
+    case (FeatureSets.BaseLineWithImage, true) => "BM+C+I"
     case (FeatureSets.BaseLine, true) => "BM+C"
     case (FeatureSets.WordEmbedding, false) => "BM+E"
     case (FeatureSets.WordEmbedding, true) => "BM+C+E"
@@ -57,8 +58,12 @@ object MultiModalTripletApp extends App with Logging {
     IndicatorRoleClassifier.save()
     LandmarkRoleClassifier.save()
 
+    val spCandidatesTrain = CandidateGenerator.getIndicatorCandidates(phrases().toList)
     val trCandidatesTrain = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+      .filterNot(x=> spCandidatesTrain.contains(x))
     val lmCandidatesTrain = CandidateGenerator.getLandmarkCandidates(phrases().toList)
+      .filterNot(x=> spCandidatesTrain.contains(x))
+
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTrain.exists(_.getId == x.getId),
@@ -93,8 +98,11 @@ object MultiModalTripletApp extends App with Logging {
     TripletRegionClassifier.load()
     TripletDirectionClassifier.load()
 
+    val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases().toList)
     val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+      .filterNot(x=> spCandidatesTest.contains(x))
     val lmCandidatesTest = CandidateGenerator.getLandmarkCandidates(phrases().toList)
+      .filterNot(x=> spCandidatesTest.contains(x))
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTest.exists(_.getId == x.getId),
@@ -203,7 +211,7 @@ object MultiModalTripletApp extends App with Logging {
   def report(rel: Relation => String, tr: Phrase => String, lm: Phrase => String, sp: Phrase => String) = {
     val writer = new PrintStream(s"$resultsDir/error_report_$expName$suffix.txt")
 
-    triplets().foreach { r =>
+    triplets().toList.sortBy(x=> x.getId).foreach { r =>
       val predicted = rel(r)
       val actual = tripletIsRelation(r)
       val t = triplets(r) ~> tripletToFirstArg head
@@ -212,19 +220,32 @@ object MultiModalTripletApp extends App with Logging {
       val tDis = tripletDistanceTrSp(r)
       val lDis = tripletDistanceLmSp(r)
 
+      val tSeg = matchingSegment(t)
+      val lSeg = matchingSegment(l)
+      val tSegSim = similarityToMatchingSegment(t)
+      val lSegSim = similarityToMatchingSegment(l)
+
       val tCorrect = "trajector".equalsIgnoreCase(tr(t))
       val sCorrect = "indicator".equalsIgnoreCase(sp(s))
       val lCorrect = if(l == dummyPhrase) false else "landmark".equalsIgnoreCase(lm(l))
 
       val sent = triplets(r) ~> -sentenceToTriplets head
+
       val segments = (sentences(sent) ~> -documentToSentence ~> documentToImage ~> imageToSegment)
+          .toList.sortBy(_.getSegmentId)
         .map(x => x.getSegmentId + ":" + x.getSegmentCode +":" + x.getSegmentConcept).mkString(",")
+
+      val matchings = (sentences(sent)~> sentenceToPhrase).toList.sortBy(_.getStart)
+        .map(p=> p.getText + "-> " + matchingSegment(p) + ": " + similarityToMatchingSegment(p))
+        .mkString(",")
+
       val docId = (triplets(r) ~> -sentenceToTriplets ~> -documentToSentence).head.getId
+
       //docId, sentId, sent, actual rel, predicted rel, tr text, sp text, lm text
       //tr correct, sp correct, lm correct, segments[id, code, text]
       val line = s"$docId\t\t${sent.getId}\t\t${sent.getText}\t\t${actual}" +
         s"\t\t${predicted}\t\t${t.getText}\t\t${s.getText}\t\t${l.getText}\t\t${tCorrect}" +
-        s"\t\t${sCorrect}\t\t${lCorrect}\t\t${segments}\t\t$tDis\t\t$lDis"
+        s"\t\t${sCorrect}\t\t${lCorrect}\t\t${segments}\t\t$tDis\t\t$lDis\t\t$tSeg\t\t$tSegSim\t\t$lSeg\t\t$lSegSim\t\t$matchings"
       writer.println(line)
     }
   }

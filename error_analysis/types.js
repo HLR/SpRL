@@ -13,9 +13,14 @@ var Instance = function (line, i) {
     self.trApproved = parts(8) == 'true';
     self.spApproved = parts(9) == 'true';
     self.lmApproved = parts(10) == 'true';
-    self.segments = parts(11).split(",");
+    self.segments = parts(11).split(",").sort(function(x,y){return parseInt(x.split(':')[0]) - parseInt(y.split(':')[0]); });
     self.trDis = parts(12);
     self.lmDis = parts(13);
+    self.trSegment = parts(14);
+    self.trSegmentSimilarity = parts(15);
+    self.lmSegment = parts(16);
+    self.lmSegmentSimilarity = parts(17);
+    self.matchings = parts(18).split(",");    
     self.index = i;
     self.image = self.docId.substr(0, self.docId.lastIndexOf(".")) + ".jpg";
     self.image = self.image.substr(0, self.image.lastIndexOf("/")) + "/segmented_images" + self.image.substr(self.image.lastIndexOf("/"));
@@ -27,6 +32,18 @@ var Instance = function (line, i) {
     self.fn = self.actualRel === "Relation" && self.predictedRel === "None";
     self.correct = self.tp || self.tn;
     self.errortype = self.tp ? "tp" : self.tn ? "tn" : self.fp ? "fp" : "fn";
+
+    for(var i in self.segments){
+        var id = self.segments[i].split(':')[0]
+        if(id === self.trSegment){
+            self.segments[i] += '(tr sim = ' + self.trSegmentSimilarity + ')';
+            self.trMatched = true;
+        }
+        if(id === self.lmSegment){
+            self.segments[i] += '(lm sim = ' + self.lmSegmentSimilarity + ')';
+            self.lmMatched = true;
+        }
+    }
 
     self.equalRoles = function(d){
         return self.trApproved == d.trApproved && self.lmApproved == d.lmApproved && self.spApproved == d.spApproved;
