@@ -8,6 +8,8 @@ object mSpRLConfigurator {
   val onTheFlyLexicon = true // build the sp lex on the fly when training or using pre existed lex
   val resultsDir = "data/mSpRL/results/"
   val imageDataPath = "data/mSprl/saiapr_tc-12"
+  val alignmentAnnotationPath = imageDataPath + "/annotatedFiles/"
+  val alignmentTextPath = imageDataPath + "/annotatedFiles/textData"
   val modelDir = "models/mSpRL/"
   val spatialIndicatorLex = "data/mSprl/spatialIndicator.lex"
   val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"

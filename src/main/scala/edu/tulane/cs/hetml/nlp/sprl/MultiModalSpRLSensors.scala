@@ -95,7 +95,7 @@ object MultiModalSpRLSensors {
         r.setArgumentId(0, p.getId)
         r.setArgumentId(1, s.getSegmentId.toString)
         val head = getHeadword(p)
-        val sim = s.getSegmentConcept.split('-').map(x => getSimilarity(x, head.getText)).max
+        //val sim = s.getSegmentConcept.split('-').map(x => getSimilarity(x, head.getText)).max
         r.setProperty("similarity", "0")//sim.toString)
         r
     }
