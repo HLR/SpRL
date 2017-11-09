@@ -11,17 +11,18 @@ import scala.collection.JavaConversions._
   */
 object ImageApp extends App {
 
+val tripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets")
 
 //  val languageHelper = new LanguageHelper()
 //  val a =languageHelper.wordSpellVerifier("buildinng")
 //
 //  val sim = getGoogleSimilarity("", "")
 //  println(a)
-
-val expData = new RefExpTrainedWordReader()
-  expData.ExpClsOutput("data/mSprl/saiapr_tc-12")
-  expData.WordClsOutput("data/mSprl/saiapr_tc-12")
-  expData.findDiff()
+//
+//val expData = new RefExpTrainedWordReader()
+//  expData.ExpClsOutput("data/mSprl/saiapr_tc-12")
+//  expData.WordClsOutput("data/mSprl/saiapr_tc-12")
+//  expData.findDiff()
 
   //  val readFullData = true
 //

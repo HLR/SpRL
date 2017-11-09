@@ -10,6 +10,11 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.*;
 
+/**
+ * Reads CLEF Segment CNN Features, given a directory
+ * @author Umar Manzoor
+ *
+ */
 public class CLEFGoogleNETReader {
 
     public List<Image> allImages;

@@ -165,7 +165,7 @@ object WordasClassifierApp extends App {
     val testSegments =
       if (useAnntotatedClef) {
         val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
-        ClefAnnReader.testSegments.toList
+        ClefAnnReader.clefSegments.toList
       }
       else
         allsegments

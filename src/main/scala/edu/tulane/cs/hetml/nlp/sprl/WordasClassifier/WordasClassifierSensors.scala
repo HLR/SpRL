@@ -28,43 +28,48 @@ object WordasClassifierSensors {
   }
 
   def sentenceToSegmentSentencePairsGenerating(sen: Sentence): List[Relation] = {
-    val posSeg = segments().filter(s=> s.getUniqueId==sen.getId).toList
-    val negSegs = segments().filter(s=> s.getAssociatedImageID==sen.getId.split("_")(0) &&
-      s.getSegmentId.toString!=sen.getId.split("_")(1)).toList
+    if(sen.getText!=null) {
+      val posSeg = segments().filter(s => s.getUniqueId == sen.getId).toList
+      val negSegs = segments().filter(s => s.getAssociatedImageID == sen.getId.split("_")(0) &&
+        s.getSegmentId.toString != sen.getId.split("_")(1)).toList
 
-    val len = if(isTrain) if(negSegs.size > 5) 5 else negSegs.size else negSegs.size
-    val scoreVector = getExpressionSegmentScore(sen, posSeg.head, negSegs.take(len))
+      val len = if (isTrain) if (negSegs.size > 5) 5 else negSegs.size else negSegs.size
+      val scoreVector = getExpressionSegmentScore(sen, posSeg.head, negSegs.take(len))
 
-    val posExps = posSeg.map {
-      seg=>
-        val r = new Relation()
+      val posExps = posSeg.map {
+        seg =>
+          val r = new Relation()
 
-        r.setId(sen.getId + "__1__" + seg.getSegmentId)
-        r.setArgumentId(0, sen.getId)
-        r.setArgumentId(1, seg.getUniqueId)
-        r.setArgumentId(2, "isRel")
-        r.setArgumentId(3, scoreVector(0).toString) // Computed & Normalized Score
-        r
+          r.setId(sen.getId + "__1__" + seg.getSegmentId)
+          r.setArgumentId(0, sen.getId)
+          r.setArgumentId(1, seg.getUniqueId)
+          r.setArgumentId(2, "isRel")
+          r.setArgumentId(3, scoreVector(0).toString) // Computed & Normalized Score
+          r
+      }
+      var index = 1;
+      val negExps = negSegs.take(len).map {
+        seg =>
+          val r = new Relation()
+
+          r.setId(sen.getId + "__0__" + seg.getSegmentId)
+          r.setArgumentId(0, sen.getId)
+          r.setArgumentId(1, seg.getUniqueId)
+          r.setArgumentId(2, "isNotRel")
+          r.setArgumentId(3, scoreVector(index).toString) // Computed & Normalized Score
+          index += 1
+          r
+      }
+      posExps ++ negExps
     }
-    var index = 1;
-    val negExps = negSegs.take(len).map {
-      seg =>
-        val r = new Relation()
-
-        r.setId(sen.getId + "__0__" + seg.getSegmentId)
-        r.setArgumentId(0, sen.getId)
-        r.setArgumentId(1, seg.getUniqueId)
-        r.setArgumentId(2, "isNotRel")
-        r.setArgumentId(3, scoreVector(index).toString) // Computed & Normalized Score
-        index += 1
-        r
-    }
-    posExps ++ negExps
+    else
+      List()
   }
 
   def getExpressionSegmentScore(sen: Sentence, seg: Segment, negSegs: List[Segment]) : List[Double] = {
 
     val allsegs = List(seg) ++ negSegs
+    println(sen.getId)
     val instances = sen.getText.split(" ").map(w => {
       allsegs.map(s => new WordSegment(w, s, s.getUniqueId==seg.getUniqueId, false, "")).toList
     }).toList

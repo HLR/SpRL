@@ -56,26 +56,49 @@ object ExpressionClassifierApp extends App {
   })
 
   loadWordClassifiers()
-  val clefSegments =
-    if(useAnntotatedClef) {
-      val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
-      ClefAnnReader.testSegments.toList
+
+  if(!useAnntotatedClef) {
+    images.populate(allImages, isTrain)
+    segments.populate(allsegments, isTrain)
+    documents.populate(allDocuments, isTrain)
+    sentences.populate(allSentence, isTrain)
+  }
+  else {
+    val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
+
+    val clefSegments =
+      if(useAnntotatedClef) {
+        ClefAnnReader.clefSegments.toList
+      } else
+        List()
+    val clefImages = if(useAnntotatedClef) {
+      ClefAnnReader.clefImages.toList
     } else
       List()
 
-  if(useAnntotatedClef) {
-    clefSegments.foreach({
-      cS =>
-        val segWithFeatures = allsegments.filter(seg => seg.getUniqueId.equals(cS.getUniqueId))
-        cS.segmentFeatures = segWithFeatures(0).segmentFeatures
-    })
-  }
+    val clefSentences = if(useAnntotatedClef) {
+      ClefAnnReader.clefSentences.toList
+    } else
+      List()
 
-  val segmentDataset = if(!useAnntotatedClef) allsegments else clefSegments
-  images.populate(allImages, isTrain)
-  segments.populate(segmentDataset, isTrain)
-  documents.populate(allDocuments, isTrain)
-  sentences.populate(allSentence, isTrain)
+    val clefDocuments = if(useAnntotatedClef) {
+      ClefAnnReader.clefDocuments.toList
+    } else
+      List()
+
+    if(useAnntotatedClef) {
+      clefSegments.foreach({
+        cS =>
+          val segWithFeatures = allsegments.filter(seg => seg.getUniqueId.equals(cS.getUniqueId))
+          cS.segmentFeatures = segWithFeatures(0).segmentFeatures
+      })
+    }
+
+    images.populate(clefImages, isTrain)
+    segments.populate(clefSegments, isTrain)
+    documents.populate(clefDocuments, isTrain)
+    sentences.populate(clefSentences, isTrain)
+  }
 
   if(isTrain) {
     println("Training...")
@@ -86,13 +109,13 @@ object ExpressionClassifierApp extends App {
 
   if(!isTrain) {
     println("Testing...")
-    ExpressionasClassifer.modelDir = classifierDirectory
+    //ExpressionasClassifer.modelDir = classifierDirectory
     var count = 0;
     ExpressionasClassifer.load()
     //ExpressionasClassifer.test()
 
-    //ExpressionasClassifer.test(expressionSegmentPairs(), expressionPredictedRelation, expressionActualRelation)
-    ExpressionasClassiferConstraintClassifier.test()
+    ExpressionasClassifer.test(expressionSegmentPairs(), expressionPredictedRelation, expressionActualRelation)
+    //ExpressionasClassiferConstraintClassifier.test()
 
     //ExpressionasClassiferConstraintClassifier.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))
     //ExpressionasClassifer.test(expressionSegmentPairs().filter(es => es.getArgumentId(2)=="isRel"))

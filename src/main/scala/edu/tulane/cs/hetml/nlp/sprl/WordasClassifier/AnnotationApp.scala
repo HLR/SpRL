@@ -17,8 +17,8 @@ import scala.collection.JavaConversions._
 object AnnotationApp extends App {
 
   val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
-  val testImages = ClefAnnReader.testImages.toList
-  val testSegments = ClefAnnReader.testSegments.toList
+  val testImages = ClefAnnReader.clefImages.toList
+  val testSegments = ClefAnnReader.clefSegments.toList
 
   populateRoleDataFromAnnotatedCorpus()
 

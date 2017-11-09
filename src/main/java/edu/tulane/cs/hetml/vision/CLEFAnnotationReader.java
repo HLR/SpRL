@@ -1,9 +1,14 @@
 package edu.tulane.cs.hetml.vision;
 
+/**
+ * Reads CLEF Annotated dataset, given a directory
+ * @author Umar Manzoor
+ *
+ */
+import edu.tulane.cs.hetml.nlp.BaseTypes.Document;
+import edu.tulane.cs.hetml.nlp.BaseTypes.Sentence;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
+import java.util.*;
 
 public class CLEFAnnotationReader {
 
@@ -11,14 +16,20 @@ public class CLEFAnnotationReader {
     private Hashtable<String, String> pharseRemaining = new Hashtable<String, String>();
     private Hashtable<String, String> referit = new Hashtable<String, String>();
 
-    public List<Image> testImages;
-    public List<Segment> testSegments;
-    private List<String> allphrases;
+    public List<Image> clefImages;
+    public List<Segment> clefSegments;
+    private List<String> allPhrases;
+    public List<Document> clefDocuments;
+    public List<Sentence> clefSentences;
 
     PrintWriter printToFile;
     PrintWriter printToFileNames;
 
     public CLEFAnnotationReader(String directory) throws IOException {
+        loadAnnotatedFiles(directory);
+    }
+
+    private void loadAnnotatedFiles(String directory) throws IOException {
 
         File d = new File(directory);
 
@@ -30,9 +41,11 @@ public class CLEFAnnotationReader {
             throw new IOException(directory + " is not a directory!");
         }
 
-        testImages = new ArrayList<>();
-        testSegments = new ArrayList<>();
-        allphrases = new ArrayList<>();
+        clefImages = new ArrayList<>();
+        clefSegments = new ArrayList<>();
+        allPhrases = new ArrayList<>();
+        clefSentences = new ArrayList<>();
+        clefDocuments = new ArrayList<>();
 
         //Load Referit Text
         loadReferit(directory);
@@ -46,8 +59,9 @@ public class CLEFAnnotationReader {
 
         //Load Test Segments
         loadTestSegment(annDir);
-    }
 
+        generateNLPBaseClasses();
+    }
     private void annotatedFilesConversion(String directory) throws IOException {
 
         printToFile = new PrintWriter( directory + "/Output/ClefSegment.txt");
@@ -65,7 +79,7 @@ public class CLEFAnnotationReader {
             if (file.isFile()) {
                 String fileName = file.getName().replaceFirst("[.][^.]+$", "");
                 // Reading Text used for Annotated
-                allphrases.clear();
+                allPhrases.clear();
                 tokens.clear();
                 pharseRemaining.clear();
                 completeText(directory, fileName);
@@ -80,7 +94,7 @@ public class CLEFAnnotationReader {
                             tokens.put(words[0], words[2]);
                             String[] spans = words[1].split(" ");
                             String pharseWithSpan = words[2] + " " + spans[1] + " " + spans [2];
-                            allphrases.remove(pharseWithSpan);
+                            allPhrases.remove(pharseWithSpan);
                             pharseRemaining.put(words[0], words[2]);
                         }
                         else if (words[1].startsWith("S")) //Segment
@@ -141,7 +155,7 @@ public class CLEFAnnotationReader {
                     int startSpan = index +1;
                     int endSpan = index +1 + p.trim().length();
                     String phraseWithSpan = p.trim() + " " + startSpan + " " + endSpan;
-                    allphrases.add(phraseWithSpan);
+                    allPhrases.add(phraseWithSpan);
                     index +=p.trim().length() + 2;
                 }
                 index += 1;
@@ -163,7 +177,7 @@ public class CLEFAnnotationReader {
         while ((line = reader.readLine()) != null) {
             String imageId = line.trim();
             Image i = new Image(imageId.trim() + ".jpg", imageId.trim());
-            testImages.add(i);
+            clefImages.add(i);
         }
     }
 
@@ -174,8 +188,9 @@ public class CLEFAnnotationReader {
         while ((line = reader.readLine()) != null) {
             String[] segInfo = line.split("\\~");
             System.out.println(line);
-            Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]),"",segInfo[2],false);
-            testSegments.add(s);
+            String exp = removeDuplicates(segInfo[2]);
+            Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]),"", exp,false);
+            clefSegments.add(s);
         }
     }
 
@@ -187,5 +202,23 @@ public class CLEFAnnotationReader {
             String[] segInfo = line.split("\\~");
             referit.put(segInfo[0], segInfo[1] + "~" + segInfo[2] + "~" + segInfo[3]);
         }
-     }
+    }
+
+    public void generateNLPBaseClasses() {
+        for (Segment s :  clefSegments) {
+            String ID = s.getAssociatedImageID() + "_" + s.getSegmentId();
+            Document d = new Document(ID);
+            int len = 0;
+            if(s.referItExpression!=null)
+                len = s.referItExpression.length();
+            Sentence sen = new Sentence(d, ID, 0, len, s.referItExpression);
+            clefDocuments.add(d);
+            clefSentences.add(sen);
+        }
+    }
+
+    public String removeDuplicates(String s) {
+        s = s.toLowerCase().replaceAll("[^a-z]", " ").replaceAll("( )+", " ").trim();
+        return new LinkedHashSet<String>(Arrays.asList(s.split(" "))).toString().replaceAll("(^\\[|\\]$)", "").replace(", ", " ");
+    }
 }
