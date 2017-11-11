@@ -21,7 +21,7 @@ class AlignmentReader(annotationDir: String, textDir: String) {
 
               val sentencePhrases = filePhrases.filter(p => p.getSentence.getText.equalsIgnoreCase(s))
 
-              if(sentencePhrases.isEmpty){
+              if (sentencePhrases.isEmpty) {
                 println(s"sentence '$s' from file $f skipped")
               }
               else {
@@ -35,8 +35,18 @@ class AlignmentReader(annotationDir: String, textDir: String) {
                     if (phrase.isEmpty)
                       phrase = sentencePhrases.filter(x => x.getText.split(",").exists(_.trim.equalsIgnoreCase(p)))
 
-                    if (phrase.length != 1)
-                      println(s"No unique phrase matches for '$p': ${phrase.length} in file $f")
+                    if (phrase.isEmpty) {
+                      phrase = sentencePhrases.filter(x => x.getText.toLowerCase().contains(p))
+                      if (phrase.nonEmpty)
+                        println(s"Warning: $p matched with ${phrase.head.getText}")
+                    }
+
+                    if (phrase.length > 1)
+                      println(s"More than 1 phrase matches for '$p': ${phrase.length} in file $f")
+
+                    if (phrase.isEmpty)
+                      throw new Exception(s"Zero phrase matches for '$p': in file $f")
+
                     segments.foreach({
                       x =>
                         phrase.head.addPropertyValue("alignedSegment", x(3))

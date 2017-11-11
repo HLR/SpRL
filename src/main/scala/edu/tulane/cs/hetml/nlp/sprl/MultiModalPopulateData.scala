@@ -35,12 +35,12 @@ object MultiModalPopulateData extends Logging{
 
     xmlReader.setRoles(phraseInstances)
 
+    alignmentReader.setAlignments(phraseInstances)
     if(populateImages) {
       images.populate(imageReader.getImageList, isTrain)
       segments.populate(imageReader.getSegmentList, isTrain)
       segmentRelations.populate(imageReader.getImageRelationList, isTrain)
     }
-    alignmentReader.setAlignments(phraseInstances)
 
     logger.info("Role population finished.")
   }

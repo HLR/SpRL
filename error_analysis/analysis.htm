@@ -138,7 +138,7 @@
                 <tr>
                     <td>docId</td>
                     <td data-bind="text: currentRel().image"></td>
-                    <td rowspan="5">
+                    <td rowspan="4">
                         <img data-bind="attr:{src: '../data/mSpRL/' + currentRel().image}" />
                     </td>
                 </tr>
@@ -159,6 +159,9 @@
                 <tr>
                     <td>matchings</td>
                     <td data-bind="foreach: currentRel().matchings">
+                        <div data-bind="text: $data"></div>
+                    </td>
+                    <td data-bind="foreach: currentRel().imageRels">
                         <div data-bind="text: $data"></div>
                     </td>
                 </tr>

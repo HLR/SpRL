@@ -38,7 +38,8 @@ object MultiModalTripletApp extends App with Logging {
     TripletGeneralTypeClassifier,
     TripletSpecificTypeClassifier,
     TripletRegionClassifier,
-    TripletDirectionClassifier
+    TripletDirectionClassifier,
+    TripletImageRegionClassifier
   )
   classifiers.foreach(x => {
     x.modelDir = s"models/mSpRL/triplet/$featureSet/"
@@ -52,8 +53,13 @@ object MultiModalTripletApp extends App with Logging {
     println("training started ...")
 
     TrajectorRoleClassifier.learn(iterations)
+    TrajectorRoleClassifier.test(phrases())
+
     IndicatorRoleClassifier.learn(iterations)
+    IndicatorRoleClassifier.test(phrases())
+
     LandmarkRoleClassifier.learn(iterations)
+    LandmarkRoleClassifier.test(phrases())
 
     TrajectorRoleClassifier.save()
     IndicatorRoleClassifier.save()
@@ -73,17 +79,30 @@ object MultiModalTripletApp extends App with Logging {
     )
 
     TripletRelationClassifier.learn(iterations)
+    TripletRelationClassifier.test(triplets())
+
     TripletGeneralTypeClassifier.learn(iterations)
+    TripletGeneralTypeClassifier.test(triplets())
+
     TripletSpecificTypeClassifier.learn(iterations)
+    //TripletSpecificTypeClassifier.test(triplets())
+
     TripletRegionClassifier.learn(iterations)
+    TripletRegionClassifier.test(triplets())
+
     TripletDirectionClassifier.learn(iterations)
+    TripletDirectionClassifier.test(triplets())
+
+    TripletImageRegionClassifier.learn(iterations)
+    TripletImageRegionClassifier.test(triplets())
+
 
     TripletRelationClassifier.save()
     TripletGeneralTypeClassifier.save()
     TripletSpecificTypeClassifier.save()
     TripletRegionClassifier.save()
     TripletDirectionClassifier.save()
-
+    TripletImageRegionClassifier.save()
   }
 
   if (!isTrain) {
@@ -98,6 +117,7 @@ object MultiModalTripletApp extends App with Logging {
     TripletSpecificTypeClassifier.load()
     TripletRegionClassifier.load()
     TripletDirectionClassifier.load()
+    TripletImageRegionClassifier.load()
 
     val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases().toList)
     val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)
@@ -112,24 +132,24 @@ object MultiModalTripletApp extends App with Logging {
 
 
     if (!useConstraints) {
-      //      val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
-      //      val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
-      //      val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
-      //
-      //      val tripletList = triplets.getTestingInstances
-      //        .filter(x => TripletRelationClassifier(x) == "Relation").toList
-      //
-      //
-      //      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
-      //        x => TripletGeneralTypeClassifier(x),
-      //        x => TripletSpecificTypeClassifier(x),
-      //        x => TripletRCC8Classifier(x),
-      //        x => TripletDirectionClassifier(x),
-      //        s"$resultsDir/${expName}${suffix}.xml")
-      //
-      //      ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+      val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
+      val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
+      val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
 
-      val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
+      val tripletList = triplets.getTestingInstances
+        .filter(x => TripletRelationClassifier(x) == "Relation").toList
+
+
+      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
+        x => TripletGeneralTypeClassifier(x),
+        x => TripletSpecificTypeClassifier(x),
+        x => TripletRegionClassifier(x),
+        x => TripletDirectionClassifier(x),
+        s"$resultsDir/${expName}${suffix}.xml")
+
+      ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+
+      val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", true)
 
       val tr = TrajectorRoleClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Trajector(within data model)", tr)
@@ -152,6 +172,9 @@ object MultiModalTripletApp extends App with Logging {
       val region = TripletRegionClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
 
+      val imRegion = TripletImageRegionClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Image Region(within data model)", imRegion)
+
       report(x => TripletRelationClassifier(x),
         x => TrajectorRoleClassifier(x),
         x => LandmarkRoleClassifier(x),
@@ -160,24 +183,24 @@ object MultiModalTripletApp extends App with Logging {
     }
     else {
 
-      //      val trajectors = phrases.getTestingInstances.filter(x => TRConstraintClassifier(x) == "Trajector").toList
-      //      val landmarks = phrases.getTestingInstances.filter(x => LMConstraintClassifier(x) == "Landmark").toList
-      //      val indicators = phrases.getTestingInstances.filter(x => IndicatorConstraintClassifier(x) == "Indicator").toList
-      //
-      //      val tripletList = triplets.getTestingInstances
-      //        .filter(x => TripletRelationConstraintClassifier(x) == "Relation").toList
-      //
-      //
-      //      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
-      //        x => TripletGeneralTypeConstraintClassifier(x),
-      //        x => TripletSpecificTypeClassifier(x),
-      //        x => TripletRegionConstraintClassifier(x),
-      //        x => TripletDirectionConstraintClassifier(x),
-      //        s"$resultsDir/${expName}${suffix}.xml")
-      //
-      //      ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+      val trajectors = phrases.getTestingInstances.filter(x => TRConstraintClassifier(x) == "Trajector").toList
+      val landmarks = phrases.getTestingInstances.filter(x => LMConstraintClassifier(x) == "Landmark").toList
+      val indicators = phrases.getTestingInstances.filter(x => IndicatorConstraintClassifier(x) == "Indicator").toList
 
-      val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
+      val tripletList = triplets.getTestingInstances
+        .filter(x => TripletRelationConstraintClassifier(x) == "Relation").toList
+
+
+      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
+        x => TripletGeneralTypeConstraintClassifier(x),
+        x => TripletSpecificTypeClassifier(x),
+        x => TripletRegionConstraintClassifier(x),
+        x => TripletDirectionConstraintClassifier(x),
+        s"$resultsDir/${expName}${suffix}.xml")
+
+      ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+
+      val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", true)
 
       val tr = TRConstraintClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Trajector(within data model)", tr)
@@ -240,13 +263,16 @@ object MultiModalTripletApp extends App with Logging {
         .map(p=> p.getText + "-> " + matchingSegment(p) + ": " + similarityToMatchingSegment(p))
         .mkString(",")
 
+      val imageRels = tripletMatchingSegmentRelations(r).mkString(",")
+
       val docId = (triplets(r) ~> -sentenceToTriplets ~> -documentToSentence).head.getId
 
       //docId, sentId, sent, actual rel, predicted rel, tr text, sp text, lm text
       //tr correct, sp correct, lm correct, segments[id, code, text]
       val line = s"$docId\t\t${sent.getId}\t\t${sent.getText}\t\t${actual}" +
         s"\t\t${predicted}\t\t${t.getText}\t\t${s.getText}\t\t${l.getText}\t\t${tCorrect}" +
-        s"\t\t${sCorrect}\t\t${lCorrect}\t\t${segments}\t\t$tDis\t\t$lDis\t\t$tSeg\t\t$tSegSim\t\t$lSeg\t\t$lSegSim\t\t$matchings"
+        s"\t\t${sCorrect}\t\t${lCorrect}\t\t${segments}\t\t$tDis\t\t$lDis\t\t$tSeg\t\t$tSegSim\t\t$lSeg\t\t$lSegSim" +
+        s"\t\t$matchings\t\t$imageRels"
       writer.println(line)
     }
   }

@@ -15,14 +15,14 @@ object mSpRLConfigurator {
   val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"
   val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"
   val suffix = ""
-  val model = FeatureSets.WordEmbeddingPlusImage
+  val model = FeatureSets.BaseLineWithImage
   var isTrain = true
 
   val jointTrain = false
   val skipIndividualClassifiersTraining = false  /* When using joint train, it will ignore individual classifiers
                                                   * training and loads them from the disk*/
   val iterations = 50
-  val useConstraints = true
+  val useConstraints = false
   val imageConstraints = model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val populateImages = true// model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
 }

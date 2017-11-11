@@ -1,11 +1,11 @@
 body {
     font-family: arial;
-    font-size: 9pt;
+    font-size: 8pt;
 }
 
 table{
     font-family: arial;
-    font-size: 9pt;
+    font-size: 8pt;
 }
 
 .ko-grid {
@@ -60,5 +60,5 @@ table.details tr td{
 }
 
 img{
-    width: 250px;
+    width: 200px;
 }

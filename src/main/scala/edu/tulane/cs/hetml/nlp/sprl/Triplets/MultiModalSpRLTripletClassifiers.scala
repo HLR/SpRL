@@ -33,7 +33,8 @@ object MultiModalSpRLTripletClassifiers {
       tripletDistanceTrSp, tripletDistanceLmSp
     ) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(tripletLmMatchingSegmentSimilarity, tripletTrMatchingSegmentSimilarity)
+        case FeatureSets.BaseLineWithImage => List(tripletLmMatchingSegmentSimilarity,
+          tripletTrMatchingSegmentSimilarity)
         case FeatureSets.WordEmbedding => List(tripletTrVector, tripletLmVector)
         case FeatureSets.WordEmbeddingPlusImage => List(tripletTrVector, tripletLmVector,
           tripletLmMatchingSegmentSimilarity, tripletTrMatchingSegmentSimilarity)
@@ -116,21 +117,29 @@ object MultiModalSpRLTripletClassifiers {
     override def feature = tripletFeatures
   }
 
-  object TripletRegionClassifier extends Learnable(triplets) {
-    def label = tripletRegion
-
-    override lazy val classifier = new SparseNetworkLearner()
-
-    override def feature =  (tripletFeatures)
-      .diff(List(tripletLmVector))
-  }
-
-
   object TripletDirectionClassifier extends Learnable(triplets) {
     def label = tripletDirection
 
     override lazy val classifier = new SparseNetworkLearner()
 
     override def feature = tripletFeatures
+      .diff(List(JF2_1))
+  }
+
+  object TripletRegionClassifier extends Learnable(triplets) {
+    def label = tripletRegion
+
+    override lazy val classifier = new SparseNetworkLearner()
+
+    override def feature =  (tripletFeatures)
+      .diff(List(tripletLmVector, JF2_1))
+  }
+
+  object TripletImageRegionClassifier extends Learnable(triplets) {
+    def label = tripletRegion
+
+    override lazy val classifier = new SparseNetworkLearner()
+
+    override def feature =  List(tripletSpWordForm)
   }
 }

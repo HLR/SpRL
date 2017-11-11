@@ -61,8 +61,12 @@ object MultiModalSpRLSensors {
     i.getId == s.getAssociatedImageID
   }
 
-  def segmentRelationToSegmentMatching(r: SegmentRelation, s: Segment): Boolean = {
-    (r.getFirstSegmentId == s.getSegmentId || r.getSecondSegmentId == s.getSegmentId) && (r.getImageId == s.getAssociatedImageID)
+  def segmentRelationToFirstArgMatching(r: SegmentRelation, s: Segment): Boolean = {
+    r.getFirstSegmentId == s.getSegmentId && r.getImageId == s.getAssociatedImageID
+  }
+
+  def segmentRelationToSecondArgMatching(r: SegmentRelation, s: Segment): Boolean = {
+    r.getSecondSegmentId == s.getSegmentId && r.getImageId == s.getAssociatedImageID
   }
 
   def relationToFirstArgumentMatching(r: Relation, p: Phrase): Boolean = {
@@ -94,9 +98,15 @@ object MultiModalSpRLSensors {
         r.setId(p.getId + "__" + s.getSegmentId)
         r.setArgumentId(0, p.getId)
         r.setArgumentId(1, s.getSegmentId.toString)
-        val head = getHeadword(p)
-        //val sim = s.getSegmentConcept.split('-').map(x => getSimilarity(x, head.getText)).max
-        r.setProperty("similarity", "0")//sim.toString)
+//        val head = getHeadword(p)
+//        val sim = s.getSegmentConcept.split('-').map(x => getSimilarity(x, head.getText)).max
+//        r.setProperty("similarity", sim.toString)
+        if (p.getPropertyValues("alignedSegment").contains(s.getSegmentId.toString)) {
+          r.setProperty("similarity", "1")
+        }
+        else {
+          r.setProperty("similarity", "0")
+        }
         r
     }
   }
