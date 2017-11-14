@@ -104,15 +104,15 @@ object AnnotationApp extends App {
       }
       else
         line += ", Candidate "
-      if(annotationAnalysis(t)=="true") {
-        roleCount += 1
-        line += ", M"
-        if(goldMatched=="true")
-          goldMatchedCount += 1
-      }
-      else {
-        line += ", NM"
-      }
+//      if(annotationAnalysis(t)=="true") {
+//        roleCount += 1
+//        line += ", M"
+//        if(goldMatched=="true")
+//          goldMatchedCount += 1
+//      }
+//      else {
+//        line += ", NM"
+//      }
       writer.println(line)
     })
     writer.println("")
