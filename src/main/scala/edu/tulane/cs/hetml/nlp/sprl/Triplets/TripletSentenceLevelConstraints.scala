@@ -126,7 +126,7 @@ object TripletSentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (
-              (TripletDirectionClassifier on x isNot "None") ==> (TripletGeneralTypeClassifier on x is "direction")
+              (TripletDirectionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "direction")
             )
       }
       a
@@ -139,7 +139,7 @@ object TripletSentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (
-              (TripletRegionClassifier on x isNot "None") ==> (TripletGeneralTypeClassifier on x is "region")
+              (TripletRegionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "region")
             )
       }
       a
