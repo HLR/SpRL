@@ -1,12 +1,13 @@
 package edu.tulane.cs.hetml.nlp.sprl.Triplets
 
-import edu.illinois.cs.cogcomp.lbjava.learn.{SparseAveragedPerceptron, SparseNetworkLearner}
+import edu.illinois.cs.cogcomp.lbjava.learn.{SparseAveragedPerceptron, SparseNetworkLearner, SupportVectorMachine}
 import edu.illinois.cs.cogcomp.saul.classifier.Learnable
 import edu.illinois.cs.cogcomp.saul.datamodel.property.Property
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets.FeatureSets
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.vision.WordSegment
 
 object MultiModalSpRLTripletClassifiers {
   var featureSet = FeatureSets.WordEmbeddingPlusImage

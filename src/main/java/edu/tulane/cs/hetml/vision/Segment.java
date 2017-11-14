@@ -2,6 +2,8 @@ package edu.tulane.cs.hetml.vision;
 
 
 
+import org.bytedeco.javacpp.presets.opencv_core;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,22 +13,30 @@ import java.util.List;
 public class Segment {
     private int segmentId;
     private int segmentCode;
-    private String segmentFeatures;
+    public String segmentFeatures;
     private String segmentConcept;
     private String imageId;
-    public List<String> ontologyConcepts= new ArrayList<>();
-    public List<String> referitText= new ArrayList<>();
-    public double[] features;
+    public List<String> tagged;
+    public String referItExpression;
+    public String filteredTokens;
+    private boolean isMatching;
 
-    public Segment(String ImageId, int segmentId, int segmentCode, String segmentFeatures, String segmentConcept, List<String> ontologyConcepts, List<String> referitText)
+    public Segment(String ImageId, int segmentId, String segmentFeatures, String referItExpression, boolean isMatching) {
+        this.imageId = ImageId;
+        this.segmentId = segmentId;
+        this.segmentFeatures = segmentFeatures;
+        this.referItExpression = referItExpression;
+        this.isMatching = isMatching;
+        this.tagged = new ArrayList<>();
+    }
+
+    public Segment(String ImageId, int segmentId, int segmentCode, String segmentFeatures, String segmentConcept, List<String> tagged, List<String> refExp)
     {
         this.imageId = ImageId;
         this.segmentId = segmentId;
         this.segmentCode = segmentCode;
         this.segmentFeatures = segmentFeatures;
         this.segmentConcept = segmentConcept;
-        this.ontologyConcepts = ontologyConcepts;
-        this.referitText = referitText;
     }
 
     public String getAssociatedImageID()
@@ -54,23 +64,23 @@ public class Segment {
         return segmentConcept;
     }
 
-    public List<String> getSegmentConceptOntology()
-    {
-        return ontologyConcepts;
+    public String getExpression() {
+        return referItExpression;
     }
 
-    public boolean isexistOntologyConcepts(String x)
-    {
-        for(String o : ontologyConcepts) {
-            if(x.contains(o.toLowerCase()))
-                return true;
-        }
-        return false;
+    public boolean isExpressionAndSegmentMatching() {
+        return isMatching;
     }
 
-    @Override
-    public String toString() {
-        // TODO Auto-generated method stub
-        return imageId + ", " + segmentId + ", " + segmentCode + ", " + segmentFeatures + ", " + segmentConcept;
+    public void setFilteredTokens(String filteredTokens) {
+        this.filteredTokens = filteredTokens;
+    }
+
+    public void setTagged(List<String> tagged) {
+        this.tagged = tagged;
+    }
+
+    public String getUniqueId() {
+        return imageId + "_" + segmentId;
     }
 }

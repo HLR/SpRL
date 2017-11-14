@@ -279,12 +279,12 @@ object ReportHelper {
   def saveEvalResults(stream: FileOutputStream, caption: String, results: Results): Unit =
     saveEvalResults(stream, caption, convertToEval(results))
 
-  def saveEvalResults(stream: FileOutputStream, caption: String, results: Seq[SpRLEvaluation]): Unit = {
+  def saveEvalResults(stream: FileOutputStream, caption: String, results: Seq[SpRLEvaluation], ignore:Seq[String] = Seq("none")): Unit = {
     val writer = new PrintStream(stream, true)
     writer.println("===========================================================================")
     writer.println(s" ${caption}")
     writer.println("---------------------------------------------------------------------------")
-    SpRLEvaluator.printEvaluation(stream, results.filterNot(x => x.getLabel.equalsIgnoreCase("none")))
+    SpRLEvaluator.printEvaluation(stream, results.filterNot(x => ignore.exists(i => x.getLabel.equalsIgnoreCase(i))))
     writer.println()
   }
 
@@ -326,7 +326,7 @@ object ReportHelper {
       .mkString(" -> ")
   }
 
-  private def convertToEval(r: Results): Seq[SpRLEvaluation] = r.perLabel
+  def convertToEval(r: Results): Seq[SpRLEvaluation] = r.perLabel
     .map(x => {
       var p = if (x.predictedSize == 0) 1.0 else x.precision
       var r = if (x.labeledSize == 0) 1.0 else x.recall
