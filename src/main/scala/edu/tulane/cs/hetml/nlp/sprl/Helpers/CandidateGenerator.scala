@@ -15,11 +15,11 @@ import scala.io.Source
 object CandidateGenerator {
 
   def generateTripletCandidatesFromPairs(
-                                 trSpFilter: (Relation) => Boolean,
-                                 spFilter: (Phrase) => Boolean,
-                                 lmSpFilter: (Relation) => Boolean,
-                                 isTrain: Boolean
-                               ): List[Relation] = {
+                                          trSpFilter: (Relation) => Boolean,
+                                          spFilter: (Phrase) => Boolean,
+                                          lmSpFilter: (Relation) => Boolean,
+                                          isTrain: Boolean
+                                        ): List[Relation] = {
     val instances = if (isTrain) phrases.getTrainingInstances else phrases.getTestingInstances
     val indicators = instances.filter(t => t.getId != dummyPhrase.getId && spFilter(t)).toList
       .sortBy(x => x.getSentence.getStart + x.getStart)
@@ -42,6 +42,8 @@ object CandidateGenerator {
     })
   }
 
+  val withoutLandmarkIndicators = List("on the right", "on the left", "in the center", "in the centre", "on the right", "on the left")
+
   def generateAllTripletCandidates(
                                     trFilter: (Phrase) => Boolean,
                                     spFilter: (Phrase) => Boolean,
@@ -57,7 +59,7 @@ object CandidateGenerator {
     val trajectors = instances.filter(t => t.getId != dummyPhrase.getId && trFilter(t)).toList
       .sortBy(x => x.getSentence.getStart + x.getStart)
 
-    val landmarks = instances.filter(t =>  t.getId != dummyPhrase.getId && lmFilter(t)).toList
+    val landmarks = instances.filter(t => t.getId != dummyPhrase.getId && lmFilter(t)).toList
       .sortBy(x => x.getSentence.getStart + x.getStart) ++ List(dummyPhrase)
 
     val candidateRelations = indicators.flatMap(sp => {
@@ -74,7 +76,8 @@ object CandidateGenerator {
         List()
       }
     })
-    candidateRelations
+    candidateRelations.filterNot(x => x.getArgumentId(2) != dummyPhrase.getId &&
+      withoutLandmarkIndicators.exists(i => i.equalsIgnoreCase(x.getArgument(1).getText)))
   }
 
   def generatePairCandidates(

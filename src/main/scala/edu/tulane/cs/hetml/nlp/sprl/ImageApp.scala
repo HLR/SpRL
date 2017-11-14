@@ -19,7 +19,7 @@ object ImageApp extends App {
 
 //  val CLEFDataset = new CLEFImageReader("data/mSprl/saiapr_tc-12", "data/mSprl/saiapr_tc-12/newSprl2017_train.xml",
 //    "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml", readFullData)
-  val CLEFAnnotations = new CLEFAnnotationReader("data/annotatedFiles")
+  //val CLEFAnnotations = new CLEFAlignmentReader("data/annotatedFiles")
 
   /*  val imageListTrain = CLEFDataset.trainingImages
   val segmentListTrain = CLEFDataset.trainingSegments

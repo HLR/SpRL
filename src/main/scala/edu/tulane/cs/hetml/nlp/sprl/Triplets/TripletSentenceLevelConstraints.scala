@@ -6,8 +6,32 @@ import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator
+
+import scala.collection.JavaConversions._
 
 object TripletSentenceLevelConstraints {
+
+  val roleShouldHaveRel = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      val sentTriplets = (sentences(s) ~> sentenceToTriplets).toList
+      sentTriplets.foreach {
+        x =>
+          val trRel = sentTriplets.filter(r => r.getArgumentId(0) == x.getArgumentId(0))
+            ._exists(x => (TripletRelationClassifier on x) is "Relation")
+
+          val lmRel = sentTriplets.filter(r => r.getArgumentId(2) == x.getArgumentId(2))
+            ._exists(x => (TripletRelationClassifier on x) is "Relation")
+
+          val tr = TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector"
+          val lm = LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "Landmark"
+
+          a = a and (tr ==> trRel) and (lm ==> lmRel)
+      }
+      a
+  }
 
   val roleIntegrity = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
@@ -36,6 +60,22 @@ object TripletSentenceLevelConstraints {
           (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => TrajectorRoleClassifier on x is "Trajector" }
         )
   }
+  val sim = new SegmentPhraseSimilarityClassifier()
+  val boostTrajectorByImage = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToPhrase).foreach {
+        p =>
+          val pairs = (phrases(p) ~> -segmentPhrasePairToPhrase).toList
+
+          a = a and
+            (
+              pairs._exists(pair => sim on pair is "true") ==>
+              (TrajectorRoleClassifier on p is "Trajector") or (LandmarkRoleClassifier on p is "Landmark"))
+      }
+      a
+  }
 
   val boostLandmark = ConstrainedClassifier.constraint[Sentence] {
     s: Sentence =>
@@ -44,18 +84,6 @@ object TripletSentenceLevelConstraints {
           ==>
           (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => LandmarkRoleClassifier on x is "Landmark" }
         )
-  }
-
-  val boostTripletByRoles = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      (
-        (sentences(s) ~> sentenceToPhrase).toList._exists { p: Phrase => IndicatorRoleClassifier on p is "Indicator" } or
-          (sentences(s) ~> sentenceToPhrase).toList._exists { p: Phrase => LandmarkRoleClassifier on p is "Landmark" } or
-          (sentences(s) ~> sentenceToPhrase).toList._exists { p: Phrase => TrajectorRoleClassifier on p is "Trajector" }
-
-        )==>
-        (sentences(s) ~> sentenceToTriplets).toList._exists { r: Relation => TripletRelationClassifier on r is "Relation" }
   }
 
   val boostTripletByGeneralType = ConstrainedClassifier.constraint[Sentence] {
@@ -74,74 +102,91 @@ object TripletSentenceLevelConstraints {
       a
   }
 
-  val boostGeneralType = ConstrainedClassifier.constraint[Sentence] {
+  val boostTripletByImage = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          val tr = (triplets(x) ~> tripletToFirstArg ~> -segmentPhrasePairToPhrase).toList
+          val lm = (triplets(x) ~> tripletToThirdArg ~> -segmentPhrasePairToPhrase).toList
+
+          a = a and (
+            tr._exists(t => (sim on t) is "true") and lm._exists(t => (sim on t) is "true") ==>
+              (TripletRelationClassifier on x is "Relation")
+            )
+      }
+      a
+  }
+
+  val boostGeneralByDirection = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (
-            (
-              (TripletRelationClassifier on x) is "Relation") ==>
-              (TripletGeneralTypeClassifier on x isNot "None")
+              (TripletDirectionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "direction")
             )
       }
       a
   }
 
-  val boostDirection = ConstrainedClassifier.constraint[Sentence] {
+  val boostGeneralByRegion = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (
-            (
-              (TripletGeneralTypeClassifier on x) is "direction") <==>
-              (TripletDirectionClassifier on x isNot "None")
+              (TripletRegionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "region")
             )
       }
       a
   }
 
-  val boostRegion = ConstrainedClassifier.constraint[Sentence] {
+  val uniqueSegmentAssignment = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and (
-            (
-              (TripletGeneralTypeClassifier on x) is "region") <==>
-              (TripletRegionClassifier on x isNot "None")
-            )
+      val segPhrases = (sentences(s) ~> sentenceToPhrase ~> -segmentPhrasePairToPhrase).toList
+
+      // The segments assigned to a phrase in a sentence should be at most 1
+      segPhrases.groupBy(_.getArgumentId(0)).foreach {
+        phraseSegments =>
+          if (phraseSegments._2.size > 1)
+            a = a and phraseSegments._2._atmost(1)(x => sim on x is "true")
       }
+
+      // The phrases assigned to a segment in a sentence should be at most 1
+      segPhrases.groupBy(_.getArgumentId(1)).foreach {
+        segmentPhrases =>
+          if (segmentPhrases._2.size > 1)
+            a = a and segmentPhrases._2._atmost(1)(x => sim on x is "true")
+      }
+
       a
-  }
-
-  val roleConstraints = ConstrainedClassifier.constraint[Sentence] {
-
-    x: Sentence => boostTrajector(x) and boostLandmark(x) and roleIntegrity(x)
   }
 
   val tripletConstraints = ConstrainedClassifier.constraint[Sentence] {
 
-    x: Sentence => boostTripletByRoles(x) and boostTripletByGeneralType(x)
-  }
+    x: Sentence =>
+      var a =
+      //roleIntegrity(x) and
+        roleShouldHaveRel(x) and
+          boostTrajector(x) and
+          boostLandmark(x) and
+          boostTripletByGeneralType(x) and
+          boostGeneralByDirection(x) and
+          boostGeneralByRegion(x) //and
+          //noDuplicates(x)
 
-  val generalConstraints = ConstrainedClassifier.constraint[Sentence] {
-
-    x: Sentence => boostTripletByRoles(x) and boostGeneralType(x)
-  }
-
-  val directionConstraints = ConstrainedClassifier.constraint[Sentence]{
-
-    x: Sentence => generalConstraints(x) and boostDirection(x) and boostRegion(x)
-  }
-
-  val regionConstraints = ConstrainedClassifier.constraint[Sentence]{
-
-    x: Sentence => generalConstraints(x) and boostRegion(x)
+//      if (mSpRLConfigurator.imageConstraints)
+//        a = a and
+//          boostTripletByImage(x) and
+//          //boostTrajectorByImage(x) and
+//          uniqueSegmentAssignment(x)
+      a
   }
 
 }

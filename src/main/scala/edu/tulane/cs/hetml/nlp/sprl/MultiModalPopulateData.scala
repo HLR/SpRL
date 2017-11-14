@@ -4,7 +4,7 @@ import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel.{triplets, _}
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.documentToSentenceGenerating
-import edu.tulane.cs.hetml.nlp.sprl.Helpers.{CandidateGenerator, ImageReaderHelper, LexiconHelper, SpRLXmlReader}
+import edu.tulane.cs.hetml.nlp.sprl.Helpers._
 import mSpRLConfigurator._
 
 import scala.collection.JavaConversions._
@@ -16,6 +16,7 @@ object MultiModalPopulateData extends Logging{
 
   lazy val xmlReader = new SpRLXmlReader(if (isTrain) trainFile else testFile)
   lazy val imageReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, isTrain)
+  lazy val alignmentReader = new AlignmentReader(alignmentAnnotationPath, alignmentTextPath)
 
   def populateRoleDataFromAnnotatedCorpus(populateNullPairs: Boolean = true): Unit = {
     logger.info("Role population started ...")
@@ -34,11 +35,13 @@ object MultiModalPopulateData extends Logging{
 
     xmlReader.setRoles(phraseInstances)
 
+    alignmentReader.setAlignments(phraseInstances)
     if(populateImages) {
       images.populate(imageReader.getImageList, isTrain)
       segments.populate(imageReader.getSegmentList, isTrain)
       segmentRelations.populate(imageReader.getImageRelationList, isTrain)
     }
+
     logger.info("Role population finished.")
   }
 
