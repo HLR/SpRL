@@ -65,7 +65,7 @@ object VisualTripletsDataModel extends DataModel {
       t.getLmAreaBbox
   }
 
-  val   = property(visualTriplets) {
+  val visualTripletIOU = property(visualTriplets) {
     t: ImageTriplet =>
       t.getIou
   }

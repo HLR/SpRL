@@ -208,16 +208,16 @@ public class CLEFImageReader {
                 getImages(imageFolder);
 
                 //Load all segments
-//                String ontologyfile = mainFolder + "/ontology_path.txt";
-//                getSegmentsOntology(ontologyfile);
+                String ontologyfile = mainFolder + "/ontology_path.txt";
+                getSegmentsOntology(ontologyfile);
 
                 //Load all segments
                 String file = mainFolder + "/features.txt";
                 getSegments(file);
 
                 //Load all relations
-//                String spatialRelations = mainFolder + "/spatial_rels";
-//                getSegmentsRelations(spatialRelations);
+                String spatialRelations = mainFolder + "/spatial_rels";
+                getSegmentsRelations(spatialRelations);
             }
         }
     }
@@ -373,18 +373,14 @@ public class CLEFImageReader {
 
                                 val = (int) yRels[x][y];
                                 if (val == 5)
-                                    //rel = null;
-                                    // Ignoring above relations
                                     rel = "above";
                                 else if (val == 6)
-                                    //rel = null;
-                                    // Ignoring below relations
                                     rel = "below";
                                 else if (val == 7) {
                                     // Original "y-aligned"
-                                    //rel= "y-aligned";
-                                    String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
-                                    rel = redefindedRelations.get(key);
+                                    rel= "y-aligned";
+//                                    String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
+//                                    rel = redefindedRelations.get(key);
                                 }
 
                                 if (rel != null) {
