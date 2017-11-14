@@ -75,49 +75,50 @@ public class CLEFAnnotationReader {
         for (File file : listOfFiles) {
             if (file.isFile()) {
                 String fileName = file.getName().replaceFirst("[.][^.]+$", "");
-                // Reading Text used for Annotated
-                allPhrases.clear();
-                tokens.clear();
-                pharseRemaining.clear();
-                completeText(directory, fileName);
-                printToFileNames.println(fileName);
-                String line;
-                BufferedReader reader = new BufferedReader(new FileReader(file));
-                while ((line = reader.readLine()) != null) {
-                    String[] words = line.split("\\t");
+                if (!fileName.isEmpty() || fileName!="") {
+                    // Reading Text used for Annotated
+                    allPhrases.clear();
+                    tokens.clear();
+                    pharseRemaining.clear();
+                    completeText(directory, fileName);
+                    printToFileNames.println(fileName);
+                    String line;
+                    BufferedReader reader = new BufferedReader(new FileReader(file));
+                    while ((line = reader.readLine()) != null) {
+                        String[] words = line.split("\\t");
 
-                    if (words[0].startsWith("T")) { // Tokens
-                        if (words[1].startsWith("P")) { // Phrase
-                            tokens.put(words[0], words[2]);
-                            String[] spans = words[1].split(" ");
-                            String pharseWithSpan = words[2] + " " + spans[1] + " " + spans [2];
-                            allPhrases.remove(pharseWithSpan);
-                            pharseRemaining.put(words[0], words[2]);
-                        }
-                        else if (words[1].startsWith("S")) //Segment
-                            tokens.put(words[0], words[2]);
-                    } else if (words[0].startsWith("R")) { // Relations
-                        String[] relTokens = words[1].split(" ");
-                        String[] arg1 = relTokens[1].split(":");
-                        String[] arg2 = relTokens[2].split(":");
-                        String arg1Phrase = tokens.get(arg1[1].trim());
-                        pharseRemaining.remove(arg1[1].trim());
-                        String arg2Segment = tokens.get(arg2[1].trim());
-                        String[] segCodeText = arg2Segment.split(" ");
+                        if (words[0].startsWith("T")) { // Tokens
+                            if (words[1].startsWith("P")) { // Phrase
+                                tokens.put(words[0], words[2]);
+                                String[] spans = words[1].split(" ");
+                                String pharseWithSpan = words[2] + " " + spans[1] + " " + spans[2];
+                                allPhrases.remove(pharseWithSpan);
+                                pharseRemaining.put(words[0], words[2]);
+                            } else if (words[1].startsWith("S")) //Segment
+                                tokens.put(words[0], words[2]);
+                        } else if (words[0].startsWith("R")) { // Relations
+                            String[] relTokens = words[1].split(" ");
+                            String[] arg1 = relTokens[1].split(":");
+                            String[] arg2 = relTokens[2].split(":");
+                            String arg1Phrase = tokens.get(arg1[1].trim());
+                            pharseRemaining.remove(arg1[1].trim());
+                            String arg2Segment = tokens.get(arg2[1].trim());
+                            String[] segCodeText = arg2Segment.split(" ");
 
-                        // Referit Key
-                        String referitKey = fileName + "_" + segCodeText[0] + ".jpg";
-                        String newData;
-                        if(referit.get(referitKey)!=null) {
-                            String[] oldData = referit.get(referitKey).split("~");
-                            // Our Text in Referit
-                            newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~" + oldData[1] + "~" + oldData[2];
-                        } else {
-                            //Segment Description doesn't exist in ReferIt Dataset
-                            newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~0.0~0.0";
+                            // Referit Key
+                            String referitKey = fileName + "_" + segCodeText[0] + ".jpg";
+                            String newData;
+                            if (referit.get(referitKey) != null) {
+                                String[] oldData = referit.get(referitKey).split("~");
+                                // Our Text in Referit
+                                newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~" + oldData[1] + "~" + oldData[2];
+                            } else {
+                                //Segment Description doesn't exist in ReferIt Dataset
+                                newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~0.0~0.0";
+                            }
+                            //Save the new generated data to file
+                            printToFile.println(newData);
                         }
-                        //Save the new generated data to file
-                        printToFile.println(newData);
                     }
                 }
             }

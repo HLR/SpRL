@@ -64,7 +64,7 @@ object WordasClassifierApp extends App {
     if(!useAnntotatedClef) {
         CLEFGoogleNETReaderHelper.allSegments.filter(s => {allImages.exists(i=> i.getId==s.getAssociatedImageID)})
     } else {
-      CLEFGoogleNETReaderHelper.allSegments.toList
+      CLEFGoogleNETReaderHelper.allSegments.take(2).toList
     }
 
   val allRefExp = CLEFGoogleNETReaderHelper.segRefExp
