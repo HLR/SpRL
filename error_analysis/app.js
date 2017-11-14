@@ -29,6 +29,8 @@ var App = function () {
         ii: []
     });
 
+    self.spFilter = ko.observable("")
+
     self.addModel = function (m) {
         self.models.push(m);
     };
@@ -48,6 +50,11 @@ var App = function () {
         self.data([]);
         if (selected) {
             var d = selected.data.filter(function (item, i) {
+
+                if (self.spFilter() !== "" && item.sp.toLowerCase() !== (self.spFilter().toLowerCase())) {
+                    return false;
+                }
+
                 if (self.allRolesCorrect() && !(item.trApproved && item.spApproved && item.lmApproved))
                     return false;
 

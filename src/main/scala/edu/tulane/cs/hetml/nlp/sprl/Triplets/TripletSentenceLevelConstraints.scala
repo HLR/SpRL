@@ -119,31 +119,27 @@ object TripletSentenceLevelConstraints {
       a
   }
 
-  val boostDirection = ConstrainedClassifier.constraint[Sentence] {
+  val boostGeneralByDirection = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (
-            (
-              (TripletGeneralTypeClassifier on x) is "direction") <==>
-              (TripletDirectionClassifier on x isNot "None")
+              (TripletDirectionClassifier on x isNot "None") ==> (TripletGeneralTypeClassifier on x is "direction")
             )
       }
       a
   }
 
-  val boostRegion = ConstrainedClassifier.constraint[Sentence] {
+  val boostGeneralByRegion = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (
-            (
-              (TripletGeneralTypeClassifier on x) is "region") <==>
-              (TripletRegionClassifier on x isNot "None")
+              (TripletRegionClassifier on x isNot "None") ==> (TripletGeneralTypeClassifier on x is "region")
             )
       }
       a
@@ -181,8 +177,8 @@ object TripletSentenceLevelConstraints {
           boostTrajector(x) and
           boostLandmark(x) and
           boostTripletByGeneralType(x) and
-          boostDirection(x) and
-          boostRegion(x) //and
+          boostGeneralByDirection(x) and
+          boostGeneralByRegion(x) //and
           //noDuplicates(x)
 
 //      if (mSpRLConfigurator.imageConstraints)

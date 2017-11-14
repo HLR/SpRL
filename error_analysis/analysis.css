@@ -59,6 +59,13 @@ table.details tr td{
     visibility: hidden;
 }
 
+.filter-input{
+    width: 40px;
+    padding: 0px 0px 0px 0px;
+    font-size: 7pt;
+    margin-left: 5px;
+}
+
 img{
     width: 200px;
 }

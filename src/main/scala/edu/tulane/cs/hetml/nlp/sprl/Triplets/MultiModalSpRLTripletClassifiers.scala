@@ -122,8 +122,8 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = tripletFeatures
-      .diff(List(JF2_1))
+    override def feature = (tripletFeatures ++ (List(tripletMatchingSegmentRelations)))
+      .diff(List())
   }
 
   object TripletRegionClassifier extends Learnable(triplets) {
@@ -131,8 +131,8 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature =  (tripletFeatures)
-      .diff(List(tripletLmVector, JF2_1))
+    override def feature =  (tripletFeatures ++ (List(tripletMatchingSegmentRelations)))
+      .diff(List(tripletLmVector))
   }
 
   object TripletImageRegionClassifier extends Learnable(triplets) {
