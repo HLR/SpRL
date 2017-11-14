@@ -25,6 +25,7 @@ public class ImageTripletReader {
 
         trainImageTriplets = new ArrayList<>();
         testImageTriplets = new ArrayList<>();
+
         loadFile(directory +  "/MSCOCO.originalterm.train", true);
         loadFile(directory +  "/MSCOCO.originalterm.test", false);
     }

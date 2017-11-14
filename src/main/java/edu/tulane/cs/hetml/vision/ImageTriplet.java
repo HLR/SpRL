@@ -45,4 +45,68 @@ public class ImageTriplet {
         this.trAreaImage = trAreaImage;
         this.lmAreaImage = lmAreaImage;
     }
+
+    public String getSp() {
+        return sp;
+    }
+
+    public String getImageBox() {
+        return imageBox;
+    }
+
+    public String getLandmark() {
+        return landmark;
+    }
+
+    public double getEuclideanDistance() {
+        return euclideanDistance;
+    }
+
+    public double getIou() {
+        return iou;
+    }
+
+    public double getLmAreaBbox() {
+        return lmAreaBbox;
+    }
+
+    public double getLmAreaImage() {
+        return lmAreaImage;
+    }
+
+    public double getLmAspectRatio() {
+        return lmAspectRatio;
+    }
+
+    public double getTrAreaBbox() {
+        return trAreaBbox;
+    }
+
+    public double getTrAreaImage() {
+        return trAreaImage;
+    }
+
+    public double getTrAreawrtLM() {
+        return trAreawrtLM;
+    }
+
+    public double getTrAspectRatio() {
+        return trAspectRatio;
+    }
+
+    public String getLmBox() {
+        return lmBox;
+    }
+
+    public String getTrajector() {
+        return trajector;
+    }
+
+    public String getTrBox() {
+        return trBox;
+    }
+
+    public String getTrVector() {
+        return trVector;
+    }
 }
