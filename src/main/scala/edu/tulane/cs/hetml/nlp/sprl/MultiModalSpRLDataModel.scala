@@ -6,7 +6,6 @@ import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 import edu.tulane.cs.hetml.vision._
-import java.io._
 
 /** Created by Taher on 2017-01-11.
   */
@@ -75,11 +74,17 @@ object MultiModalSpRLDataModel extends DataModel {
   val imageToSegment = edge(images, segments)
   imageToSegment.addSensor(imageToSegmentMatching _)
 
-  val segmentRelationsToSegments = edge(segmentRelations, segments)
-  segmentRelationsToSegments.addSensor(segmentRelationToSegmentMatching _)
+  val segmentRelationsToFirstArg = edge(segmentRelations, segments)
+  segmentRelationsToFirstArg.addSensor(segmentRelationToFirstArgMatching _)
 
-  val phraseToSegmentPhrasePair = edge(phrases, segmentPhrasePairs)
-  phraseToSegmentPhrasePair.addSensor(phraseToSegmentPhrasePairs _)
+  val segmentRelationsToSecondArg = edge(segmentRelations, segments)
+  segmentRelationsToSecondArg.addSensor(segmentRelationToSecondArgMatching _)
+
+  val segmentToSegmentPhrasePair = edge(segments, segmentPhrasePairs)
+  segmentToSegmentPhrasePair.addSensor(segmentToSegmentPhrasePairs _)
+
+  val segmentPhrasePairToPhrase = edge(segmentPhrasePairs, phrases)
+  segmentPhrasePairToPhrase.addSensor(SegmentPhrasePairToPhraseMatching _)
 
   /*
   Properties
@@ -129,7 +134,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val lemma = property(phrases, cache = true) {
     x: Phrase =>
       if (x != dummyPhrase) (phrases(x) ~> phraseToToken).toList.sortBy(_.getStart)
-        .map(t => getLemma(t).mkString).mkString("|") else "None"
+        .map(t => getLemma(t).mkString).mkString("|").toLowerCase else "None"
   }
 
   val pos = property(phrases, cache = true) {
@@ -147,7 +152,7 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
   val headWordLemma = property(phrases, cache = true) {
-    x: Phrase => if (x != dummyPhrase) getLemma(getHeadword(x)).mkString else "None"
+    x: Phrase => if (x != dummyPhrase) getLemma(getHeadword(x)).mkString.toLowerCase else "None"
   }
 
   val phrasePos = property(phrases, cache = true) {
@@ -208,6 +213,35 @@ object MultiModalSpRLDataModel extends DataModel {
     x: Phrase => if (x != dummyPhrase) getVector(getHeadword(x).getText.toLowerCase) else getVector(null)
   }
 
+  val matchingSegmentFeatures = property(phrases, cache = true, ordered = true) {
+    p: Phrase =>
+      val segId = p.getPropertyFirstValue("alignedSegment")
+      if (segId != null) {
+        val seg = (phrases(p) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
+          .find(_.getSegmentId.toString.equalsIgnoreCase(segId))
+        if (seg.nonEmpty) {
+          val f = seg.get.getSegmentFeatures.split(" ").map(_.toDouble).toList
+          assert(f.length == 27)
+          f
+        }
+        else
+          List.fill(27)(0.0)
+      }
+      else {
+        List.fill(27)(0.0)
+      }
+  }
+
+  val matchingSegment = property(phrases, cache = true) {
+    p: Phrase =>
+      val seg = p.getPropertyFirstValue("alignedSegment")
+      if (seg == null) "" else seg
+  }
+
+  val similarityToMatchingSegment = property(phrases, cache = true) {
+    p: Phrase => if (p.containsProperty("alignedSegment")) 1.0 else 0.0
+  }
+
   val isImageConceptExactMatch = property(phrases, cache = true) {
     p: Phrase =>
       if (p != dummyPhrase) {
@@ -218,8 +252,7 @@ object MultiModalSpRLDataModel extends DataModel {
       }
   }
 
-
-  val nearestSegmentConceptToHeadVector = property(phrases, cache = true) {
+  val nearestSegmentConceptToHeadVector = property(phrases, ordered = true, cache = true) {
     p: Phrase =>
       if (p != dummyPhrase) {
         val head = getHeadword(p)
@@ -231,7 +264,7 @@ object MultiModalSpRLDataModel extends DataModel {
       }
   }
 
-  val nearestSegmentConceptToPhraseVector = property(phrases, cache = true) {
+  val nearestSegmentConceptToPhraseVector = property(phrases, ordered = true, cache = true) {
     p: Phrase =>
       if (p != dummyPhrase) {
         //val head = getHeadword(p)
@@ -356,19 +389,19 @@ object MultiModalSpRLDataModel extends DataModel {
       headSpatialContext(first) + "::" + headSpatialContext(second)
   }
 
-  val pairTokensVector = property(pairs, cache = true) {
+  val pairTokensVector = property(pairs, ordered = true, cache = true) {
     r: Relation =>
       val (first, second) = getPairArguments(r)
       headVector(first) ++ headVector(second)
   }
 
-  val pairNearestSegmentConceptToHeadVector = property(pairs, cache = true) {
+  val pairNearestSegmentConceptToHeadVector = property(pairs, ordered = true, cache = true) {
     r: Relation =>
       val (first, _) = getPairArguments(r)
       nearestSegmentConceptToHeadVector(first)
   }
 
-  val pairNearestSegmentConceptToPhraseVector = property(pairs, cache = true) {
+  val pairNearestSegmentConceptToPhraseVector = property(pairs, ordered = true, cache = true) {
     r: Relation =>
       val (first, _) = getPairArguments(r)
       nearestSegmentConceptToPhraseVector(first)
@@ -396,17 +429,6 @@ object MultiModalSpRLDataModel extends DataModel {
         -1
       else
         getTokenDistance(first, second)
-  }
-
-  val annotationAnalysis = property(phrases) {
-    p: Phrase =>
-      val seg = (phrases(p) ~> -sentenceToPhrase ~> -documentToSentence) ~> documentToImage ~> imageToSegment
-      if(seg.nonEmpty) {
-        val a = seg.exists(s => s.referItExpression.equals(p.getText) && s.getSegmentId!=0)
-        a
-      } else {
-        false
-      }
   }
 
   val tripletIsRelation = property(triplets, cache = true) {
@@ -443,7 +465,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val JF2_1 = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
-      first.getText + "::" + second.getText + "::" + third.getText
+      first.getText.toLowerCase + "::" + second.getText.toLowerCase + "::" + third.getText.toLowerCase
   }
 
   val JF2_2 = property(triplets, cache = true) {
@@ -472,7 +494,7 @@ object MultiModalSpRLDataModel extends DataModel {
         if (first.contains(token) || second.contains(token) || third.contains(token))
           str
         else
-          str + "::" + token.getText
+          str + "::" + token.getText.toLowerCase
       })
       template
   }
@@ -480,13 +502,13 @@ object MultiModalSpRLDataModel extends DataModel {
   val JF2_4 = property(triplets, cache = true) {
     r: Relation =>
       val (_, second, third) = getTripletArguments(r)
-      second.getText + "::" + roleToSpDependencyPath(second, third)
+      second.getText.toLowerCase + "::" + roleToSpDependencyPath(second, third)
   }
 
   val JF2_5 = property(triplets, cache = true) {
     r: Relation =>
       val (first, _, _) = getTripletArguments(r)
-      first.getText
+      first.getText.toLowerCase
   }
 
   val JF2_6 = property(triplets, cache = true) {
@@ -498,7 +520,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val JF2_7 = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, _) = getTripletArguments(r)
-      roleToSpDependencyPath(first, second) + "::" + second.getText
+      roleToSpDependencyPath(first, second) + "::" + second.getText.toLowerCase
   }
 
   val JF2_8 = property(triplets, cache = true) {
@@ -547,7 +569,7 @@ object MultiModalSpRLDataModel extends DataModel {
             str + "::[LM]"
         }
         else {
-          str + "::" + token.getText
+          str + "::" + token.getText.toLowerCase
         }
       })
       template
@@ -581,7 +603,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val JF2_14 = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
-      headWordLemma(first) + "::" + second.getText + "::" + headWordLemma(third)
+      headWordLemma(first) + "::" + second.getText.toLowerCase + "::" + headWordLemma(third)
   }
 
   val JF2_15 = property(triplets, cache = true) {
@@ -597,50 +619,134 @@ object MultiModalSpRLDataModel extends DataModel {
         false
   }
 
-  val tripletTRIsImageConceptExactMatch = property(triplets, cache = true) {
+  val tripletTrWordForm = property(triplets, cache = true) {
     r: Relation =>
       val (first, _, _) = getTripletArguments(r)
-      isImageConceptExactMatch(first)
+      wordForm(first)
   }
 
-  val tripletLMIsImageConceptExactMatch = property(triplets, cache = true) {
+  val tripletSpWordForm = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, second, _) = getTripletArguments(r)
+      wordForm(second)
+  }
+
+  val tripletLmWordForm = property(triplets, cache = true) {
     r: Relation =>
       val (_, _, third) = getTripletArguments(r)
-      isImageConceptExactMatch(third)
+      wordForm(third)
   }
 
-  val tripletTRLMIsImageConcept = property(triplets, cache = true) {
+  val tripletTrMatchingSegmentFeatures = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, _, _) = getTripletArguments(r)
+      matchingSegmentFeatures(first)
+  }
+
+  val tripletTrMatchingSegmentSimilarity = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, _, _) = getTripletArguments(r)
+      similarityToMatchingSegment(first)
+  }
+
+  val tripletLmMatchingSegmentSimilarity = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, _, third) = getTripletArguments(r)
+      similarityToMatchingSegment(third)
+  }
+
+  val tripletLmMatchingSegmentFeatures = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, _, third) = getTripletArguments(r)
+      matchingSegmentFeatures(third)
+  }
+
+
+  val tripletMatchingSegmentRelations = property(triplets, cache = true) {
     r: Relation =>
       val (first, _, third) = getTripletArguments(r)
-      if (tripletTRIsImageConceptExactMatch(r) == "true" && tripletLMIsImageConceptExactMatch(r) == "true")
-        "true"
-      else
+      val trSegId = first.getPropertyFirstValue("alignedSegment")
+      val lmSegId = third.getPropertyFirstValue("alignedSegment")
+      if (trSegId != null && lmSegId != null) {
+        val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
+          .find(_.getSegmentId.toString.equalsIgnoreCase(trSegId))
+        val lmSeg = (phrases(third) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
+          .find(_.getSegmentId.toString.equalsIgnoreCase(lmSegId))
+        if (trSeg.nonEmpty && lmSeg.nonEmpty) {
+          val rels = (segments(trSeg) ~> -segmentRelationsToFirstArg)
+            .filter(x => x.getSecondSegmentId == lmSeg.get.getSegmentId)
+            .toList
+            .map(_.getRelation)
+            .distinct
+          rels
+        }
+        else
+          List()
+      }
+      else {
+        List()
+      }
+  }
+
+  val tripletTrBeforeSp = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, _) = getTripletArguments(r)
+      if (first == dummyPhrase)
         ""
+      else
+        isBefore(first, second).toString
   }
 
-
-  val tripletTRNearestSegmentConceptToHeadVector = property(triplets, cache = true) {
+  val tripletDistanceTrSp = property(triplets, cache = true) {
     r: Relation =>
-      val (first, _, _) = getTripletArguments(r)
-      nearestSegmentConceptToHeadVector(first)
+      val (first, second, _) = getTripletArguments(r)
+      if (first == dummyPhrase)
+        -1
+      else
+        getPhraseDistance(first, second)
   }
 
-  val tripletLMNearestSegmentConceptToHeadVector = property(triplets, cache = true) {
+  val tripletLmBeforeSp = property(triplets, cache = true) {
     r: Relation =>
-      val (_, _, third) = getTripletArguments(r)
-      nearestSegmentConceptToHeadVector(third)
+      val (_, second, third) = getTripletArguments(r)
+      if (third == dummyPhrase)
+        ""
+      else
+        isBefore(third, second).toString
   }
 
-  val tripletTRNearestSegmentConceptToPhraseVector = property(triplets, cache = true) {
+  val tripletDistanceLmSp = property(triplets, cache = true) {
     r: Relation =>
-      val (first, _, _) = getTripletArguments(r)
-      nearestSegmentConceptToPhraseVector(first)
+      val (_, second, third) = getTripletArguments(r)
+      if (third == dummyPhrase)
+        -1
+      else
+        getPhraseDistance(third, second)
   }
 
-  val tripletLMNearestSegmentConceptToPhraseVector = property(triplets, cache = true) {
+  val tripletTrBeforeLm = property(triplets, cache = true) {
     r: Relation =>
-      val (_, _, third) = getTripletArguments(r)
-      nearestSegmentConceptToPhraseVector(third)
+      val (first, _, third) = getTripletArguments(r)
+      if (third == dummyPhrase)
+        ""
+      else
+        isBefore(first, third).toString
+  }
+
+  val tripletDistanceTrLm = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, _, third) = getTripletArguments(r)
+      if (third == dummyPhrase)
+        -1
+      else
+        getTokenDistance(first, third)
+  }
+
+  val withoutLandmark = List("on the right", "on the left", "in the center", "in the centre", "on the right", "on the left")
+  val tripletSpWithoutLandmark = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, second, third) = getTripletArguments(r)
+      withoutLandmark.exists(_.equalsIgnoreCase(second.getText))
   }
 
   val tripletHeadWordForm = property(triplets, cache = true) {
@@ -683,14 +789,6 @@ object MultiModalSpRLDataModel extends DataModel {
     r: Relation =>
       val (_, _, third) = getTripletArguments(r)
       headVector(third)
-  }
-
-  val tripletImageConfirms = property(triplets, cache = true) {
-    r: Relation => ""
-  }
-
-  val tripletImageRelations = property(triplets, cache = true) {
-    r: Relation => "" //getSegmentRelations(r)
   }
 
   val tripletLemma = property(triplets, cache = true) {
@@ -741,14 +839,6 @@ object MultiModalSpRLDataModel extends DataModel {
       headSpatialContext(first) + "::" + headSpatialContext(second)
   }
 
-  val imageAnnotationData = property(images) {
-    x: Image => writeDataforAnnotation(x)
-  }
-
-  val imagePhrases= property(images) {
-    x: Image => writePhrases(x)
-  }
-
   val imageLabel = property(images, cache = true) {
     x: Image => x.getLabel
   }
@@ -797,7 +887,7 @@ object MultiModalSpRLDataModel extends DataModel {
     }
   }
 
-  private def getSimilarity(w1: String, w2: String): Double = {
+  def getSimilarity(w1: String, w2: String): Double = {
     if (useVectorAverages) {
       (getGoogleSimilarity(w1, w2) + getClefSimilarity(w1, w2)) / 2.0
     } else {
@@ -830,68 +920,6 @@ object MultiModalSpRLDataModel extends DataModel {
     }
     else
       undefined
-  }
-
-  private def isImageConceptMatchingWith(imageConcept: String, concept: String): Boolean = {
-    if (!imageConcept.contains("-")) {
-      getGoogleSimilarity(imageConcept.toLowerCase(), concept.toLowerCase()) >= 0.40
-
-    }
-    else {
-      val segWords = imageConcept.split("-")
-      segWords.exists(sw => getGoogleSimilarity(sw.toLowerCase(), concept.toLowerCase()) >= 0.40)
-    }
-  }
-
-  private def writeDataforAnnotation(i:Image): Boolean =
-  {
-    val filename = i.getId
-    val path = "data/mSpRL/results/annotation/" + filename + ".txt"
-    val pathann = "data/mSpRL/results/annotation/" + filename + ".ann"
-    var printWriterText = new PrintWriter(path)
-    var printWriterAnn = new PrintWriter(pathann)
-    printWriterText.println(filename)
-    printWriterText.println("")
-    printWriterText.println("Segments:")
-    val seg = images(i) ~> imageToSegment
-    seg.foreach(s => {
-      printWriterText.print(s.getSegmentId + " " + s.getSegmentConcept + ", ")
-    })
-    printWriterText.println("")
-    printWriterText.println("")
-    val sen = images(i) ~> -documentToImage ~> documentToSentence
-    var count = 1
-    sen.foreach(s => {
-      printWriterText.println("S" + count + "-Phrases:")
-      val ps = sentences(s) ~> sentenceToPhrase
-      ps.foreach(p => {
-        printWriterText.print(p.getText + ", ")
-      })
-      count = count + 1
-      printWriterText.println("")
-    })
-
-    count = 1
-    printWriterText.println("")
-    printWriterText.println("Sentences:")
-    sen.foreach(s => {
-      printWriterText.println("S" + count + ": " + s.getText)
-      count = count + 1
-    })
-    printWriterText.close()
-    true
-  }
-
-  private def writePhrases(i:Image): Boolean =
-  {
-    val filename = i.getId
-    val path = "data/mSpRL/results/phrases/" + filename + ".txt"
-    var printWriterText = new PrintWriter(path)
-    val phrases = images(i) ~> -documentToImage ~> documentToSentence ~> sentenceToPhrase
-    phrases.foreach(p => printWriterText.println(p.getText)
-    )
-    printWriterText.close()
-    true
   }
 
 }

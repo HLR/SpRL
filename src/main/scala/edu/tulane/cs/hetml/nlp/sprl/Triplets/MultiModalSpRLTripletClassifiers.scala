@@ -18,9 +18,9 @@ object MultiModalSpRLTripletClassifiers {
     List(wordForm, headWordFrom, pos, headWordPos, phrasePos, semanticRole, dependencyRelation, subCategorization,
       spatialContext, headSpatialContext, headDependencyRelation, headSubCategorization) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List()
+        case FeatureSets.BaseLineWithImage => List(similarityToMatchingSegment)
         case FeatureSets.WordEmbedding => List(headVector)
-        case FeatureSets.WordEmbeddingPlusImage => List(headVector, nearestSegmentConceptToHeadVector)
+        case FeatureSets.WordEmbeddingPlusImage => List(headVector, similarityToMatchingSegment)
         case _ => List[Property[Phrase]]()
       })
 
@@ -28,11 +28,17 @@ object MultiModalSpRLTripletClassifiers {
 
   def tripletFeatures(featureSet: FeatureSets): List[Property[Relation]] =
     List(JF2_1, JF2_2, JF2_3, JF2_4, JF2_5, JF2_6, JF2_8, JF2_9, JF2_10, JF2_11, JF2_13, JF2_14, JF2_15,
-      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos) ++
+      tripletSpWithoutLandmark,
+      tripletPhrasePos, tripletDependencyRelation, tripletHeadWordPos,
+      tripletLmBeforeSp, tripletTrBeforeLm, tripletTrBeforeSp,
+      tripletDistanceTrSp, tripletDistanceLmSp
+    ) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(tripletImageConfirms)
+        case FeatureSets.BaseLineWithImage => List(tripletLmMatchingSegmentSimilarity,
+          tripletTrMatchingSegmentSimilarity)
         case FeatureSets.WordEmbedding => List(tripletTrVector, tripletLmVector)
-        case FeatureSets.WordEmbeddingPlusImage => List()
+        case FeatureSets.WordEmbeddingPlusImage => List(tripletTrVector, tripletLmVector,
+          tripletLmMatchingSegmentSimilarity, tripletTrMatchingSegmentSimilarity)
         case _ => List[Property[Relation]]()
       })
 
@@ -69,7 +75,7 @@ object MultiModalSpRLTripletClassifiers {
     }
 
     override def feature = (phraseFeatures ++ List(lemma, headWordLemma))
-      .diff(List(isImageConceptExactMatch))
+      .diff(List())
   }
 
   object IndicatorRoleClassifier extends Learnable(phrases) {
@@ -83,7 +89,7 @@ object MultiModalSpRLTripletClassifiers {
     }
 
     override def feature = (phraseFeatures(FeatureSets.BaseLine) ++ List(headSubCategorization))
-      .diff(List(headWordPos, headWordFrom, headDependencyRelation, isImageConceptExactMatch))
+      .diff(List(headWordPos, headWordFrom, headDependencyRelation))
   }
 
   object TripletRelationClassifier extends Learnable(triplets) {
@@ -112,21 +118,29 @@ object MultiModalSpRLTripletClassifiers {
     override def feature = tripletFeatures
   }
 
-  object TripletRegionClassifier extends Learnable(triplets) {
-    def label = tripletRegion
-
-    override lazy val classifier = new SparseNetworkLearner()
-
-    override def feature =  (tripletFeatures)
-      .diff(List(tripletLmVector))
-  }
-
-
   object TripletDirectionClassifier extends Learnable(triplets) {
     def label = tripletDirection
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = tripletFeatures
+    override def feature = (tripletFeatures ++ (List(tripletMatchingSegmentRelations)))
+      .diff(List())
+  }
+
+  object TripletRegionClassifier extends Learnable(triplets) {
+    def label = tripletRegion
+
+    override lazy val classifier = new SparseNetworkLearner()
+
+    override def feature =  (tripletFeatures ++ (List(tripletMatchingSegmentRelations)))
+      .diff(List(tripletLmVector))
+  }
+
+  object TripletImageRegionClassifier extends Learnable(triplets) {
+    def label = tripletRegion
+
+    override lazy val classifier = new SparseNetworkLearner()
+
+    override def feature =  List(tripletSpWordForm)
   }
 }

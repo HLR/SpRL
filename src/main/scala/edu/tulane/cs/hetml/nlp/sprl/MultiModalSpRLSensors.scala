@@ -14,7 +14,7 @@ import org.deeplearning4j.models.word2vec.Word2Vec
 import scala.collection.immutable.HashMap
 import scala.collection.JavaConversions._
 import scala.util.matching.Regex
-import  MultiModalSpRLDataModel._
+import MultiModalSpRLDataModel.{_}
 
 object MultiModalSpRLSensors {
 
@@ -61,8 +61,12 @@ object MultiModalSpRLSensors {
     i.getId == s.getAssociatedImageID
   }
 
-  def segmentRelationToSegmentMatching(r: SegmentRelation, s: Segment): Boolean = {
-    (r.getFirstSegmentId == s.getSegmentId || r.getSecondSegmentId == s.getSegmentId) && (r.getImageId == s.getAssociatedImageID)
+  def segmentRelationToFirstArgMatching(r: SegmentRelation, s: Segment): Boolean = {
+    r.getFirstSegmentId == s.getSegmentId && r.getImageId == s.getAssociatedImageID
+  }
+
+  def segmentRelationToSecondArgMatching(r: SegmentRelation, s: Segment): Boolean = {
+    r.getSecondSegmentId == s.getSegmentId && r.getImageId == s.getAssociatedImageID
   }
 
   def relationToFirstArgumentMatching(r: Relation, p: Phrase): Boolean = {
@@ -81,16 +85,34 @@ object MultiModalSpRLSensors {
     d.getPropertyFirstValue("IMAGE").endsWith("/" + i.getLabel)
   }
 
-  def phraseToSegmentPhrasePairs(p: Phrase): List[Relation] = {
-    val segments = (phrases(p)~> -sentenceToPhrase ~> -documentToSentence ~> documentToImage ~> imageToSegment).toList
-    segments.map{
-      s=>
+  val matchingCandidates = List("NN", "JJR", "JJ", "NNP", "NNS")
+
+  def segmentToSegmentPhrasePairs(s: Segment): List[Relation] = {
+    val image = images().filter(i => i.getId == s.getAssociatedImageID)
+    val phrases = (images(image) ~> -documentToImage ~> documentToSentence ~> sentenceToPhrase)
+      .filter(p => p != dummyPhrase && matchingCandidates.exists(x => headWordPos(p).toUpperCase().contains(x)))
+      .toList
+    phrases.map {
+      p =>
         val r = new Relation()
         r.setId(p.getId + "__" + s.getSegmentId)
         r.setArgumentId(0, p.getId)
         r.setArgumentId(1, s.getSegmentId.toString)
+//        val head = getHeadword(p)
+//        val sim = s.getSegmentConcept.split('-').map(x => getSimilarity(x, head.getText)).max
+//        r.setProperty("similarity", sim.toString)
+        if (p.getPropertyValues("alignedSegment").contains(s.getSegmentId.toString)) {
+          r.setProperty("similarity", "1")
+        }
+        else {
+          r.setProperty("similarity", "0")
+        }
         r
     }
+  }
+
+  def SegmentPhrasePairToPhraseMatching(pair: Relation, phrase: Phrase): Boolean = {
+    pair.getArgumentId(0) == phrase.getId
   }
 
   val phraseConceptToWord = HashMap(
