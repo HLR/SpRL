@@ -75,7 +75,7 @@ public class CLEFImageReader {
 
         path = directory;
         // Load redefined segment relations
-//        getRedefinedRelations(directory);
+        getRedefinedRelations(directory);
         // Load Concepts
         getConcepts(directory);
         //Load Referit Data

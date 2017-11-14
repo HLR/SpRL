@@ -17,7 +17,7 @@ object mSpRLConfigurator {
   val suffix = ""
   val model = FeatureSets.BaseLineWithImage
   var isTrain = false
-
+  val useAnntotatedClef = false
   val jointTrain = false
   val skipIndividualClassifiersTraining = false  /* When using joint train, it will ignore individual classifiers
                                                   * training and loads them from the disk*/
