@@ -127,12 +127,12 @@ public class CLEFAlignmentReader {
         }
 
         for (File f : annDir.listFiles())
-            if (f.isFile()) {
+            if (f.isFile() && f.getName().toLowerCase().endsWith(".ann")) {
                 annFiles.put(f.getName().split("\\.")[0], f);
             }
 
         for (File f : textDir.listFiles())
-            if (f.isFile())
+            if (f.isFile() && f.getName().toLowerCase().endsWith(".txt"))
                 textFiles.put(f.getName().split("\\.")[0], f);
 
     }
