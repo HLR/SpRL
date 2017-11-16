@@ -31,6 +31,7 @@ public class NlpXmlReader {
     private String textTagName = "text";
     private String idTagName = "id";
     private NlpBaseElementTypes relationParent = NlpBaseElementTypes.Sentence;
+    private boolean useGlobalSpans = false;
 
     public NlpXmlReader(String path, String documentTagName, String sentenceTagName, String phraseTagName, String tokenTagName) {
         this(new File(path), documentTagName, sentenceTagName, phraseTagName, tokenTagName);
@@ -233,14 +234,16 @@ public class NlpXmlReader {
             case Sentence:
                 return ((Sentence) e).getDocument().getId();
             case Phrase:
-                return ((Phrase) e).getSentence().getId();
+                return useGlobalSpans?((Phrase) e).getDocument().getId(): ((Phrase) e).getSentence().getId();
             case Token:
-                return ((Token) e).getSentence().getId();
+                return useGlobalSpans?((Phrase) e).getDocument().getId(): ((Token) e).getSentence().getId();
         }
         return null;
     }
 
     private <T extends NlpBaseElement> String getParentName(T e) {
+        if(useGlobalSpans)
+            return "document";
         switch (e.getType()) {
             case Document:
                 return "";
@@ -268,6 +271,8 @@ public class NlpXmlReader {
     }
 
     private String getRelationParentTagName() {
+        if(useGlobalSpans)
+            return getDocumentTagName();
         switch (relationParent) {
             case Document:
                 return getDocumentTagName();
@@ -442,5 +447,13 @@ public class NlpXmlReader {
 
     public void setRelationParent(NlpBaseElementTypes relationParent) {
         this.relationParent = relationParent;
+    }
+
+    public boolean isUseGlobalSpans() {
+        return useGlobalSpans;
+    }
+
+    public void setUseGlobalSpans(boolean useGlobalSpans) {
+        this.useGlobalSpans = useGlobalSpans;
     }
 }

@@ -126,7 +126,7 @@ object CandidateGenerator {
 
   def getLandmarkCandidates(phrases: List[Phrase]): List[Phrase] = {
 
-    val lmPosTagLex = List("PRP", "NN", "PRP$", "JJ", "NNS", "CD")
+    val lmPosTagLex = List("PRP", "NN", "PRP$", "JJ", "NNS", "NNP", "CD")
     val lmCandidates = phrases.filter(x => lmPosTagLex.exists(p => getPos(x).contains(p)))
     ReportHelper.reportRoleStats(phrases, lmCandidates, "LANDMARK")
     lmCandidates

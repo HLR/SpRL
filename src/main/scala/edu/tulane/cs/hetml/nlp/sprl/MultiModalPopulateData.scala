@@ -12,9 +12,9 @@ import scala.collection.JavaConversions._
 /** Created by Taher on 2017-02-12.
   */
 
-object MultiModalPopulateData extends Logging{
+object MultiModalPopulateData extends Logging {
 
-  lazy val xmlReader = new SpRLXmlReader(if (isTrain) trainFile else testFile)
+  lazy val xmlReader = new SpRLXmlReader(if (isTrain) trainFile else testFile, globalSpans)
   lazy val imageReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, isTrain)
   lazy val alignmentReader = new AlignmentReader(alignmentAnnotationPath, alignmentTextPath)
 
@@ -33,10 +33,27 @@ object MultiModalPopulateData extends Logging{
     val phraseInstances = (if (isTrain) phrases.getTrainingInstances.toList else phrases.getTestingInstances.toList)
       .filter(_.getId != dummyPhrase.getId)
 
+    if (globalSpans) {
+      phraseInstances.foreach {
+        p =>
+          p.setStart(p.getSentence.getStart + p.getStart)
+          p.setEnd(p.getSentence.getStart + p.getEnd)
+          p.setGlobalSpan(globalSpans)
+      }
+    }
+
     xmlReader.setRoles(phraseInstances)
 
+//    if (globalSpans) {
+//      phraseInstances.foreach {
+//        p =>
+//          p.setStart(p.getStart - p.getSentence.getStart)
+//          p.setEnd(p.getEnd - p.getSentence.getStart)
+//      }
+//    }
+
     alignmentReader.setAlignments(phraseInstances)
-    if(populateImages) {
+    if (populateImages) {
       images.populate(imageReader.getImageList, isTrain)
       segments.populate(imageReader.getSegmentList, isTrain)
       segmentRelations.populate(imageReader.getImageRelationList, isTrain)
@@ -83,10 +100,10 @@ object MultiModalPopulateData extends Logging{
   }
 
   def populateTripletDataFromAnnotatedCorpus(
-                                                       trFilter: (Phrase) => Boolean,
-                                                       spFilter: (Phrase) => Boolean,
-                                                       lmFilter: (Phrase) => Boolean
-                                                     ): Unit = {
+                                              trFilter: (Phrase) => Boolean,
+                                              spFilter: (Phrase) => Boolean,
+                                              lmFilter: (Phrase) => Boolean
+                                            ): Unit = {
 
     logger.info("Triplet population started ...")
     val candidateRelations = CandidateGenerator.generateAllTripletCandidates(

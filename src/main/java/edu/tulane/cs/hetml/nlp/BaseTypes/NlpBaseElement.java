@@ -13,6 +13,7 @@ public abstract class NlpBaseElement extends SpanBasedElement {
     private String id;
     private String text;
     private Map<String, List<String>> properties = new HashMap<>();
+    private boolean globalSpan;
 
     public NlpBaseElement() {
         setStart(-1);
@@ -78,8 +79,33 @@ public abstract class NlpBaseElement extends SpanBasedElement {
         return null;
     }
 
+    public int getRelativeStart() {
+        return getStart();
+    }
+
+    public int getRelativeEnd() {
+        return getEnd();
+    }
+
+    public int getGlobalStart() {
+        return getStart();
+    }
+
+    public int getGlobalEnd() {
+        return getEnd();
+    }
+
     @Override
     public String toString() {
         return getText();
     }
+
+    public boolean isGlobalSpan() {
+        return globalSpan;
+    }
+
+    public void setGlobalSpan(boolean globalSpan) {
+        this.globalSpan = globalSpan;
+    }
+
 }

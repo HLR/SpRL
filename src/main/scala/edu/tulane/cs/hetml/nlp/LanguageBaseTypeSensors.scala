@@ -105,9 +105,10 @@ object LanguageBaseTypeSensors extends Logging {
       val newPhrase = new Constituent("temp", "", ta, 0, ta.getTokens.length)
       val newHeadId = getHeadwordId(ta, newPhrase)
       val head = ta.getView(ViewNames.TOKENS).asInstanceOf[TokenLabelView].getConstituentAtToken(newHeadId)
-      new Token(p, p.getId + head.getSpan, head.getStartCharOffset + p.getStart, head.getEndCharOffset + p.getStart, head.toString)
+      new Token(p, p.getId + head.getSpan,
+        head.getStartCharOffset + p.getRelativeStart, head.getEndCharOffset + p.getRelativeStart, head.toString)
     }
-    else{
+    else {
       val head = ta.getView(ViewNames.TOKENS).asInstanceOf[TokenLabelView].getConstituentAtToken(headId)
       new Token(p, p.getId + head.getSpan, head.getStartCharOffset, head.getEndCharOffset, head.toString)
     }
@@ -115,7 +116,7 @@ object LanguageBaseTypeSensors extends Logging {
 
   def getTokens(text: String): List[Token] = {
     val ta = TextAnnotationFactory.createTextAnnotation(as, "", "", text)
-    ta.getView(ViewNames.TOKENS).getConstituents.asScala.map(x=>
+    ta.getView(ViewNames.TOKENS).getConstituents.asScala.map(x =>
       new Token(null.asInstanceOf[Sentence], null, x.getStartCharOffset, x.getEndCharOffset, x.toString)).toList
   }
 
@@ -143,7 +144,7 @@ object LanguageBaseTypeSensors extends Logging {
   }
 
   def isBefore(t1: NlpBaseElement, t2: NlpBaseElement): Boolean = {
-    t1.getStart < t2.getStart
+    t1.getRelativeStart < t2.getRelativeStart
   }
 
   def getTokenDistance(t1: NlpBaseElement, t2: NlpBaseElement): Int = {
@@ -153,9 +154,9 @@ object LanguageBaseTypeSensors extends Logging {
   }
 
   def getPhraseDistance(p1: Phrase, p2: Phrase): Int = {
-    val start = Math.min(p1.getEnd, p2.getEnd)
-    val end = Math.max(p1.getStart, p2.getStart)
-    val count = getPhrases(getSentence(p1)).count(p=> p.getStart>= start && p.getEnd <= end)
+    val start = Math.min(p1.getRelativeEnd, p2.getRelativeEnd)
+    val end = Math.max(p1.getRelativeStart, p2.getRelativeStart)
+    val count = getPhrases(getSentence(p1)).count(p => p.getRelativeStart >= start && p.getRelativeEnd <= end)
     count
   }
 
@@ -205,22 +206,22 @@ object LanguageBaseTypeSensors extends Logging {
     ta.getTokens.slice(start, end)
   }
 
-  def getDependencyRelationWith(t: Token, relationName:String): List[(Int, Int, String)] = {
+  def getDependencyRelationWith(t: Token, relationName: String): List[(Int, Int, String)] = {
     val relations = getDependencyRelations(getTextAnnotation(t))
 
     relations
-      .filter(r => r.getTarget.getStartCharOffset == t.getStart && r.getRelationName.equalsIgnoreCase(relationName))
-      .map(r=> (r.getSource.getStartCharOffset, r.getSource.getEndCharOffset, r.getSource.toString))
+      .filter(r => r.getTarget.getStartCharOffset == t.getRelativeStart && r.getRelationName.equalsIgnoreCase(relationName))
+      .map(r => (r.getSource.getStartCharOffset, r.getSource.getEndCharOffset, r.getSource.toString))
       .toList
   }
 
   def getDependencyRelation(t: Token): String = {
     val relations = getDependencyRelations(getTextAnnotation(t))
     val root = getDependencyRoot(relations)
-    if (root != null && root.getStartCharOffset == t.getStart)
+    if (root != null && root.getStartCharOffset == t.getRelativeStart)
       "root"
     else
-      relations.find(r => r.getTarget.getStartCharOffset == t.getStart) match {
+      relations.find(r => r.getTarget.getStartCharOffset == t.getRelativeStart) match {
         case Some(r) => r.getRelationName
         case _ => ""
       }
@@ -237,30 +238,35 @@ object LanguageBaseTypeSensors extends Logging {
     }
 
     val ta = getTextAnnotation(t1)
-    val c1 = ta.getView(dependencyView).getConstituentsCoveringToken(getStartTokenId(t1)).get(0)
-    val c2 = ta.getView(dependencyView).getConstituentsCoveringToken(getStartTokenId(t2)).get(0)
+    try {
+      val c1 = ta.getView(dependencyView).getConstituentsCoveringToken(getStartTokenId(t1)).get(0)
+      val c2 = ta.getView(dependencyView).getConstituentsCoveringToken(getStartTokenId(t2)).get(0)
 
-    val parse: TreeView = ta.getView(dependencyView).asInstanceOf[TreeView]
+      val parse: TreeView = ta.getView(dependencyView).asInstanceOf[TreeView]
 
-    val relations = parse.getRelations.asScala.toList
-    val paths = PathFeatureHelper.getPathsToCommonAncestor(c1, c2, 400)
+      val relations = parse.getRelations.asScala.toList
+      val paths = PathFeatureHelper.getPathsToCommonAncestor(c1, c2, 400)
 
-    val up = paths.getFirst.asScala.toList
-    val down = paths.getSecond.asScala.toList
+      val up = paths.getFirst.asScala.toList
+      val down = paths.getSecond.asScala.toList
 
-    val path: StringBuilder = new StringBuilder
-    var i = 0
-    while (i < up.size - 1) {
-      path.append(getRelationName(relations, up(i), up(i + 1), "↑"))
-      i += 1
+      val path: StringBuilder = new StringBuilder
+      var i = 0
+      while (i < up.size - 1) {
+        path.append(getRelationName(relations, up(i), up(i + 1), "↑"))
+        i += 1
+      }
+      i = down.size - 1
+      while (i > 0) {
+        path.append(getRelationName(relations, down(i), down(i - 1), "↓"))
+        i -= 1
+      }
+
+      path.toString.toUpperCase
     }
-    i = down.size - 1
-    while (i > 0) {
-      path.append(getRelationName(relations, down(i), down(i - 1), "↓"))
-      i -= 1
+    catch {
+      case _: Throwable => ""
     }
-
-    path.toString.toUpperCase
   }
 
 
@@ -364,8 +370,8 @@ object LanguageBaseTypeSensors extends Logging {
       return Seq()
     val ta = getTextAnnotation(s)
     val v = ta.getView(ViewNames.TOKENS)
-    val startId = ta.getTokenIdFromCharacterOffset(e.getStart)
-    val endId = ta.getTokenIdFromCharacterOffset(e.getEnd - 1)
+    val startId = ta.getTokenIdFromCharacterOffset(e.getRelativeStart)
+    val endId = ta.getTokenIdFromCharacterOffset(e.getRelativeEnd - 1)
     v.getConstituentsCoveringSpan(startId, endId + 1).asScala
   }
 
@@ -388,7 +394,7 @@ object LanguageBaseTypeSensors extends Logging {
     val ta = getTextAnnotation(e)
     val start = e match {
       case _: Document | _: Sentence => 0
-      case _ => e.getStart
+      case _ => e.getRelativeStart
     }
     ta.getTokenIdFromCharacterOffset(start)
   }
@@ -397,7 +403,7 @@ object LanguageBaseTypeSensors extends Logging {
     val ta = getTextAnnotation(e)
     val end = e match {
       case _: Document | _: Sentence => ta.getView(ViewNames.TOKENS).getConstituents.asScala.last.getEndCharOffset
-      case _ => e.getEnd
+      case _ => e.getRelativeEnd
     }
     ta.getTokenIdFromCharacterOffset(end - 1)
   }

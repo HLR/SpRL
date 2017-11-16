@@ -177,9 +177,10 @@ object ReportHelper {
                              actualFile: String,
                              resultsDir: String,
                              resultFilePrefix: String,
-                             predicted: List[Relation]
+                             predicted: List[Relation],
+                             globalSpan: Boolean
                            )={
-    val actual = new SpRLXmlReader(actualFile).getTripletsWithArguments()
+    val actual = new SpRLXmlReader(actualFile, globalSpan).getTripletsWithArguments()
     reportRelationResults(resultsDir, resultFilePrefix, actual, predicted, new OverlapComparer, 3)
   }
   def reportRelationResults(
@@ -345,17 +346,8 @@ object ReportHelper {
     val tr = r.getArgument(0)
     val sp = r.getArgument(1)
     val lm = r.getArgument(2)
-    val offset = sp match {
-      case x: Token => x.getSentence.getStart
-      case x: Phrase => x.getSentence.getStart
-    }
-    val lmStart = if (notNull(lm)) offset + lm.getStart else -1
-    val lmEnd = if (notNull(lm)) offset + lm.getEnd else -1
-    val trStart = if (notNull(tr)) offset + tr.getStart else -1
-    val trEnd = if (notNull(tr)) offset + tr.getEnd else -1
-    val spStart = offset + sp.getStart
-    val spEnd = offset + sp.getEnd
-    new RelationEval(trStart, trEnd, spStart, spEnd, lmStart, lmEnd)
+    new RelationEval(tr.getGlobalStart, tr.getGlobalEnd, sp.getGlobalStart, sp.getGlobalEnd,
+      lm.getGlobalStart, lm.getGlobalEnd)
   }
 
   private def notNull(t: NlpBaseElement) = {
