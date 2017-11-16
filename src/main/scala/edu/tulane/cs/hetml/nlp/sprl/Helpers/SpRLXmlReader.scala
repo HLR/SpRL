@@ -84,9 +84,9 @@ class SpRLXmlReader(dataPath: String, useGlobalSpan: Boolean) {
 
     val actualTriplets = getTripletsWithArguments()
     actualTriplets.foreach(a => {
-      val predicted = triplets.find(x => isEqual(x, a))
+      val predicted = triplets.filter(x => isEqual(x, a))
       if (predicted.nonEmpty) {
-        copyRelationProperties(a, predicted.get)
+        predicted.foreach(x => copyRelationProperties(a, x))
       }
       else {
         println(s"Warning: Could not find matching candidate for relation ${a.getId}")
