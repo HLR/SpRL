@@ -21,6 +21,38 @@ public class Phrase extends NlpBaseElement {
         return NlpBaseElementTypes.Phrase;
     }
 
+    @Override
+    public int getRelativeStart(){
+        if(getStart() < 0)
+            return getStart();
+
+        return isGlobalSpan()? getStart() - sentence.getStart(): getStart();
+    }
+
+    @Override
+    public int getRelativeEnd(){
+        if(getEnd() < 0)
+            return getEnd();
+
+        return isGlobalSpan()? getEnd() - sentence.getStart(): getEnd();
+    }
+
+    @Override
+    public int getGlobalStart(){
+        if(getStart() < 0)
+            return getStart();
+
+        return isGlobalSpan()? getStart(): getStart() + sentence.getStart();
+    }
+
+    @Override
+    public int getGlobalEnd(){
+        if(getEnd() < 0)
+            return getEnd();
+
+        return isGlobalSpan()? getEnd(): getEnd() + sentence.getStart();
+    }
+
     public Document getDocument() {
         return getSentence().getDocument();
     }

@@ -155,7 +155,7 @@ object MultiModalPairSpRLApp extends App with Logging{
       val indicators = phrases.getTestingInstances.filter(x => PairsSentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator").toList
       val tripletList = triplets.getTestingInstances.toList
 
-      ReportHelper.reportTripletResults(testFile, resultsDir, s"${expName}${suffix}_triplet", tripletList)
+      ReportHelper.reportTripletResults(testFile, resultsDir, s"${expName}${suffix}_triplet", tripletList, globalSpans)
 
       ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
         x => TripletGeneralTypeClassifier(x),

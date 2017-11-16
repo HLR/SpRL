@@ -13,9 +13,9 @@ object mSpRLConfigurator {
   val modelDir = "models/mSpRL/"
   val spatialIndicatorLex = "data/mSprl/spatialIndicator.lex"
   val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"
-  val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"
+  val testFile = "data/TrainSet.xml"
   val suffix = ""
-  val model = FeatureSets.BaseLineWithImage
+  val model = FeatureSets.BaseLine
   var isTrain = false
   val useAnntotatedClef = true
   val jointTrain = false
@@ -24,5 +24,6 @@ object mSpRLConfigurator {
   val iterations = 50
   val useConstraints = true
   val imageConstraints = model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
-  val populateImages = true// model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
+  val populateImages = model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
+  val globalSpans = true
 }

@@ -10,7 +10,7 @@ import scala.collection.JavaConversions._
 
 /** Created by taher on 2017-02-28.
   */
-class SpRLXmlReader(dataPath: String) {
+class SpRLXmlReader(dataPath: String, useGlobalSpan: Boolean) {
 
   val trTag = "TRAJECTOR"
   val lmTag = "LANDMARK"
@@ -83,10 +83,13 @@ class SpRLXmlReader(dataPath: String) {
   def setTripletRelationTypes(triplets: List[Relation]): Unit = {
 
     val actualTriplets = getTripletsWithArguments()
-    triplets.foreach(r => {
-      val actual = actualTriplets.find(x => isEqual(x, r))
-      if (actual.nonEmpty) {
-        copyRelationProperties(actual.get, r)
+    actualTriplets.foreach(a => {
+      val predicted = triplets.find(x => isEqual(x, a))
+      if (predicted.nonEmpty) {
+        copyRelationProperties(a, predicted.get)
+      }
+      else {
+        println(s"Warning: Could not find matching candidate for relation ${a.getId}")
       }
     })
   }
@@ -105,14 +108,32 @@ class SpRLXmlReader(dataPath: String) {
     val indicators = reader.getPhrases().map(x => x.getId -> x).toMap
 
     relations.map(r => {
-      val tr = trajectors(r.getArgumentId(0))
-      val sp = indicators(r.getArgumentId(1))
-      val lm = landmarks(r.getArgumentId(2))
-      r.setArgument(0, tr)
-      r.setArgument(1, sp)
-      r.setArgument(2, lm)
-      r
-    }).toList
+
+      if (!trajectors.containsKey(r.getArgumentId(0))) {
+        println(s"Warning: cannot find trajector ${r.getArgumentId(0)} for relation ${r.getId}. Relation skipped.")
+        null
+      }
+      else if (!indicators.containsKey(r.getArgumentId(1))) {
+        println(s"Warning: cannot find indicator ${r.getArgumentId(2)} for relation ${r.getId}. Relation skipped.")
+        null
+      }
+      else if (!landmarks.containsKey(r.getArgumentId(2))) {
+        println(s"Warning: cannot find landmark ${r.getArgumentId(2)} for relation ${r.getId}. Relation skipped.")
+        null
+      }
+      else {
+        val tr = trajectors(r.getArgumentId(0))
+        tr.setGlobalSpan(useGlobalSpan)
+        val sp = indicators(r.getArgumentId(1))
+        sp.setGlobalSpan(useGlobalSpan)
+        val lm = landmarks(r.getArgumentId(2))
+        lm.setGlobalSpan(useGlobalSpan)
+        r.setArgument(0, tr)
+        r.setArgument(1, sp)
+        r.setArgument(2, lm)
+        r
+      }
+    }).filter(x => x != null).toList
   }
 
   def getTrSpPairsWithArguments(): List[Relation] = {
@@ -226,6 +247,7 @@ class SpRLXmlReader(dataPath: String) {
   private def createXmlReader(): NlpXmlReader = {
     val reader = new NlpXmlReader(dataPath, "SCENE", "SENTENCE", null, null)
     reader.setIdUsingAnotherProperty("SCENE", "DOCNO")
+    reader.setUseGlobalSpans(useGlobalSpan)
     reader
   }
 

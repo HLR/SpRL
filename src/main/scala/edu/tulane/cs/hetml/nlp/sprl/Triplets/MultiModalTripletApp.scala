@@ -147,9 +147,9 @@ object MultiModalTripletApp extends App with Logging {
         x => TripletDirectionClassifier(x),
         s"$resultsDir/${expName}${suffix}.xml")
 
-      ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+      //ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
 
-      val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", true)
+      val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
 
       val tr = TrajectorRoleClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Trajector(within data model)", tr)
@@ -198,9 +198,9 @@ object MultiModalTripletApp extends App with Logging {
         x => TripletDirectionConstraintClassifier(x),
         s"$resultsDir/${expName}${suffix}.xml")
 
-      ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+      //ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
 
-      val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", true)
+      val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
 
       val tr = TRConstraintClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Trajector(within data model)", tr)

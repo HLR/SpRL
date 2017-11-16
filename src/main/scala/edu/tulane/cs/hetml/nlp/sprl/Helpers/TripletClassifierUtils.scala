@@ -16,11 +16,12 @@ object TripletClassifierUtils {
             isTrain: Boolean,
             trClassifier: (Relation) => Boolean,
             spClassifier: (Phrase) => Boolean,
-            lmClassifier: (Relation) => Boolean
+            lmClassifier: (Relation) => Boolean,
+            globalSpan: Boolean
           ): Seq[SpRLEvaluation] = {
 
     val predicted: List[Relation] = predict(trClassifier, spClassifier, lmClassifier, isTrain)
-    val actual = new SpRLXmlReader(dataPath).getTripletsWithArguments()
+    val actual = new SpRLXmlReader(dataPath, globalSpan).getTripletsWithArguments()
 
     ReportHelper.reportRelationResults(resultsDir, resultsFilePrefix + "_triplet", actual, predicted, new OverlapComparer, 3)
   }

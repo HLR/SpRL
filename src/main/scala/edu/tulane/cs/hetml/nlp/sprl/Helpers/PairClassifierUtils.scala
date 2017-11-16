@@ -15,10 +15,11 @@ object PairClassifierUtils {
                 resultsDir: String,
                 resultsFilePrefix: String,
                 isTrain: Boolean,
-                isTrajector: Boolean
+                isTrajector: Boolean,
+                globalSpan: Boolean
               ): Seq[SpRLEvaluation] = {
 
-    val reader = new SpRLXmlReader(dataPath)
+    val reader = new SpRLXmlReader(dataPath, globalSpan)
     val actual = if(isTrajector) reader.getTrSpPairsWithArguments() else reader.getLmSpPairsWithArguments()
 
     val name = if (isTrajector) "TrSp" else "LmSp"
