@@ -34,6 +34,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val segments = node[Segment]
   val segmentRelations = node[SegmentRelation]
   val segmentPhrasePairs = node[Relation]((r: Relation) => r.getId)
+  val visualTriplets = node[ImageTriplet]
 
   /*
   Edges

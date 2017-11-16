@@ -20,6 +20,7 @@ public class Segment {
     public String referItExpression;
     public String filteredTokens;
     private boolean isMatching;
+    private String boxDimensions;
 
     public Segment(String ImageId, int segmentId, String segmentFeatures, String referItExpression, boolean isMatching) {
         this.imageId = ImageId;
@@ -30,13 +31,14 @@ public class Segment {
         this.tagged = new ArrayList<>();
     }
 
-    public Segment(String ImageId, int segmentId, int segmentCode, String segmentFeatures, String segmentConcept, List<String> tagged, List<String> refExp)
+    public Segment(String ImageId, int segmentId, int segmentCode, String segmentFeatures, String segmentConcept, String boxDimensions)
     {
         this.imageId = ImageId;
         this.segmentId = segmentId;
         this.segmentCode = segmentCode;
         this.segmentFeatures = segmentFeatures;
         this.segmentConcept = segmentConcept;
+        this.boxDimensions = boxDimensions;
     }
 
     public String getAssociatedImageID()
@@ -83,4 +85,13 @@ public class Segment {
     public String getUniqueId() {
         return imageId + "_" + segmentId;
     }
+
+    public String getBoxDimensions() {
+        return boxDimensions;
+    }
+
+    public void setBoxDimensions(String boxDimensions) {
+        this.boxDimensions = boxDimensions;
+    }
+
 }
