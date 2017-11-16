@@ -7,6 +7,7 @@ import edu.tulane.cs.hetml.nlp.XmlMatchings
 import edu.tulane.cs.hetml.nlp.sprl.Eval.OverlapComparer
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ListBuffer
 
 /** Created by taher on 2017-02-28.
   */
@@ -83,15 +84,17 @@ class SpRLXmlReader(dataPath: String, useGlobalSpan: Boolean) {
   def setTripletRelationTypes(triplets: List[Relation]): Unit = {
 
     val actualTriplets = getTripletsWithArguments()
+    val missed = new ListBuffer[String]()
     actualTriplets.foreach(a => {
       val predicted = triplets.filter(x => isEqual(x, a))
       if (predicted.nonEmpty) {
         predicted.foreach(x => copyRelationProperties(a, x))
       }
       else {
-        println(s"Warning: Could not find matching candidate for relation ${a.getId}")
+        missed.add(a.getId)
       }
     })
+    println(s"Warning: Missed relations ${missed.size}")
   }
 
   def getTripletsWithArguments(): List[Relation] = {
