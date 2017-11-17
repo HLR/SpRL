@@ -39,6 +39,8 @@ public class CLEFImageReader {
     public List<ImageTriplet> trainImageTriplets;
     public List<ImageTriplet> testImageTriplets;
 
+    private boolean useRedefinedRelations;
+
     private Hashtable<Integer, String> MapCode2Concept = new Hashtable<Integer, String>();
     private Hashtable<String, String> segmentReferitText = new Hashtable<String, String>();
     private Hashtable<String, String> segmentOntology = new Hashtable<String, String>();
@@ -48,8 +50,9 @@ public class CLEFImageReader {
     private double imageWidth, imageHeight;
     PrintWriter printWriterTest;
 
-    public CLEFImageReader(String directory, String trainFilePath, String testFilePath, Boolean readFullData) throws IOException {
+    public CLEFImageReader(String directory, String trainFilePath, String testFilePath, Boolean readFullData, Boolean useRedefinedRelations) throws IOException {
 
+        this.useRedefinedRelations = useRedefinedRelations;
         this.trainFilePath = trainFilePath;
         this.testFilePath = testFilePath;
         File d = new File(directory);
@@ -361,10 +364,13 @@ public class CLEFImageReader {
                                 if (val == 3)
                                     rel = "beside";
                                 else if (val == 4) {
-                                    // Original "x-aligned"
-                                    //rel = "x-aligned";
-                                    String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
-                                    rel = redefindedRelations.get(key);
+                                    if(!useRedefinedRelations)
+                                        // Original "x-aligned"
+                                        rel = "x-aligned";
+                                    else {
+                                        String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
+                                        rel = redefindedRelations.get(key);
+                                    }
                                 }
 
                                 if (rel != null) {
@@ -383,10 +389,13 @@ public class CLEFImageReader {
                                 else if (val == 6)
                                     rel = "below";
                                 else if (val == 7) {
-                                    // Original "y-aligned"
-                                    //rel= "y-aligned";
-                                    String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
-                                    rel = redefindedRelations.get(key);
+                                    if(!useRedefinedRelations)
+                                        // Original "y-aligned"
+                                        rel= "y-aligned";
+                                    else {
+                                        String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
+                                        rel = redefindedRelations.get(key);
+                                    }
                                 }
 
                                 if (rel != null) {
@@ -724,5 +733,13 @@ public class CLEFImageReader {
         double distance = Math.sqrt(xSqr + ySqr);
 
         return distance;
+    }
+
+    public boolean isUseRedefinedRelations() {
+        return useRedefinedRelations;
+    }
+
+    public void setUseRedefinedRelations(boolean useRedefinedRelations) {
+        this.useRedefinedRelations = useRedefinedRelations;
     }
 }
