@@ -8,7 +8,7 @@ import scala.collection.JavaConversions._
   */
 class ImageReaderHelper(dataDir: String, trainFileName: String, testFileName: String, isTrain: Boolean) {
 
-  lazy val reader = new CLEFImageReader(dataDir, trainFileName, testFileName, false)
+  lazy val reader = new CLEFImageReader(dataDir, trainFileName, testFileName, false, false)
 
   def getImageRelationList: List[SegmentRelation] = {
 
