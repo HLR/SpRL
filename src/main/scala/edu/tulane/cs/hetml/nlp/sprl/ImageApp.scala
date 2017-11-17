@@ -17,8 +17,11 @@ object ImageApp extends App {
   /* Example 2 */
 //  val tensorflowLableImage = new LabelImage("data/imageModel","data/imageModel/28.jpg")
 
-//  val CLEFDataset = new CLEFImageReader("data/mSprl/saiapr_tc-12", "data/mSprl/saiapr_tc-12/newSprl2017_train.xml",
-//    "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml", readFullData)
+  val CLEFDataset = new CLEFImageReader("data/mSprl/saiapr_tc-12", "data/mSprl/saiapr_tc-12/newSprl2017_train.xml",
+    "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml", readFullData)
+
+  visualTriplets.populate(CLEFDataset.testImageTriplets)
+
   //val CLEFAnnotations = new CLEFAlignmentReader("data/annotatedFiles")
 
   /*  val imageListTrain = CLEFDataset.trainingImages

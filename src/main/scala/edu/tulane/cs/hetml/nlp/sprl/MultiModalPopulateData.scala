@@ -57,6 +57,7 @@ object MultiModalPopulateData extends Logging {
       images.populate(imageReader.getImageList, isTrain)
       segments.populate(imageReader.getSegmentList, isTrain)
       segmentRelations.populate(imageReader.getImageRelationList, isTrain)
+      visualTriplets.populate(imageReader.getVisualTripletList, isTrain)
     }
 
     logger.info("Role population finished.")

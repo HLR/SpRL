@@ -1,6 +1,6 @@
 package edu.tulane.cs.hetml.nlp.sprl.Helpers
 
-import edu.tulane.cs.hetml.vision.{CLEFImageReader, Image, Segment, SegmentRelation}
+import edu.tulane.cs.hetml.vision._
 
 import scala.collection.JavaConversions._
 
@@ -16,6 +16,15 @@ class ImageReaderHelper(dataDir: String, trainFileName: String, testFileName: St
       reader.trainingRelations.toList
     } else {
       reader.testRelations.toList
+    }
+  }
+
+  def getVisualTripletList: List[ImageTriplet] = {
+
+    if (isTrain) {
+      reader.trainImageTriplets.toList
+    } else {
+      reader.testImageTriplets.toList
     }
   }
 
