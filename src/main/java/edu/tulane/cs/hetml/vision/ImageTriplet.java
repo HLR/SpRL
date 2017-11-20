@@ -1,7 +1,5 @@
 package edu.tulane.cs.hetml.vision;
 
-import org.bytedeco.javacpp.presets.opencv_core;
-
 public class ImageTriplet {
     private String imageId;
     private int firstSegId;
@@ -49,9 +47,9 @@ public class ImageTriplet {
                         String trVector, double trAreawrtLM, double trAspectRatio, double lmAspectRatio,
                         double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance, double trAreaImage,
                         double lmAreaImage) {
-        this.imageId = imageId;
-        this.firstSegId = firstSegId;
-        this.secondSegId = secondSegId;
+        this.setImageId(imageId);
+        this.setFirstSegId(firstSegId);
+        this.setSecondSegId(secondSegId);
         this.trBox = trBox;
         this.lmBox = lmBox;
         this.imageBox = imageBox;
@@ -129,5 +127,29 @@ public class ImageTriplet {
 
     public String getTrVector() {
         return trVector;
+    }
+
+    public String getImageId() {
+        return imageId;
+    }
+
+    public void setImageId(String imageId) {
+        this.imageId = imageId;
+    }
+
+    public int getFirstSegId() {
+        return firstSegId;
+    }
+
+    public void setFirstSegId(int firstSegId) {
+        this.firstSegId = firstSegId;
+    }
+
+    public int getSecondSegId() {
+        return secondSegId;
+    }
+
+    public void setSecondSegId(int secondSegId) {
+        this.secondSegId = secondSegId;
     }
 }

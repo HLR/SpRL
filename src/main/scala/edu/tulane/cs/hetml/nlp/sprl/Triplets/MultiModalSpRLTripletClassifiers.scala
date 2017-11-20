@@ -18,7 +18,7 @@ object MultiModalSpRLTripletClassifiers {
     List(wordForm, headWordFrom, pos, headWordPos, phrasePos, semanticRole, dependencyRelation, subCategorization,
       spatialContext, headSpatialContext, headDependencyRelation, headSubCategorization) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(similarityToMatchingSegment)
+        case FeatureSets.BaseLineWithImage => List(similarityToMatchingSegment, matchingSegmentFeatures)
         case FeatureSets.WordEmbedding => List(headVector)
         case FeatureSets.WordEmbeddingPlusImage => List(headVector, similarityToMatchingSegment)
         case _ => List[Property[Phrase]]()
@@ -75,7 +75,7 @@ object MultiModalSpRLTripletClassifiers {
     }
 
     override def feature = (phraseFeatures ++ List(lemma, headWordLemma))
-      .diff(List())
+      .diff(List(matchingSegmentFeatures))
   }
 
   object IndicatorRoleClassifier extends Learnable(phrases) {
@@ -97,7 +97,7 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature =  (tripletFeatures)
+    override def feature = (tripletFeatures)
       .diff(List(tripletLmVector))
   }
 
@@ -123,7 +123,7 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = (tripletFeatures ++ (List(tripletMatchingSegmentRelations)))
+    override def feature = (tripletFeatures)
       .diff(List())
   }
 
@@ -132,7 +132,7 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature =  (tripletFeatures ++ (List(tripletMatchingSegmentRelations)))
+    override def feature = (tripletFeatures)
       .diff(List(tripletLmVector))
   }
 
@@ -141,6 +141,7 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature =  List(tripletSpWordForm)
+    override def feature = List(tripletSpWordForm)
   }
+
 }

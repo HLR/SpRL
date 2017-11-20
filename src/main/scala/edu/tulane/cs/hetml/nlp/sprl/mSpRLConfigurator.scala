@@ -15,7 +15,7 @@ object mSpRLConfigurator {
   val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"
   val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//"data/TrainSet.xml"
   val suffix = ""
-  val model = FeatureSets.BaseLine
+  val model = FeatureSets.BaseLineWithImage
   var isTrain = true
   val useAnntotatedClef = true
   val jointTrain = false

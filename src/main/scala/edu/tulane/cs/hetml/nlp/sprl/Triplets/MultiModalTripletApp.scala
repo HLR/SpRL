@@ -9,6 +9,7 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import edu.tulane.cs.hetml.vision.CLEFAlignmentReader
 import org.apache.commons.io.FileUtils
@@ -67,9 +68,9 @@ object MultiModalTripletApp extends App with Logging {
 
     val spCandidatesTrain = CandidateGenerator.getIndicatorCandidates(phrases().toList)
     val trCandidatesTrain = CandidateGenerator.getTrajectorCandidates(phrases().toList)
-      .filterNot(x=> spCandidatesTrain.contains(x))
+      .filterNot(x => spCandidatesTrain.contains(x))
     val lmCandidatesTrain = CandidateGenerator.getLandmarkCandidates(phrases().toList)
-      .filterNot(x=> spCandidatesTrain.contains(x))
+      .filterNot(x => spCandidatesTrain.contains(x))
 
 
     populateTripletDataFromAnnotatedCorpus(
@@ -77,6 +78,9 @@ object MultiModalTripletApp extends App with Logging {
       x => IndicatorRoleClassifier(x) == "Indicator",
       x => lmCandidatesTrain.exists(_.getId == x.getId)
     )
+
+    val region = triplets().map(x=> (tripletSpHeadWord(x), tripletMatchingSegmentRelationLabel(x)))
+      .filter(x=> !x._2.equals("-")).toList
 
     TripletRelationClassifier.learn(iterations)
     TripletRelationClassifier.test(triplets())
@@ -121,9 +125,9 @@ object MultiModalTripletApp extends App with Logging {
 
     val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases().toList)
     val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)
-      .filterNot(x=> spCandidatesTest.contains(x))
+      .filterNot(x => spCandidatesTest.contains(x))
     val lmCandidatesTest = CandidateGenerator.getLandmarkCandidates(phrases().toList)
-      .filterNot(x=> spCandidatesTest.contains(x))
+      .filterNot(x => spCandidatesTest.contains(x))
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTest.exists(_.getId == x.getId),
@@ -235,7 +239,7 @@ object MultiModalTripletApp extends App with Logging {
   def report(rel: Relation => String, tr: Phrase => String, lm: Phrase => String, sp: Phrase => String) = {
     val writer = new PrintStream(s"$resultsDir/error_report_$expName$suffix.txt")
 
-    triplets().toList.sortBy(x=> x.getId).foreach { r =>
+    triplets().toList.sortBy(x => x.getId).foreach { r =>
       val predicted = rel(r)
       val actual = tripletIsRelation(r)
       val t = triplets(r) ~> tripletToFirstArg head
@@ -251,16 +255,16 @@ object MultiModalTripletApp extends App with Logging {
 
       val tCorrect = "trajector".equalsIgnoreCase(tr(t))
       val sCorrect = "indicator".equalsIgnoreCase(sp(s))
-      val lCorrect = if(l == dummyPhrase) false else "landmark".equalsIgnoreCase(lm(l))
+      val lCorrect = if (l == dummyPhrase) false else "landmark".equalsIgnoreCase(lm(l))
 
       val sent = triplets(r) ~> -sentenceToTriplets head
 
       val segments = (sentences(sent) ~> -documentToSentence ~> documentToImage ~> imageToSegment)
-          .toList.sortBy(_.getSegmentId)
-        .map(x => x.getSegmentId + ":" + x.getSegmentCode +":" + x.getSegmentConcept).mkString(",")
+        .toList.sortBy(_.getSegmentId)
+        .map(x => x.getSegmentId + ":" + x.getSegmentCode + ":" + x.getSegmentConcept).mkString(",")
 
-      val matchings = (sentences(sent)~> sentenceToPhrase).toList.sortBy(_.getStart)
-        .map(p=> p.getText + "-> " + matchingSegment(p) + ": " + similarityToMatchingSegment(p))
+      val matchings = (sentences(sent) ~> sentenceToPhrase).toList.sortBy(_.getStart)
+        .map(p => p.getText + "-> " + matchingSegment(p) + ": " + similarityToMatchingSegment(p))
         .mkString(",")
 
       val imageRels = tripletMatchingSegmentRelations(r).mkString(",")
