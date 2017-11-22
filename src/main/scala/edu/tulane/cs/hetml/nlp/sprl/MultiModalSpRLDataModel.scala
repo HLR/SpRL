@@ -732,7 +732,7 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val tripletMatchingSegmentRelationLabel = property(triplets, cache = true, ordered = true) {
     r: Relation =>
-      val (first, _, third) = getTripletArguments(r)
+      val (first, second, third) = getTripletArguments(r)
       val trSegId = first.getPropertyFirstValue("alignedSegment")
       val lmSegId = third.getPropertyFirstValue("alignedSegment")
       if (trSegId != null && lmSegId != null) {
@@ -741,14 +741,18 @@ object MultiModalSpRLDataModel extends DataModel {
         val lmSeg = (phrases(third) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
           .find(_.getSegmentId.toString.equalsIgnoreCase(lmSegId))
         if (trSeg.nonEmpty && lmSeg.nonEmpty) {
-          val rels = visualTriplets().filter(x => x.getImageId == trSeg.get.getAssociatedImageID &&
+          val rels = visualTriplets().find(x => x.getImageId == trSeg.get.getAssociatedImageID &&
             x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
-            .toList
           if (rels.nonEmpty) {
-            println(rels.head)
-            val x = VisualTripletClassifier(rels.head)
-            println(x)
-            x
+            rels.get.setTrajector(headWordFrom(first).toLowerCase())
+            rels.get.setSp(headWordFrom(second).toLowerCase())
+            rels.get.setLandmark(headWordFrom(third).toLowerCase())
+            val x = VisualTripletClassifier.classifier.scores(rels.head)
+            val max = x.toArray.map(_.score).max
+            val min = x.toArray.map(_.score).min
+            val scores = x.toArray.sortBy(_.score * -1).map(y => y.value + ": " + f"${(y.score - min) / (max - min)}%1.3f").mkString(", ")
+            println(scores)
+            scores
           }
           else
             "-"

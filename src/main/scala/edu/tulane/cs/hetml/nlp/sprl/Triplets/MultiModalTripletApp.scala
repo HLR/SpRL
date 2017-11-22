@@ -79,9 +79,6 @@ object MultiModalTripletApp extends App with Logging {
       x => lmCandidatesTrain.exists(_.getId == x.getId)
     )
 
-    val region = triplets().map(x=> (tripletSpHeadWord(x), tripletMatchingSegmentRelationLabel(x)))
-      .filter(x=> !x._2.equals("-")).toList
-
     TripletRelationClassifier.learn(iterations)
     TripletRelationClassifier.test(triplets())
 
@@ -280,6 +277,24 @@ object MultiModalTripletApp extends App with Logging {
       writer.println(line)
     }
   }
+
+  val all = triplets().map(x => (x.getArgument(1).getText, tripletMatchingSegmentRelationLabel(x), tripletIsRelation(x), x))
+    .filter(x => !x._2.equals("-")).toList
+  val rels = all.filter(_._3.equalsIgnoreCase("Relation"))
+  val noRels = all.filter(_._3.equalsIgnoreCase("None"))
+  val tp = rels.count(x => x._2.split(":").head == x._1)
+  val fn = rels.size - tp
+  val fp = noRels.count(x => x._2.split(":").head == x._1)
+  val tn = noRels.size - fp
+  val writer = new PrintStream(s"$resultsDir/preposition-prediction.txt")
+  writer.println("Alined ground truth: " + rels.size)
+  writer.println("tp: " + tp)
+  writer.println("tn: " + tn)
+  writer.println("fp: " + fp)
+  writer.println("fn: " + fn)
+  all.sortBy(_._3).foreach(x => writer.println("(" + x._4.getArgument(0).getText + ", " + x._1 + ", " +
+    x._4.getArgument(2).getText + ") :: " + x._2 + " :: " + x._3))
+  writer.close()
 
 }
 

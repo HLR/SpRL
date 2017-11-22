@@ -25,9 +25,9 @@ public class ImageTriplet {
                         String trVector, double trAreawrtLM, double trAspectRatio, double lmAspectRatio,
                         double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance, double trAreaImage,
                         double lmAreaImage) {
-        this.sp = sp;
-        this.trajector = trajector;
-        this.landmark = landmark;
+        this.setSp(sp);
+        this.setTrajector(trajector);
+        this.setLandmark(landmark);
         this.trBox = trBox;
         this.lmBox = lmBox;
         this.imageBox = imageBox;
@@ -151,5 +151,17 @@ public class ImageTriplet {
 
     public void setSecondSegId(int secondSegId) {
         this.secondSegId = secondSegId;
+    }
+
+    public void setSp(String sp) {
+        this.sp = sp;
+    }
+
+    public void setTrajector(String trajector) {
+        this.trajector = trajector;
+    }
+
+    public void setLandmark(String landmark) {
+        this.landmark = landmark;
     }
 }
