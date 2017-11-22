@@ -1,14 +1,31 @@
 package edu.tulane.cs.hetml.nlp.sprl.VisualTriplets
 
 import edu.illinois.cs.cogcomp.saul.datamodel.DataModel
+import edu.tulane.cs.hetml.nlp.BaseTypes.{Document, Sentence, Token}
+import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.{getHeadword, getPos}
 import edu.tulane.cs.hetml.vision._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
+import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 
 /** Created by Umar on 2017-11-09.
   */
 object VisualTripletsDataModel extends DataModel {
 
   val visualTriplets = node[ImageTriplet]
+  val sentences = node[Sentence]
+  val tokens = node[Token]
+
+  val tripletToSentence = edge(visualTriplets, sentences)
+  tripletToSentence.addReverseSensor((x: ImageTriplet) => {
+    val doc = new Document(x.getImageId)
+    val text = x.getTrajector + " " + x.getSp + " " + x.getLandmark
+    val s = new Sentence(doc, x.getImageId + "_" + x.getFirstSegId + "_" + x.getFirstSegId + "_" + x.getSp, 0,
+      text.length, text)
+    List(s)
+  })
+
+  val sentenceToToken = edge(sentences, tokens)
+  sentenceToToken.addSensor(sentenceToTokenGenerating _)
 
   val visualTripletLabel = property(visualTriplets) {
     t: ImageTriplet =>
@@ -83,5 +100,29 @@ object VisualTripletsDataModel extends DataModel {
   val visualTripletLandmarkAreaWRTImage = property(visualTriplets) {
     t: ImageTriplet =>
       t.getLmAreaImage
+  }
+
+  val visualTripletTrPos = property(visualTriplets, cache = true) {
+    t: ImageTriplet =>
+      val w = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).head
+      getPos(w).mkString
+  }
+
+  val visualTripletLmPos = property(visualTriplets, cache = true) {
+    t: ImageTriplet =>
+      val w = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).last
+      getPos(w).mkString
+  }
+
+  val visualTripletTrLemma = property(visualTriplets, cache = true) {
+    t: ImageTriplet =>
+      val w = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).head
+      getLemma(w).mkString
+  }
+
+  val visualTripletLmLemma = property(visualTriplets, cache = true) {
+    t: ImageTriplet =>
+      val w = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).last
+      getLemma(w).mkString
   }
 }

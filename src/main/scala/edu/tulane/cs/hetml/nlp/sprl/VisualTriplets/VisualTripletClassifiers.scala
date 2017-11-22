@@ -9,12 +9,14 @@ object VisualTripletClassifiers {
   object VisualTripletClassifier extends Learnable(visualTriplets) {
     def label = visualTripletLabel
 
-    override lazy val classifier = new SupportVectorMachine()
+    override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = List(visualTripletTrajector, visualTripletlandmark,
+    override def feature = List(
       visualTripletTrVector, visualTripletTrajectorAreaWRTLanmark, visualTripletTrajectorAspectRatio,
       visualTripletLandmarkAspectRatio, visualTripletTrajectorAreaWRTBbox, visualTripletLandmarkAreaWRTBbox, visualTripletIOU,
-      visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage
+      visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage,
+      visualTripletTrLemma, visualTripletLmLemma
+      //visualTripletTrPos, visualTripletLmPos
       //,visualTripletTrajectorW2V, visualTripletlandmarkW2V
     )
   }
