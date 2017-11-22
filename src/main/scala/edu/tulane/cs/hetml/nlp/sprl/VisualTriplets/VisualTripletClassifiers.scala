@@ -11,9 +11,12 @@ object VisualTripletClassifiers {
 
     override lazy val classifier = new SupportVectorMachine()
 
-    override def feature = List(visualTripletTrajector, visualTripletlandmark, visualTripletTrajectorW2V,
-      visualTripletlandmarkW2V, visualTripletTrVector, visualTripletTrajectorAreaWRTLanmark, visualTripletTrajectorAspectRatio,
+    override def feature = List(visualTripletTrajector, visualTripletlandmark,
+      visualTripletTrVector, visualTripletTrajectorAreaWRTLanmark, visualTripletTrajectorAspectRatio,
       visualTripletLandmarkAspectRatio, visualTripletTrajectorAreaWRTBbox, visualTripletLandmarkAreaWRTBbox, visualTripletIOU,
-      visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage)
+      visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage
+      //,visualTripletTrajectorW2V, visualTripletlandmarkW2V
+    )
   }
+
 }

@@ -1,5 +1,7 @@
 package edu.tulane.cs.hetml.vision;
 
+import java.awt.geom.Rectangle2D;
+
 public class ImageTriplet {
     private String imageId;
     private int firstSegId;
@@ -7,10 +9,12 @@ public class ImageTriplet {
     private String trajector;
     private String landmark;
     private String sp;
-    private String trBox;
-    private String lmBox;
-    private String imageBox;
-    private String trVector; // F1
+    private Rectangle2D trBox;
+    private Rectangle2D lmBox;
+    private double imageWidth;
+    private double imageHeight;
+    private double trVectorX; // F1
+    private double trVectorY; // F1
     private double trAreawrtLM; // F2
     private double trAspectRatio; // F3
     private double lmAspectRatio; // F3
@@ -21,8 +25,9 @@ public class ImageTriplet {
     private double trAreaImage; // F7
     private double lmAreaImage; // F7
 
-    public ImageTriplet(String sp, String trajector, String landmark, String trBox, String lmBox, String imageBox,
-                        String trVector, double trAreawrtLM, double trAspectRatio, double lmAspectRatio,
+    public ImageTriplet(String sp, String trajector, String landmark, Rectangle2D trBox, Rectangle2D lmBox, double imageWidth,
+                        double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
+                        double lmAspectRatio,
                         double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance, double trAreaImage,
                         double lmAreaImage) {
         this.setSp(sp);
@@ -30,8 +35,10 @@ public class ImageTriplet {
         this.setLandmark(landmark);
         this.trBox = trBox;
         this.lmBox = lmBox;
-        this.imageBox = imageBox;
-        this.trVector = trVector;
+        this.imageWidth = imageWidth;
+        this.imageHeight = imageHeight;
+        this.trVectorX = trVectorX;
+        this.trVectorY = trVectorY;
         this.trAreawrtLM = trAreawrtLM;
         this.trAspectRatio = trAspectRatio;
         this.lmAspectRatio = lmAspectRatio;
@@ -43,17 +50,19 @@ public class ImageTriplet {
         this.lmAreaImage = lmAreaImage;
     }
 
-    public ImageTriplet(String imageId, int firstSegId, int secondSegId, String trBox, String lmBox, String imageBox,
-                        String trVector, double trAreawrtLM, double trAspectRatio, double lmAspectRatio,
-                        double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance, double trAreaImage,
-                        double lmAreaImage) {
+    public ImageTriplet(String imageId, int firstSegId, int secondSegId, Rectangle2D trBox, Rectangle2D lmBox,
+                        double imageWidth, double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
+                        double lmAspectRatio, double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance,
+                        double trAreaImage, double lmAreaImage) {
         this.setImageId(imageId);
         this.setFirstSegId(firstSegId);
         this.setSecondSegId(secondSegId);
         this.trBox = trBox;
         this.lmBox = lmBox;
-        this.imageBox = imageBox;
-        this.trVector = trVector;
+        this.imageWidth = imageWidth;
+        this.imageHeight = imageHeight;
+        this.trVectorX = trVectorX;
+        this.trVectorY = trVectorY;
         this.trAreawrtLM = trAreawrtLM;
         this.trAspectRatio = trAspectRatio;
         this.lmAspectRatio = lmAspectRatio;
@@ -69,8 +78,11 @@ public class ImageTriplet {
         return sp;
     }
 
-    public String getImageBox() {
-        return imageBox;
+    public double getImageWidth() {
+        return imageWidth;
+    }
+    public double getImageHeight() {
+        return imageHeight;
     }
 
     public String getLandmark() {
@@ -113,7 +125,7 @@ public class ImageTriplet {
         return trAspectRatio;
     }
 
-    public String getLmBox() {
+    public Rectangle2D getLmBox() {
         return lmBox;
     }
 
@@ -121,12 +133,16 @@ public class ImageTriplet {
         return trajector;
     }
 
-    public String getTrBox() {
+    public Rectangle2D getTrBox() {
         return trBox;
     }
 
-    public String getTrVector() {
-        return trVector;
+    public double getTrVectorX() {
+        return trVectorX;
+    }
+
+    public double getTrVectorY() {
+        return trVectorY;
     }
 
     public String getImageId() {

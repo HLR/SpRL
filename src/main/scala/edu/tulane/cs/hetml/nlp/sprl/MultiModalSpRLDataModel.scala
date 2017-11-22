@@ -229,11 +229,11 @@ object MultiModalSpRLDataModel extends DataModel {
           .find(_.getSegmentId.toString.equalsIgnoreCase(segId))
         if (seg.nonEmpty) {
           val image = segments(seg) ~> -imageToSegment head
-          val box = seg.get.getBoxDimensions.split("-").map(_.toDouble)
-          val left = box(0) / image.getWidth
-          val top = box(1) / image.getHeight
-          val width = box(2) / image.getWidth
-          val height = box(3) / image.getHeight
+          val box = seg.get.getBoxDimensions
+          val left = box.getX / image.getWidth
+          val top = box.getY / image.getHeight
+          val width = box.getWidth / image.getWidth
+          val height = box.getHeight / image.getHeight
           List(left, top, width, height)
         }
         else

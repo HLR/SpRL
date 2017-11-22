@@ -8,10 +8,11 @@ import scala.collection.JavaConversions._
   */
 object VisualTripletsApp extends App {
 
-  val visualTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets")
+  val fileName = "Flickr30k.majorityhead"
+  val visualTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", fileName)
   val isTrain = false
   val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-  val classifierSuffix = "SVM-MSCOCO-original"
+  val classifierSuffix = fileName
   if(isTrain) {
 
 
@@ -23,6 +24,7 @@ object VisualTripletsApp extends App {
     VisualTripletClassifier.modelDir = classifierDirectory
     VisualTripletClassifier.learn(50)
     VisualTripletClassifier.save()
+    VisualTripletClassifier.test(visualTriplets())
   }
   else {
     VisualTripletClassifier.modelSuffix = classifierSuffix
