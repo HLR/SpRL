@@ -17,10 +17,11 @@ object VisualTripletsApp extends App {
   val msCocoTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "MSCOCO.originalterm")
   val isTrain = false
   val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-  val classifierSuffix = "combined" + "_perceptron - text + lemma"
+  val classifierSuffix = "combined_perceptron - text + lemma"
   if (isTrain) {
 
     val trainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
+
     visualTriplets.populate(trainTriplets)
 
     VisualTripletClassifier.modelSuffix = classifierSuffix

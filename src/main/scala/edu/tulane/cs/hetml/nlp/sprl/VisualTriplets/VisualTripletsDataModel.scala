@@ -59,6 +59,8 @@ object VisualTripletsDataModel extends DataModel {
 
   val visualTripletTrajectorAreaWRTLanmark = property(visualTriplets) {
     t: ImageTriplet =>
+      if(t.getTrAreawrtLM.isNaN)
+        logger.warn("")
       t.getTrAreawrtLM
   }
 

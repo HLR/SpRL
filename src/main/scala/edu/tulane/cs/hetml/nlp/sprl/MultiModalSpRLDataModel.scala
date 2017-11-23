@@ -6,6 +6,7 @@ import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
+import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel
 import edu.tulane.cs.hetml.vision._
 
 /** Created by Taher on 2017-01-11.
@@ -20,7 +21,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val undefined = "[undefined]"
 
   val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-  val classifierSuffix = "SVM-MSCOCO-original"
+  val classifierSuffix = "combined-all_perceptron - text + lemma"
   VisualTripletClassifier.modelSuffix = classifierSuffix
   VisualTripletClassifier.modelDir = classifierDirectory
   VisualTripletClassifier.load()
@@ -542,6 +543,7 @@ object MultiModalSpRLDataModel extends DataModel {
         undefined
       else {
         getWordnetHypernyms(getHeadword(third))
+        ""
       }
   }
 
@@ -744,14 +746,12 @@ object MultiModalSpRLDataModel extends DataModel {
           val rels = visualTriplets().find(x => x.getImageId == trSeg.get.getAssociatedImageID &&
             x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
           if (rels.nonEmpty) {
-            rels.get.setTrajector(headWordFrom(first).toLowerCase())
-            rels.get.setSp(headWordFrom(second).toLowerCase())
-            rels.get.setLandmark(headWordFrom(third).toLowerCase())
-            val x = VisualTripletClassifier.classifier.scores(rels.head)
-            val max = x.toArray.map(_.score).max
+            val x = VisualTripletClassifier.classifier.scores(rels.get)
             val min = x.toArray.map(_.score).min
-            val scores = x.toArray.sortBy(_.score * -1).map(y => y.value + ": " + f"${(y.score - min) / (max - min)}%1.3f").mkString(", ")
-            println(scores)
+            val sum = x.toArray.map(_.score - min).sum
+            val scores = x.toArray.sortBy(_.score * -1).map(y => y.value + ": " + f"${(y.score - min) / sum}%1.4f").mkString(", ")
+            if(x.toArray.exists(_.score.isNaN))
+              println(rels.get.getTrajector)
             scores
           }
           else
@@ -1004,7 +1004,7 @@ object MultiModalSpRLDataModel extends DataModel {
     }
   }
 
-  private def getTripletArguments(r: Relation): (Phrase, Phrase, Phrase) = {
+  def getTripletArguments(r: Relation): (Phrase, Phrase, Phrase) = {
     ((triplets(r) ~> tripletToFirstArg).head, (triplets(r) ~> tripletToSecondArg).head, (triplets(r) ~> tripletToThirdArg).head)
   }
 

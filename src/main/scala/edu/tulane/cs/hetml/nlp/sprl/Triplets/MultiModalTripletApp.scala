@@ -10,6 +10,7 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
+import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import edu.tulane.cs.hetml.vision.CLEFAlignmentReader
 import org.apache.commons.io.FileUtils
@@ -132,7 +133,7 @@ object MultiModalTripletApp extends App with Logging {
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
 
-    if (!useConstraints) {
+    if (!useConstraints && false) {
       val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
       val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
       val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
@@ -278,6 +279,38 @@ object MultiModalTripletApp extends App with Logging {
     }
   }
 
+  val aligned = triplets().map(
+    r => {
+      val (first, second, third) = getTripletArguments(r)
+      val trSegId = first.getPropertyFirstValue("alignedSegment")
+      val lmSegId = third.getPropertyFirstValue("alignedSegment")
+      if (trSegId != null && lmSegId != null) {
+        val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
+          .find(_.getSegmentId.toString.equalsIgnoreCase(trSegId))
+        val lmSeg = (phrases(third) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
+          .find(_.getSegmentId.toString.equalsIgnoreCase(lmSegId))
+        if (trSeg.nonEmpty && lmSeg.nonEmpty) {
+          val rels = visualTriplets().find(x => x.getImageId == trSeg.get.getAssociatedImageID &&
+            x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
+          if (rels.nonEmpty) {
+            rels.get.setTrajector(headWordFrom(first).toLowerCase())
+            rels.get.setSp(headWordFrom(second).toLowerCase())
+            rels.get.setLandmark(headWordFrom(third).toLowerCase())
+            rels.get
+          }
+          else
+            null
+        }
+        else
+          null
+      }
+      else {
+        null
+      }
+    }).filter(x => x != null).toList
+
+  VisualTripletsDataModel.visualTriplets.populate(aligned)
+
   val all = triplets().map(x => (x.getArgument(1).getText, tripletMatchingSegmentRelationLabel(x), tripletIsRelation(x), x))
     .filter(x => !x._2.equals("-")).toList
   val rels = all.filter(_._3.equalsIgnoreCase("Relation"))
@@ -286,14 +319,14 @@ object MultiModalTripletApp extends App with Logging {
   val fn = rels.size - tp
   val fp = noRels.count(x => x._2.split(":").head == x._1)
   val tn = noRels.size - fp
-  val writer = new PrintStream(s"$resultsDir/preposition-prediction.txt")
+  val writer = new PrintStream(s"$resultsDir/preposition-prediction_${isTrain}.txt")
   writer.println("Alined ground truth: " + rels.size)
   writer.println("tp: " + tp)
   writer.println("tn: " + tn)
   writer.println("fp: " + fp)
   writer.println("fn: " + fn)
-  all.sortBy(_._3).foreach(x => writer.println("(" + x._4.getArgument(0).getText + ", " + x._1 + ", " +
-    x._4.getArgument(2).getText + ") :: " + x._2 + " :: " + x._3))
+  all.sortBy(_._3).foreach(x => writer.println(x._3 +"[" + x._4.getId + "](" + x._4.getArgument(0).getText + ", " + x._1 + ", " +
+    x._4.getArgument(2).getText + ") :: " + x._2 + " :: "))
   writer.close()
 
 }
