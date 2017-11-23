@@ -133,7 +133,7 @@ object MultiModalTripletApp extends App with Logging {
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
 
-    if (!useConstraints && false) {
+    if (!useConstraints) {
       val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
       val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
       val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
