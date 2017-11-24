@@ -73,20 +73,28 @@
             <span data-bind="text: comparison().second.name"></span>
             <br/>
         </div>
+        <div id="filters" style="display:inline-block;vertical-align:top; padding-left:20px">
+            <input type="checkbox" data-bind="click: toggleTP, attr:{checked: TP}" /> TP
+            <input type="checkbox" data-bind="click: toggleTN, attr:{checked: TN}" /> TN
+            <input type="checkbox" data-bind="click: toggleFP, attr:{checked: FP}" /> FP
+            <input type="checkbox" data-bind="click: toggleFN, attr:{checked: FN}" /> FN
+            <input type="checkbox" data-bind="click: toggleTrMatched, attr:{checked: trMatched}" /> Tr Matched
+            <input type="checkbox" data-bind="click: toggleLmMatched, attr:{checked: lmMatched}" /> Lm Matched
+            <input type="checkbox" data-bind="click: toggleSpMatched, attr:{checked: spMatched}" /> Sp Matched
+            <br/>
+            <input type="checkbox" data-bind="click: toggleAllRolesCorrect, attr:{checked: allRolesCorrect}" /> All roles correct
+            <input type="checkbox" data-bind="click: toggleDiffRole, attr:{checked: diffRole}" /> Different role predictions
+            <input type="checkbox" data-bind="click: toggleDiffRel, attr:{checked: diffRel}" /> Different relation predictions 
+            <br/>
+            <input type="checkbox" data-bind="click: toggleRegion, attr:{checked: region}" /> Region 
+            <input type="checkbox" data-bind="click: toggleNonRegion, attr:{checked: nonRegion}" /> Non-Region 
+            <input type="checkbox" data-bind="click: toggleDirection, attr:{checked: direction}" /> Direction 
+            <input type="checkbox" data-bind="click: toggleNonDirection, attr:{checked: nonDirection}" /> Non-Direction             
+        </div>
     </div>
     <button data-bind="click: compare">compare</button>
     <button data-bind="click: explore">explore</button>
     <hr/>
-    <input type="checkbox" data-bind="click: toggleTP, attr:{checked: TP}" /> TP
-    <input type="checkbox" data-bind="click: toggleTN, attr:{checked: TN}" /> TN
-    <input type="checkbox" data-bind="click: toggleFP, attr:{checked: FP}" /> FP
-    <input type="checkbox" data-bind="click: toggleFN, attr:{checked: FN}" /> FN
-    <input type="checkbox" data-bind="click: toggleTrMatched, attr:{checked: trMatched}" /> Tr Matched
-    <input type="checkbox" data-bind="click: toggleLmMatched, attr:{checked: lmMatched}" /> Lm Matched
-    <input type="checkbox" data-bind="click: toggleSpMatched, attr:{checked: spMatched}" /> Sp Matched
-    <input type="checkbox" data-bind="click: toggleAllRolesCorrect, attr:{checked: allRolesCorrect}" /> All roles correct
-    <input type="checkbox" data-bind="click: toggleDiffRole, attr:{checked: diffRole}" /> Different role predictions
-    <input type="checkbox" data-bind="click: toggleDiffRel, attr:{checked: diffRel}" /> Different relation predictions
     <div>
         <div style="display:inline-block">
             <table class="ko-grid" cellspacing="0">
@@ -94,8 +102,10 @@
                     <tr>
                         <th>index</th>
                         <th>type</th>
-                        <th>label</th>
                         <th>rel</th>
+                        <th>genral</th>
+                        <th>region</th>
+                        <th>direction</th>
                         <th>tr</th>
                         <th>sp
                             <input class="filter-input" data-bind='textInput: spFilter' />
@@ -107,8 +117,22 @@
                     <tr data-bind="css: $parent.currentRel().index === index ? 'selected':'', click: $parent.showRelDetail">
                         <td data-bind="text: index"></td>
                         <td data-bind="text: errortype"></td>
-                        <td data-bind="text: actualRel"></td>
-                        <td data-bind="text: $parent.predicted($data)"></td>
+                        <td>
+                            <span data-bind="text: $parent.predicted($data)"></span>
+                            <span data-bind="text: actualRelShort"></span>
+                        </td>
+                        <td>
+                            <span data-bind="text: $parent.generalApproved($data)"></span>
+                            <span data-bind="text: general"></span>(
+                            <span data-bind="text: predictedGeneral"></span>)</td>
+                        <td>
+                            <span data-bind="text: $parent.regionApproved($data)"></span>
+                            <span data-bind="text: region"></span>(
+                            <span data-bind="text: predictedRegion"></span>)</td>
+                        <td>
+                            <span data-bind="text: $parent.directionApproved($data)"></span>
+                            <span data-bind="text: direction"></span>(
+                            <span data-bind="text: predictedDirection"></span>)</td>
                         <td>
                             <span data-bind="text: $parent.trApproved($data)"></span>
                             <span data-bind="text: tr"></span>
@@ -137,7 +161,7 @@
             (
             <span data-bind="text: totalRels"></span>)
         </div>
-        <div data-bind="css: currentRel().index<0 ? 'hidden':''" style="display:inline-block; vertical-align:top; margin-left:5px; width:600px">
+        <div data-bind="css: currentRel().index<0 ? 'hidden':''" style="display:inline-block; vertical-align:top; margin-left:5px; width:500px">
             <table class="details">
                 <tr>
                     <td>docId</td>

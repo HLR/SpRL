@@ -748,13 +748,7 @@ object MultiModalSpRLDataModel extends DataModel {
     r: Relation =>
       val aligned = getAlignedVisualTriplet(r)
       if (aligned != null) {
-        val x = VisualTripletClassifier.classifier.scores(aligned)
-        val min = x.toArray.map(_.score).min
-        val sum = x.toArray.map(_.score - min).sum
-        val scores = x.toArray.sortBy(_.score * -1).map(y => y.value + ": " + f"${(y.score - min) / sum}%1.4f").mkString(", ")
-        if (x.toArray.exists(_.score.isNaN))
-          println(aligned.getTrajector)
-        scores
+        getImageSpScores(aligned)
       }
       else
         "-"
@@ -1001,6 +995,14 @@ object MultiModalSpRLDataModel extends DataModel {
 
   def getTripletArguments(r: Relation): (Phrase, Phrase, Phrase) = {
     ((triplets(r) ~> tripletToFirstArg).head, (triplets(r) ~> tripletToSecondArg).head, (triplets(r) ~> tripletToThirdArg).head)
+  }
+
+  def getImageSpScores(r: ImageTriplet) = {
+    val x = VisualTripletClassifier.classifier.scores(r)
+    val min = x.toArray.map(_.score).min
+    val sum = x.toArray.map(_.score - min).sum
+    val scores = x.toArray.sortBy(_.score * -1).map(y => y.value + ": " + f"${(y.score - min) / sum}%1.4f").mkString(", ")
+    scores
   }
 
   def getAlignedVisualTriplet(r: Relation): ImageTriplet = {

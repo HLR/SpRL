@@ -159,6 +159,20 @@ object TripletSentenceLevelConstraints {
       a
   }
 
+  val regionShouldHaveLandmark = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          val lmIsNull = (triplets(x) ~> tripletToThirdArg).head == dummyPhrase
+          if(lmIsNull) {
+            a = a and (TripletGeneralTypeClassifier on x isNot "region") and (TripletRegionClassifier on x is "None")
+          }
+      }
+      a
+  }
+
   val uniqueSegmentAssignment = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
@@ -192,7 +206,8 @@ object TripletSentenceLevelConstraints {
           boostLandmark(x) and
           boostTripletByGeneralType(x) and
           boostGeneralByDirection(x) and
-          boostGeneralByRegion(x) //and
+          boostGeneralByRegion(x) and
+          regionShouldHaveLandmark(x)
           //noDuplicates(x)
 
 //      if (mSpRLConfigurator.imageConstraints)

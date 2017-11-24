@@ -19,6 +19,10 @@ var App = function () {
     self.spMatched = ko.observable(false);
     self.diffRole = ko.observable(false);
     self.diffRel = ko.observable(false);
+    self.region = ko.observable(false);
+    self.nonRegion = ko.observable(false);
+    self.direction = ko.observable(false);
+    self.nonDirection = ko.observable(false);
     self.currentRel = ko.observable({ index: -1 });
     self.allRolesCorrect = ko.observable(false);
     self.comparison = ko.observable({
@@ -67,6 +71,18 @@ var App = function () {
 
 
                 if (self.spMatched() && !item.spMatched)
+                    return false;
+
+                if (self.region() && item.region == "None")
+                    return false;
+
+                if (self.nonRegion() && item.region != "None")
+                    return false;
+
+                if (self.direction() && item.direction == "None")
+                    return false;
+
+                if (self.nonDirection() && item.direction != "None")
                     return false;
 
                 if (self.comparison().first !== {} && self.comparison().second !== {}) {
@@ -193,6 +209,30 @@ var App = function () {
         return true;
     };
 
+    self.toggleRegion = function () {
+        self.region(!self.region());
+        self.explore();
+        return true;
+    };
+
+    self.toggleNonRegion = function () {
+        self.nonRegion(!self.nonRegion());
+        self.explore();
+        return true;
+    };
+
+    self.toggleDirection = function () {
+        self.direction(!self.direction());
+        self.explore();
+        return true;
+    };
+
+    self.toggleNonDirection = function () {
+        self.nonDirection(!self.nonDirection());
+        self.explore();
+        return true;
+    };
+
     self.nextPage = function () {
         self.page(Math.min(self.page() + 1, self.total() - 1));
         self.explore();
@@ -247,6 +287,27 @@ var App = function () {
         var str = "";
         for (i in self.models()) {
             str += self.models()[i].data[rel.index].tp || self.models()[i].data[rel.index].tn ? '\u2713' : '\u00D7';
+        }
+        return str;
+    }
+    self.generalApproved = function (rel) {
+        var str = "";
+        for (i in self.models()) {
+            str += self.models()[i].data[rel.index].generalApproved ? '\u2713' : '\u00D7';
+        }
+        return str;
+    }
+    self.regionApproved = function (rel) {
+        var str = "";
+        for (i in self.models()) {
+            str += self.models()[i].data[rel.index].regionApproved ? '\u2713' : '\u00D7';
+        }
+        return str;
+    }
+    self.directionApproved = function (rel) {
+        var str = "";
+        for (i in self.models()) {
+            str += self.models()[i].data[rel.index].directionApproved ? '\u2713' : '\u00D7';
         }
         return str;
     }

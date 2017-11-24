@@ -179,7 +179,10 @@ object MultiModalTripletApp extends App with Logging {
       report(x => TripletRelationClassifier(x),
         x => TrajectorRoleClassifier(x),
         x => LandmarkRoleClassifier(x),
-        x => IndicatorRoleClassifier(x)
+        x => IndicatorRoleClassifier(x),
+        x => TripletGeneralTypeClassifier(x),
+        x => TripletDirectionClassifier(x),
+        x => TripletRegionClassifier(x)
       )
     }
     else {
@@ -227,18 +230,28 @@ object MultiModalTripletApp extends App with Logging {
       report(x => TripletRelationConstraintClassifier(x),
         x => TRConstraintClassifier(x),
         x => LMConstraintClassifier(x),
-        x => IndicatorRoleClassifier(x)
+        x => IndicatorRoleClassifier(x),
+        x => TripletGeneralTypeConstraintClassifier(x),
+        x => TripletDirectionConstraintClassifier(x),
+        x => TripletRegionConstraintClassifier(x)
       )
     }
 
   }
 
-  def report(rel: Relation => String, tr: Phrase => String, lm: Phrase => String, sp: Phrase => String) = {
+  def report(rel: Relation => String, tr: Phrase => String, lm: Phrase => String, sp: Phrase => String,
+             general: Relation => String, direction: Relation => String, region: Relation => String) = {
     val writer = new PrintStream(s"$resultsDir/error_report_$expName$suffix.txt")
 
     triplets().toList.sortBy(x => x.getId).foreach { r =>
       val predicted = rel(r)
       val actual = tripletIsRelation(r)
+      val gen = tripletGeneralType(r)
+      val reg = tripletRegion(r)
+      val dir = tripletDirection(r)
+      val predictedGen = general(r)
+      val predictedReg = region(r)
+      val predictedDir = direction(r)
       val t = triplets(r) ~> tripletToFirstArg head
       val s = triplets(r) ~> tripletToSecondArg head
       val l = triplets(r) ~> tripletToThirdArg head
@@ -271,11 +284,12 @@ object MultiModalTripletApp extends App with Logging {
       val docId = (triplets(r) ~> -sentenceToTriplets ~> -documentToSentence).head.getId
 
       //docId, sentId, sent, actual rel, predicted rel, tr text, sp text, lm text
-      //tr correct, sp correct, lm correct, segments[id, code, text]
+      //tr correct, sp correct, lm correct, segments[id, code, text], ...
       val line = s"$docId\t\t${sent.getId}\t\t${sent.getText}\t\t${actual}" +
         s"\t\t${predicted}\t\t${t.getText}\t\t${s.getText}\t\t${l.getText}\t\t${tCorrect}" +
         s"\t\t${sCorrect}\t\t${lCorrect}\t\t${segments}\t\t$tDis\t\t$lDis\t\t$tSeg\t\t$tSegSim\t\t$lSeg\t\t$lSegSim" +
-        s"\t\t$matchings\t\t$imageRels\t\t$matchingImageSp\t\t$matchingImageSpScores"
+        s"\t\t$matchings\t\t$imageRels\t\t$matchingImageSp\t\t$matchingImageSpScores\t\t$gen\t\t$reg\t\t$dir" +
+        s"\t\t$predictedGen\t\t$predictedReg\t\t$predictedDir"
       writer.println(line)
     }
   }
