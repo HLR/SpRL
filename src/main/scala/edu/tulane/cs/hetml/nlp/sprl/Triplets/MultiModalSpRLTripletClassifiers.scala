@@ -18,7 +18,7 @@ object MultiModalSpRLTripletClassifiers {
     List(wordForm, headWordFrom, pos, headWordPos, phrasePos, semanticRole, dependencyRelation, subCategorization,
       spatialContext, headSpatialContext, headDependencyRelation, headSubCategorization) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(similarityToMatchingSegment, matchingSegmentFeatures)
+        case FeatureSets.BaseLineWithImage => List()
         case FeatureSets.WordEmbedding => List(headVector)
         case FeatureSets.WordEmbeddingPlusImage => List(headVector, similarityToMatchingSegment)
         case _ => List[Property[Phrase]]()
@@ -34,8 +34,7 @@ object MultiModalSpRLTripletClassifiers {
       tripletDistanceTrSp, tripletDistanceLmSp
     ) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(tripletLmMatchingSegmentSimilarity,
-          tripletTrMatchingSegmentSimilarity)
+        case FeatureSets.BaseLineWithImage => List()
         case FeatureSets.WordEmbedding => List(tripletTrVector, tripletLmVector)
         case FeatureSets.WordEmbeddingPlusImage => List(tripletTrVector, tripletLmVector,
           tripletLmMatchingSegmentSimilarity, tripletTrMatchingSegmentSimilarity)

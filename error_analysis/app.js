@@ -16,6 +16,7 @@ var App = function () {
     self.II = ko.observable(false);
     self.trMatched = ko.observable(false);
     self.lmMatched = ko.observable(false);
+    self.spMatched = ko.observable(false);
     self.diffRole = ko.observable(false);
     self.diffRel = ko.observable(false);
     self.currentRel = ko.observable({ index: -1 });
@@ -62,6 +63,10 @@ var App = function () {
                     return false;
 
                 if (self.lmMatched() && !item.lmMatched)
+                    return false;
+
+
+                if (self.spMatched() && !item.spMatched)
                     return false;
 
                 if (self.comparison().first !== {} && self.comparison().second !== {}) {
@@ -142,6 +147,12 @@ var App = function () {
 
     self.toggleLmMatched = function () {
         self.lmMatched(!self.lmMatched());
+        self.explore();
+        return true;
+    };
+
+    self.toggleSpMatched = function () {
+        self.spMatched(!self.spMatched());
         self.explore();
         return true;
     };

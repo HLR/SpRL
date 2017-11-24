@@ -6,6 +6,7 @@ import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator
 
 import scala.collection.JavaConversions._
@@ -127,6 +128,19 @@ object TripletSentenceLevelConstraints {
         x =>
           a = a and (
               (TripletDirectionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "direction")
+            )
+      }
+      a
+  }
+
+  val boostTripletByImageTriplet = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          a = a and (
+            (VisualTripletClassifiers.VisualTripletClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "region")
             )
       }
       a

@@ -132,7 +132,6 @@ object MultiModalTripletApp extends App with Logging {
       x => IndicatorRoleClassifier(x) == "Indicator",
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
-
     if (!useConstraints) {
       val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
       val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
@@ -250,6 +249,8 @@ object MultiModalTripletApp extends App with Logging {
       val lSeg = matchingSegment(l)
       val tSegSim = similarityToMatchingSegment(t)
       val lSegSim = similarityToMatchingSegment(l)
+      val matchingImageSp = tripletMatchingSegmentRelationLabel(r)
+      val matchingImageSpScores = tripletMatchingSegmentRelationLabelScores(r)
 
       val tCorrect = "trajector".equalsIgnoreCase(tr(t))
       val sCorrect = "indicator".equalsIgnoreCase(sp(s))
@@ -274,44 +275,12 @@ object MultiModalTripletApp extends App with Logging {
       val line = s"$docId\t\t${sent.getId}\t\t${sent.getText}\t\t${actual}" +
         s"\t\t${predicted}\t\t${t.getText}\t\t${s.getText}\t\t${l.getText}\t\t${tCorrect}" +
         s"\t\t${sCorrect}\t\t${lCorrect}\t\t${segments}\t\t$tDis\t\t$lDis\t\t$tSeg\t\t$tSegSim\t\t$lSeg\t\t$lSegSim" +
-        s"\t\t$matchings\t\t$imageRels"
+        s"\t\t$matchings\t\t$imageRels\t\t$matchingImageSp\t\t$matchingImageSpScores"
       writer.println(line)
     }
   }
 
-  val aligned = triplets().map(
-    r => {
-      val (first, second, third) = getTripletArguments(r)
-      val trSegId = first.getPropertyFirstValue("alignedSegment")
-      val lmSegId = third.getPropertyFirstValue("alignedSegment")
-      if (trSegId != null && lmSegId != null) {
-        val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
-          .find(_.getSegmentId.toString.equalsIgnoreCase(trSegId))
-        val lmSeg = (phrases(third) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
-          .find(_.getSegmentId.toString.equalsIgnoreCase(lmSegId))
-        if (trSeg.nonEmpty && lmSeg.nonEmpty) {
-          val rels = visualTriplets().find(x => x.getImageId == trSeg.get.getAssociatedImageID &&
-            x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
-          if (rels.nonEmpty) {
-            rels.get.setTrajector(headWordFrom(first).toLowerCase())
-            rels.get.setSp(headWordFrom(second).toLowerCase())
-            rels.get.setLandmark(headWordFrom(third).toLowerCase())
-            rels.get
-          }
-          else
-            null
-        }
-        else
-          null
-      }
-      else {
-        null
-      }
-    }).filter(x => x != null).toList
-
-  VisualTripletsDataModel.visualTriplets.populate(aligned)
-
-  val all = triplets().map(x => (x.getArgument(1).getText, tripletMatchingSegmentRelationLabel(x), tripletIsRelation(x), x))
+  val all = triplets().map(x => (x.getArgument(1).getText, tripletMatchingSegmentRelationLabelScores(x), tripletIsRelation(x), x))
     .filter(x => !x._2.equals("-")).toList
   val rels = all.filter(_._3.equalsIgnoreCase("Relation"))
   val noRels = all.filter(_._3.equalsIgnoreCase("None"))
@@ -320,14 +289,13 @@ object MultiModalTripletApp extends App with Logging {
   val fp = noRels.count(x => x._2.split(":").head == x._1)
   val tn = noRels.size - fp
   val writer = new PrintStream(s"$resultsDir/preposition-prediction_${isTrain}.txt")
-  writer.println("Alined ground truth: " + rels.size)
+  writer.println("Aligned ground truth: " + rels.size)
   writer.println("tp: " + tp)
   writer.println("tn: " + tn)
   writer.println("fp: " + fp)
   writer.println("fn: " + fn)
-  all.sortBy(_._3).foreach(x => writer.println(x._3 +"[" + x._4.getId + "](" + x._4.getArgument(0).getText + ", " + x._1 + ", " +
+  all.sortBy(_._3).foreach(x => writer.println(x._3 + "[" + x._4.getProperty("ActualId") + "](" + x._4.getArgument(0).getText + ", " + x._1 + ", " +
     x._4.getArgument(2).getText + ") :: " + x._2 + " :: "))
   writer.close()
-
 }
 

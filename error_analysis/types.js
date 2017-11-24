@@ -22,6 +22,9 @@ var Instance = function (line, i) {
     self.lmSegmentSimilarity = parts(17);
     self.matchings = parts(18).split(",");    
     self.imageRels = parts(19).split(",");
+    self.imageAlignedSp = parts(20);
+    self.spMatched = self.sp.toLowerCase() === self.imageAlignedSp.toLowerCase()
+    self.imageAlignedSpScores = parts(21).split(",");
     self.index = i;
     self.image = self.docId.substr(0, self.docId.lastIndexOf(".")) + ".jpg";
     self.image = self.image.substr(0, self.image.lastIndexOf("/")) + "/segmented_images" + self.image.substr(self.image.lastIndexOf("/"));
