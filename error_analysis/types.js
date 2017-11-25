@@ -46,7 +46,19 @@ var Instance = function (line, i) {
     self.fn = self.actualRel === "Relation" && self.predictedRel === "None";
     self.correct = self.tp || self.tn;
     self.errortype = self.tp ? "tp" : self.tn ? "tn" : self.fp ? "fp" : "fn";
-
+    
+    self.spInTop10 = false;
+    self.spRank = -1;
+    for(var i in self.imageAlignedSpScores){
+        var iSp = self.imageAlignedSpScores[i].split(':')[0].trim();
+        var sp = self.sp.replace(" ", "_".toLowerCase());
+        if(parseInt(i) < 20 &&  sp === iSp){
+            self.spInTop10 = true;
+            self.spRank = i;
+            break;
+        }
+    }
+    
     for (var i in self.segments) {
         var id = self.segments[i].split(':')[0]
         if (id === self.trSegment) {

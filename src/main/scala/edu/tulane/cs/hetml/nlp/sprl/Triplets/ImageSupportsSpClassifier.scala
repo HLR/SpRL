@@ -21,18 +21,26 @@ class ImageSupportsSpClassifier extends Learner("sprl.ImageSpClassifier") {
     val result: ScoreSet = new ScoreSet
     val r = example.asInstanceOf[Relation]
     val aligned = getAlignedVisualTriplet(r)
-    if(aligned != null) {
-      result.put("true", 1.0)
-      result.put("false", 0.0)
-    }
-    else if(r.getArgument(1).getText.equalsIgnoreCase("in between")){
+    if (aligned == null) {
+      result.put("none", 1.0)
       result.put("true", 0.0)
-      result.put("false", 1.0)
-    }
-    else{
-      val scores = getImageSpScores(aligned)
-      result.put("true", 1.0)
       result.put("false", 0.0)
+    }
+    else {
+      val scores = getImageSpScores(aligned).take(20)
+      val values = scores.map(x => x._1.trim)
+      val sp = r.getArgument(1).getText.replaceAll(" ", "_").toLowerCase()
+      val found = scores.find(x=> x._1.trim.equalsIgnoreCase(sp))
+      if (found.isEmpty) {
+        result.put("none", 0.0)
+        result.put("true", 0.0)
+        result.put("false", 1.0)
+      }
+      else {
+        result.put("none", 0.0)
+        result.put("true", found.get._2 * 10)
+        result.put("false", 0.0)
+      }
     }
     result
   }

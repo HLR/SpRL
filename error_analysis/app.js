@@ -17,12 +17,15 @@ var App = function () {
     self.trMatched = ko.observable(false);
     self.lmMatched = ko.observable(false);
     self.spMatched = ko.observable(false);
+    self.spTop10 = ko.observable(false);
     self.diffRole = ko.observable(false);
     self.diffRel = ko.observable(false);
     self.region = ko.observable(false);
     self.nonRegion = ko.observable(false);
     self.direction = ko.observable(false);
     self.nonDirection = ko.observable(false);
+    self.general = ko.observable(false);
+    self.nonGeneral = ko.observable(false);
     self.currentRel = ko.observable({ index: -1 });
     self.allRolesCorrect = ko.observable(false);
     self.comparison = ko.observable({
@@ -69,9 +72,18 @@ var App = function () {
                 if (self.lmMatched() && !item.lmMatched)
                     return false;
 
-
                 if (self.spMatched() && !item.spMatched)
                     return false;
+
+                if (self.spTop10() && !item.spInTop10)
+                    return false;
+
+                if (self.general() && item.general == "None")
+                    return false;
+
+                if (self.nonGeneral() && item.general != "None")
+                    return false;
+
 
                 if (self.region() && item.region == "None")
                     return false;
@@ -173,6 +185,12 @@ var App = function () {
         return true;
     };
 
+    self.toggleSpTop10 = function () {
+        self.spTop10(!self.spTop10());
+        self.explore();
+        return true;
+    };
+
     self.toggleTP = function () {
         self.TP(!self.TP());
         self.explore();
@@ -205,6 +223,19 @@ var App = function () {
 
     self.toggleDiffRel = function () {
         self.diffRel(!self.diffRel());
+        self.explore();
+        return true;
+    };
+
+
+    self.toggleGeneral = function () {
+        self.general(!self.general());
+        self.explore();
+        return true;
+    };
+
+    self.toggleNonGeneral = function () {
+        self.nonGeneral(!self.nonGeneral());
         self.explore();
         return true;
     };

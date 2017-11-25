@@ -81,11 +81,14 @@
             <input type="checkbox" data-bind="click: toggleTrMatched, attr:{checked: trMatched}" /> Tr Matched
             <input type="checkbox" data-bind="click: toggleLmMatched, attr:{checked: lmMatched}" /> Lm Matched
             <input type="checkbox" data-bind="click: toggleSpMatched, attr:{checked: spMatched}" /> Sp Matched
+            <input type="checkbox" data-bind="click: toggleSpTop10, attr:{checked: spTop10}" /> Sp Top10
             <br/>
             <input type="checkbox" data-bind="click: toggleAllRolesCorrect, attr:{checked: allRolesCorrect}" /> All roles correct
             <input type="checkbox" data-bind="click: toggleDiffRole, attr:{checked: diffRole}" /> Different role predictions
             <input type="checkbox" data-bind="click: toggleDiffRel, attr:{checked: diffRel}" /> Different relation predictions 
             <br/>
+            <input type="checkbox" data-bind="click: toggleGeneral, attr:{checked: general}" /> General 
+            <input type="checkbox" data-bind="click: toggleNonGeneral, attr:{checked: nonGeneral}" /> Non-General 
             <input type="checkbox" data-bind="click: toggleRegion, attr:{checked: region}" /> Region 
             <input type="checkbox" data-bind="click: toggleNonRegion, attr:{checked: nonRegion}" /> Non-Region 
             <input type="checkbox" data-bind="click: toggleDirection, attr:{checked: direction}" /> Direction 
@@ -142,7 +145,7 @@
                         <td>
                             <span data-bind="text: $parent.spApproved($data)"></span>
                             <span data-bind="text: sp"></span>(
-                            <span data-bind="text: imageAlignedSp"></span>)
+                            <span data-bind="text: imageAlignedSp"></span>: <span data-bind="text: spRank"></span>)
                         </td>
                         <td>
                             <span data-bind="text: $parent.lmApproved($data)"></span>
@@ -193,7 +196,7 @@
                         <div data-bind="text: $data"></div>
                     </td>
                     <td data-bind="foreach: currentRel().imageAlignedSpScores">
-                        <div data-bind="text: $data"></div>
+                        <div data-bind="text: $data, visible: $index() < 20"></div>
                     </td>
                 </tr>
             </table>

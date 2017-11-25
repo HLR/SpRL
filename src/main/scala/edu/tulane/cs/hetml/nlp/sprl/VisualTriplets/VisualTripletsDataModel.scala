@@ -42,15 +42,15 @@ object VisualTripletsDataModel extends DataModel {
       t.getLandmark.toLowerCase
   }
 
-//  val visualTripletTrajectorW2V = property(visualTriplets, ordered = true) {
-//    t: ImageTriplet =>
-//      getGoogleWordVector(t.getTrajector)
-//  }
-//
-//  val visualTripletlandmarkW2V = property(visualTriplets, ordered = true) {
-//    t: ImageTriplet =>
-//      getGoogleWordVector(t.getLandmark)
-//  }
+  val visualTripletTrajectorW2V = property(visualTriplets, ordered = true) {
+    t: ImageTriplet =>
+      getGoogleWordVector(t.getTrajector)
+  }
+
+  val visualTripletlandmarkW2V = property(visualTriplets, ordered = true) {
+    t: ImageTriplet =>
+      getGoogleWordVector(t.getLandmark)
+  }
 
   val visualTripletTrVector = property(visualTriplets, ordered = true) {
     t: ImageTriplet =>

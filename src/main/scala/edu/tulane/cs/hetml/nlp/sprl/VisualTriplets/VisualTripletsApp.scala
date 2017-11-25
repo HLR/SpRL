@@ -17,10 +17,10 @@ object VisualTripletsApp extends App {
   val msCocoTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "MSCOCO.originalterm")
   val isTrain = true
   val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-  val classifierSuffix = "combined_perceptron-"
+  val classifierSuffix = "combined_perceptron"
   val trainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
   val testTriplets = flickerTripletReader.testImageTriplets ++ msCocoTripletReader.testImageTriplets
-  val frequent = trainTriplets.groupBy(_.getSp.toLowerCase).filter(_._2.size > 500)
+  val frequent = trainTriplets.groupBy(_.getSp.toLowerCase).filter(_._2.size > 0)
   trainTriplets.filter(x=> !frequent.contains(x.getSp.toLowerCase()))
     .foreach(_.setSp("none"))
 
