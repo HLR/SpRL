@@ -56,6 +56,27 @@ object TripletSentenceLevelConstraints {
       a
   }
 
+  val relationsShouldNotHaveCommonRoles = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      val spGroups = (sentences(s) ~> sentenceToTriplets).groupBy(x=> x.getArgumentId(1)).filter(_._2.size > 1)
+      spGroups.foreach{
+        sp =>
+          sp._2.foreach{
+            t1 =>
+              sp._2.foreach{
+                t2 =>
+                  if(t1.getArgument(1).getStart < t2.getArgument(2).getStart){
+                    a = a and ((TripletRelationClassifier on t1 is "None") or (TripletRelationClassifier on t2 is "None"))
+                  }
+              }
+          }
+      }
+
+      a
+  }
+
   val boostTrajector = ConstrainedClassifier.constraint[Sentence] {
     s: Sentence =>
       (
@@ -169,7 +190,7 @@ object TripletSentenceLevelConstraints {
         x =>
           val lmIsNull = (triplets(x) ~> tripletToThirdArg).head == dummyPhrase
           if (lmIsNull) {
-            a = a and (TripletGeneralTypeClassifier on x isNot "region") and (TripletRegionClassifier on x is "None")
+            a = a and (TripletRegionClassifier on x is "None")
           }
       }
       a
@@ -236,7 +257,8 @@ object TripletSentenceLevelConstraints {
           boostGeneralByRegion(x) and
           regionShouldHaveLandmark(x) and
           discardRelationByImage(x) and
-          approveRelationByImage(x)
+          approveRelationByImage(x) //and
+          //relationsShouldNotHaveCommonRoles(x)
       //noDuplicates(x)
 
       //      if (mSpRLConfigurator.imageConstraints)
