@@ -98,9 +98,9 @@ object MultiModalSpRLSensors {
         r.setId(p.getId + "__" + s.getSegmentId)
         r.setArgumentId(0, p.getId)
         r.setArgumentId(1, s.getSegmentId.toString)
-//        val head = getHeadword(p)
-//        val sim = s.getSegmentConcept.split('-').map(x => getSimilarity(x, head.getText)).max
-//        r.setProperty("similarity", sim.toString)
+        //        val head = getHeadword(p)
+        //        val sim = s.getSegmentConcept.split('-').map(x => getSimilarity(x, head.getText)).max
+        //        r.setProperty("similarity", sim.toString)
         if (p.getPropertyValues("alignedSegment").contains(s.getSegmentId.toString)) {
           r.setProperty("similarity", "1")
         }
@@ -113,6 +113,42 @@ object MultiModalSpRLSensors {
 
   def SegmentPhrasePairToPhraseMatching(pair: Relation, phrase: Phrase): Boolean = {
     pair.getArgumentId(0) == phrase.getId
+  }
+
+  def TripletToVisualTripletGenerating(r: Relation): List[ImageTriplet] = {
+    val (first, second, third) = getTripletArguments(r)
+    val trSegId = first.getPropertyFirstValue("alignedSegment")
+    val lmSegId = third.getPropertyFirstValue("alignedSegment")
+    if (trSegId != null && lmSegId != null) {
+
+      val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
+        .find(_.getSegmentId.toString.equalsIgnoreCase(trSegId))
+      val lmSeg = (phrases(third) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
+        .find(_.getSegmentId.toString.equalsIgnoreCase(lmSegId))
+
+      if (trSeg.nonEmpty && lmSeg.nonEmpty) {
+
+        val imageRel = visualTriplets().filter(x => x.getImageId == trSeg.get.getAssociatedImageID &&
+          x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
+
+        imageRel.foreach {
+          x =>
+            x.setTrajector(headWordFrom(first).toLowerCase())
+            x.setLandmark(headWordFrom(third).toLowerCase())
+            if (x.getSp == null)
+              x.setSp("-")
+            if(tripletIsRelation(r) == "Relation")
+              x.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
+
+        }
+        imageRel.toList
+      }
+      else
+        List()
+    }
+    else {
+      List()
+    }
   }
 
   val phraseConceptToWord = HashMap(

@@ -105,6 +105,17 @@ object MultiModalTripletApp extends App with Logging {
     TripletRegionClassifier.save()
     TripletDirectionClassifier.save()
     TripletImageRegionClassifier.save()
+
+    val classifierDirectory = s"models/mSpRL/VisualTriplets/"
+    val classifierSuffix = "combined_perceptron"
+    VisualTripletClassifier.modelSuffix = classifierSuffix
+    VisualTripletClassifier.modelDir = classifierDirectory
+    VisualTripletClassifier.load()
+    val visualTriplets = (triplets() ~> tripletToVisualTriplet).toList
+    VisualTripletClassifier.learn(10)
+    VisualTripletClassifier.test(visualTriplets)
+    VisualTripletClassifier.modelSuffix += "_tuned"
+    VisualTripletClassifier.save()
   }
 
   if (!isTrain) {
@@ -120,6 +131,12 @@ object MultiModalTripletApp extends App with Logging {
     TripletRegionClassifier.load()
     TripletDirectionClassifier.load()
     TripletImageRegionClassifier.load()
+
+    val classifierDirectory = s"models/mSpRL/VisualTriplets/"
+    val classifierSuffix = "combined_perceptron_tuned"
+    VisualTripletClassifier.modelSuffix = classifierSuffix
+    VisualTripletClassifier.modelDir = classifierDirectory
+    VisualTripletClassifier.load()
 
     val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases().toList)
     val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)
@@ -176,6 +193,9 @@ object MultiModalTripletApp extends App with Logging {
       val imRegion = TripletImageRegionClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Image Region(within data model)", imRegion)
 
+      val visual = VisualTripletClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Visual triplet(within data model)", visual)
+
       report(x => TripletRelationClassifier(x),
         x => TrajectorRoleClassifier(x),
         x => LandmarkRoleClassifier(x),
@@ -226,6 +246,9 @@ object MultiModalTripletApp extends App with Logging {
 
       val region = TripletRegionConstraintClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
+
+      val visual = VisualTripletClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Visual triplet(within data model)", visual)
 
       report(x => TripletRelationConstraintClassifier(x),
         x => TRConstraintClassifier(x),

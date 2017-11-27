@@ -20,14 +20,14 @@ class ImageSupportsSpClassifier extends Learner("sprl.ImageSpClassifier") {
   override def scores(example: AnyRef): ScoreSet = {
     val result: ScoreSet = new ScoreSet
     val r = example.asInstanceOf[Relation]
-    val aligned = getAlignedVisualTriplet(r)
-    if (aligned == null) {
+    val aligned = triplets(r) ~> tripletToVisualTriplet
+    if (aligned.isEmpty) {
       result.put("none", 1.0)
       result.put("true", 0.0)
       result.put("false", 0.0)
     }
     else {
-      val scores = getImageSpScores(aligned).take(20)
+      val scores = getImageSpScores(aligned.head).take(20)
       val sp = r.getArgument(1).getText.replaceAll(" ", "_").toLowerCase()
       val found = scores.find(x=> x._1.trim.equalsIgnoreCase(sp))
       if (found.isEmpty) {
@@ -37,7 +37,7 @@ class ImageSupportsSpClassifier extends Learner("sprl.ImageSpClassifier") {
       }
       else {
         result.put("none", 0.0)
-        result.put("true", found.get._2)
+        result.put("true", found.get._2 * 10)
         result.put("false", 0.0)
       }
     }

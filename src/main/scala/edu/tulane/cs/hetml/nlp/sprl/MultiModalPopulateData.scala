@@ -114,9 +114,11 @@ object MultiModalPopulateData extends Logging {
       lmFilter,
       isTrain
     )
-    triplets.populate(candidateRelations, isTrain)
-
     xmlReader.setTripletRelationTypes(candidateRelations)
+
+    triplets.populate(candidateRelations, isTrain)
+    val visualTriplets = (triplets() ~> tripletToVisualTriplet).toList
+    VisualTripletsDataModel.visualTriplets.populate(visualTriplets, isTrain)
 
     logger.info("Triplet population finished.")
   }
