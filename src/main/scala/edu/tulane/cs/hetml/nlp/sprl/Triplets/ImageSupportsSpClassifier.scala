@@ -37,7 +37,7 @@ class ImageSupportsSpClassifier extends Learner("sprl.ImageSpClassifier") {
       }
       else {
         result.put("none", 0.0)
-        result.put("true", found.get._2 * 100)
+        result.put("true", found.get._2)
         result.put("false", 0.0)
       }
     }

@@ -60,20 +60,11 @@ object TripletSentenceLevelConstraints {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
-      val spGroups = (sentences(s) ~> sentenceToTriplets).groupBy(x=> x.getArgumentId(1)).filter(_._2.size > 1)
-      spGroups.foreach{
+      val spGroups = (sentences(s) ~> sentenceToTriplets).groupBy(x => x.getArgumentId(1)).filter(_._2.size > 1)
+      spGroups.foreach {
         sp =>
-          sp._2.foreach{
-            t1 =>
-              sp._2.foreach{
-                t2 =>
-                  if(t1.getArgument(1).getStart < t2.getArgument(2).getStart){
-                    a = a and ((TripletRelationClassifier on t1 is "None") or (TripletRelationClassifier on t2 is "None"))
-                  }
-              }
-          }
+          a = a and sp._2.toList._atmost(1)(t => TripletRelationClassifier on t is "Relation")
       }
-
       a
   }
 
@@ -258,7 +249,7 @@ object TripletSentenceLevelConstraints {
           regionShouldHaveLandmark(x) and
           discardRelationByImage(x) and
           approveRelationByImage(x) //and
-          //relationsShouldNotHaveCommonRoles(x)
+      //relationsShouldNotHaveCommonRoles(x)
       //noDuplicates(x)
 
       //      if (mSpRLConfigurator.imageConstraints)
