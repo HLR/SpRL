@@ -16,8 +16,16 @@ var App = function () {
     self.II = ko.observable(false);
     self.trMatched = ko.observable(false);
     self.lmMatched = ko.observable(false);
+    self.spMatched = ko.observable(false);
+    self.spTop10 = ko.observable(false);
     self.diffRole = ko.observable(false);
     self.diffRel = ko.observable(false);
+    self.region = ko.observable(false);
+    self.nonRegion = ko.observable(false);
+    self.direction = ko.observable(false);
+    self.nonDirection = ko.observable(false);
+    self.general = ko.observable(false);
+    self.nonGeneral = ko.observable(false);
     self.currentRel = ko.observable({ index: -1 });
     self.allRolesCorrect = ko.observable(false);
     self.comparison = ko.observable({
@@ -62,6 +70,31 @@ var App = function () {
                     return false;
 
                 if (self.lmMatched() && !item.lmMatched)
+                    return false;
+
+                if (self.spMatched() && !item.spMatched)
+                    return false;
+
+                if (self.spTop10() && !item.spInTop10)
+                    return false;
+
+                if (self.general() && item.general == "None")
+                    return false;
+
+                if (self.nonGeneral() && item.general != "None")
+                    return false;
+
+
+                if (self.region() && item.region == "None")
+                    return false;
+
+                if (self.nonRegion() && item.region != "None")
+                    return false;
+
+                if (self.direction() && item.direction == "None")
+                    return false;
+
+                if (self.nonDirection() && item.direction != "None")
                     return false;
 
                 if (self.comparison().first !== {} && self.comparison().second !== {}) {
@@ -146,6 +179,18 @@ var App = function () {
         return true;
     };
 
+    self.toggleSpMatched = function () {
+        self.spMatched(!self.spMatched());
+        self.explore();
+        return true;
+    };
+
+    self.toggleSpTop10 = function () {
+        self.spTop10(!self.spTop10());
+        self.explore();
+        return true;
+    };
+
     self.toggleTP = function () {
         self.TP(!self.TP());
         self.explore();
@@ -178,6 +223,43 @@ var App = function () {
 
     self.toggleDiffRel = function () {
         self.diffRel(!self.diffRel());
+        self.explore();
+        return true;
+    };
+
+
+    self.toggleGeneral = function () {
+        self.general(!self.general());
+        self.explore();
+        return true;
+    };
+
+    self.toggleNonGeneral = function () {
+        self.nonGeneral(!self.nonGeneral());
+        self.explore();
+        return true;
+    };
+
+    self.toggleRegion = function () {
+        self.region(!self.region());
+        self.explore();
+        return true;
+    };
+
+    self.toggleNonRegion = function () {
+        self.nonRegion(!self.nonRegion());
+        self.explore();
+        return true;
+    };
+
+    self.toggleDirection = function () {
+        self.direction(!self.direction());
+        self.explore();
+        return true;
+    };
+
+    self.toggleNonDirection = function () {
+        self.nonDirection(!self.nonDirection());
         self.explore();
         return true;
     };
@@ -236,6 +318,27 @@ var App = function () {
         var str = "";
         for (i in self.models()) {
             str += self.models()[i].data[rel.index].tp || self.models()[i].data[rel.index].tn ? '\u2713' : '\u00D7';
+        }
+        return str;
+    }
+    self.generalApproved = function (rel) {
+        var str = "";
+        for (i in self.models()) {
+            str += self.models()[i].data[rel.index].generalApproved ? '\u2713' : '\u00D7';
+        }
+        return str;
+    }
+    self.regionApproved = function (rel) {
+        var str = "";
+        for (i in self.models()) {
+            str += self.models()[i].data[rel.index].regionApproved ? '\u2713' : '\u00D7';
+        }
+        return str;
+    }
+    self.directionApproved = function (rel) {
+        var str = "";
+        for (i in self.models()) {
+            str += self.models()[i].data[rel.index].directionApproved ? '\u2713' : '\u00D7';
         }
         return str;
     }

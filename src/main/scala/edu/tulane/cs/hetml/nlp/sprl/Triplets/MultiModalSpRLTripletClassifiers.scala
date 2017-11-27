@@ -143,4 +143,5 @@ object MultiModalSpRLTripletClassifiers {
 
     override def feature =  List(tripletSpWordForm)
   }
+
 }

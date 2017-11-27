@@ -6,11 +6,15 @@ import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator
 
 import scala.collection.JavaConversions._
 
 object TripletSentenceLevelConstraints {
+
+  val sim = new SegmentPhraseSimilarityClassifier()
+  val imageSupportsSp = new ImageSupportsSpClassifier()
 
   val roleShouldHaveRel = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
@@ -52,6 +56,18 @@ object TripletSentenceLevelConstraints {
       a
   }
 
+  val relationsShouldNotHaveCommonRoles = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      val spGroups = (sentences(s) ~> sentenceToTriplets).groupBy(x => x.getArgumentId(1)).filter(_._2.size > 1)
+      spGroups.foreach {
+        sp =>
+          a = a and sp._2.toList._atmost(1)(t => TripletRelationClassifier on t is "Relation")
+      }
+      a
+  }
+
   val boostTrajector = ConstrainedClassifier.constraint[Sentence] {
     s: Sentence =>
       (
@@ -60,22 +76,21 @@ object TripletSentenceLevelConstraints {
           (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => TrajectorRoleClassifier on x is "Trajector" }
         )
   }
-  val sim = new SegmentPhraseSimilarityClassifier()
-  val boostTrajectorByImage = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToPhrase).foreach {
-        p =>
-          val pairs = (phrases(p) ~> -segmentPhrasePairToPhrase).toList
-
-          a = a and
-            (
-              pairs._exists(pair => sim on pair is "true") ==>
-              (TrajectorRoleClassifier on p is "Trajector") or (LandmarkRoleClassifier on p is "Landmark"))
-      }
-      a
-  }
+  //  val boostTrajectorByImage = ConstrainedClassifier.constraint[Sentence] {
+  //    var a: FirstOrderConstraint = null
+  //    s: Sentence =>
+  //      a = new FirstOrderConstant(true)
+  //      (sentences(s) ~> sentenceToPhrase).foreach {
+  //        p =>
+  //          val pairs = (phrases(p) ~> -segmentPhrasePairToPhrase).toList
+  //
+  //          a = a and
+  //            (
+  //              pairs._exists(pair => sim on pair is "true") ==>
+  //                (TrajectorRoleClassifier on p is "Trajector") or (LandmarkRoleClassifier on p is "Landmark"))
+  //      }
+  //      a
+  //  }
 
   val boostLandmark = ConstrainedClassifier.constraint[Sentence] {
     s: Sentence =>
@@ -95,7 +110,7 @@ object TripletSentenceLevelConstraints {
           a = a and (
             (
               (TripletGeneralTypeClassifier on x) isNot "None"
-              ) ==>
+              ) <==>
               (TripletRelationClassifier on x is "Relation")
             )
       }
@@ -126,7 +141,20 @@ object TripletSentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (
-              (TripletDirectionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "direction")
+            (TripletDirectionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "direction")
+            )
+      }
+      a
+  }
+
+  val boostTripletByImageTriplet = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          a = a and (
+            (VisualTripletClassifiers.VisualTripletClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "region")
             )
       }
       a
@@ -139,34 +167,73 @@ object TripletSentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (
-              (TripletRegionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "region")
+            (TripletRegionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "region")
             )
       }
       a
   }
 
-  val uniqueSegmentAssignment = ConstrainedClassifier.constraint[Sentence] {
+  val regionShouldHaveLandmark = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
-      val segPhrases = (sentences(s) ~> sentenceToPhrase ~> -segmentPhrasePairToPhrase).toList
-
-      // The segments assigned to a phrase in a sentence should be at most 1
-      segPhrases.groupBy(_.getArgumentId(0)).foreach {
-        phraseSegments =>
-          if (phraseSegments._2.size > 1)
-            a = a and phraseSegments._2._atmost(1)(x => sim on x is "true")
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          val lmIsNull = (triplets(x) ~> tripletToThirdArg).head == dummyPhrase
+          if (lmIsNull) {
+            a = a and (TripletRegionClassifier on x is "None")
+          }
       }
-
-      // The phrases assigned to a segment in a sentence should be at most 1
-      segPhrases.groupBy(_.getArgumentId(1)).foreach {
-        segmentPhrases =>
-          if (segmentPhrases._2.size > 1)
-            a = a and segmentPhrases._2._atmost(1)(x => sim on x is "true")
-      }
-
       a
   }
+
+
+  val approveRelationByImage = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          a = a and ((imageSupportsSp on x is "true") ==>
+            (TripletRelationClassifier on x is "Relation"))
+      }
+      a
+  }
+
+  val discardRelationByImage = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          a = a and ((imageSupportsSp on x is "false") ==>
+            (TripletRelationClassifier on x is "None"))
+      }
+      a
+  }
+
+  //  val uniqueSegmentAssignment = ConstrainedClassifier.constraint[Sentence] {
+  //    var a: FirstOrderConstraint = null
+  //    s: Sentence =>
+  //      a = new FirstOrderConstant(true)
+  //      val segPhrases = (sentences(s) ~> sentenceToPhrase ~> -segmentPhrasePairToPhrase).toList
+  //
+  //      // The segments assigned to a phrase in a sentence should be at most 1
+  //      segPhrases.groupBy(_.getArgumentId(0)).foreach {
+  //        phraseSegments =>
+  //          if (phraseSegments._2.size > 1)
+  //            a = a and phraseSegments._2._atmost(1)(x => sim on x is "true")
+  //      }
+  //
+  //      // The phrases assigned to a segment in a sentence should be at most 1
+  //      segPhrases.groupBy(_.getArgumentId(1)).foreach {
+  //        segmentPhrases =>
+  //          if (segmentPhrases._2.size > 1)
+  //            a = a and segmentPhrases._2._atmost(1)(x => sim on x is "true")
+  //      }
+  //
+  //      a
+  //  }
 
   val tripletConstraints = ConstrainedClassifier.constraint[Sentence] {
 
@@ -178,14 +245,18 @@ object TripletSentenceLevelConstraints {
           boostLandmark(x) and
           boostTripletByGeneralType(x) and
           boostGeneralByDirection(x) and
-          boostGeneralByRegion(x) //and
-          //noDuplicates(x)
+          boostGeneralByRegion(x) and
+          regionShouldHaveLandmark(x) and
+          discardRelationByImage(x) and
+          approveRelationByImage(x)
+      //relationsShouldNotHaveCommonRoles(x)
+      //noDuplicates(x)
 
-//      if (mSpRLConfigurator.imageConstraints)
-//        a = a and
-//          boostTripletByImage(x) and
-//          //boostTrajectorByImage(x) and
-//          uniqueSegmentAssignment(x)
+      //      if (mSpRLConfigurator.imageConstraints)
+      //        a = a and
+      //          boostTripletByImage(x) and
+      //          //boostTrajectorByImage(x) and
+      //          uniqueSegmentAssignment(x)
       a
   }
 

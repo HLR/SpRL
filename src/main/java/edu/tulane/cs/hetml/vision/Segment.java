@@ -4,6 +4,8 @@ package edu.tulane.cs.hetml.vision;
 
 import org.bytedeco.javacpp.presets.opencv_core;
 
+import java.awt.*;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +22,7 @@ public class Segment {
     public String referItExpression;
     public String filteredTokens;
     private boolean isMatching;
-    private String boxDimensions;
+    private Rectangle2D boxDimensions;
 
     public Segment(String ImageId, int segmentId, String segmentFeatures, String referItExpression, boolean isMatching) {
         this.imageId = ImageId;
@@ -31,7 +33,8 @@ public class Segment {
         this.tagged = new ArrayList<>();
     }
 
-    public Segment(String ImageId, int segmentId, int segmentCode, String segmentFeatures, String segmentConcept, String boxDimensions)
+    public Segment(String ImageId, int segmentId, int segmentCode, String segmentFeatures, String segmentConcept,
+                   Rectangle2D boxDimensions)
     {
         this.imageId = ImageId;
         this.segmentId = segmentId;
@@ -86,11 +89,11 @@ public class Segment {
         return imageId + "_" + segmentId;
     }
 
-    public String getBoxDimensions() {
+    public Rectangle2D getBoxDimensions() {
         return boxDimensions;
     }
 
-    public void setBoxDimensions(String boxDimensions) {
+    public void setBoxDimensions(Rectangle2D boxDimensions) {
         this.boxDimensions = boxDimensions;
     }
 

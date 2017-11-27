@@ -5,6 +5,7 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
+import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
 import edu.tulane.cs.hetml.vision._
 
 /** Created by Taher on 2017-01-11.
@@ -17,6 +18,12 @@ object MultiModalSpRLDataModel extends DataModel {
   dummyPhrase.addPropertyValue("TRAJECTOR_id", dummyPhrase.getId)
   dummyPhrase.addPropertyValue("LANDMARK_id", dummyPhrase.getId)
   val undefined = "[undefined]"
+
+  val classifierDirectory = s"models/mSpRL/VisualTriplets/"
+  val classifierSuffix = "combined_perceptron_tuned"
+  VisualTripletClassifier.modelSuffix = classifierSuffix
+  VisualTripletClassifier.modelDir = classifierDirectory
+  VisualTripletClassifier.load()
 
   var useVectorAverages = false
 
@@ -35,6 +42,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val segmentRelations = node[SegmentRelation]
   val segmentPhrasePairs = node[Relation]((r: Relation) => r.getId)
   val visualTriplets = node[ImageTriplet]
+  val alignedTriplets = node[ImageTriplet]
 
   /*
   Edges
@@ -86,6 +94,9 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val segmentPhrasePairToPhrase = edge(segmentPhrasePairs, phrases)
   segmentPhrasePairToPhrase.addSensor(SegmentPhrasePairToPhraseMatching _)
+
+  val tripletToVisualTriplet = edge(triplets, alignedTriplets)
+  tripletToVisualTriplet.addSensor(TripletToVisualTripletGenerating _)
 
   /*
   Properties
@@ -221,15 +232,19 @@ object MultiModalSpRLDataModel extends DataModel {
         val seg = (phrases(p) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
           .find(_.getSegmentId.toString.equalsIgnoreCase(segId))
         if (seg.nonEmpty) {
-          val f = seg.get.getSegmentFeatures.split(" ").map(_.toDouble).toList
-          assert(f.length == 27)
-          f
+          val image = segments(seg) ~> -imageToSegment head
+          val box = seg.get.getBoxDimensions
+          val left = box.getX / image.getWidth
+          val top = box.getY / image.getHeight
+          val width = box.getWidth / image.getWidth
+          val height = box.getHeight / image.getHeight
+          List(left, top, width, height)
         }
         else
-          List.fill(27)(0.0)
+          List.fill(4)(-1.0)
       }
       else {
-        List.fill(27)(0.0)
+        List.fill(4)(-1.0)
       }
   }
 
@@ -531,6 +546,7 @@ object MultiModalSpRLDataModel extends DataModel {
         undefined
       else {
         getWordnetHypernyms(getHeadword(third))
+        ""
       }
   }
 
@@ -689,6 +705,68 @@ object MultiModalSpRLDataModel extends DataModel {
       }
   }
 
+  val tripletMatchingSegmentRelationFeatures = property(triplets, cache = true, ordered = true) {
+    r: Relation =>
+      val aligned = triplets(r) ~> tripletToVisualTriplet
+      if (aligned.nonEmpty) {
+        val x = aligned.head
+        List(x.getEuclideanDistance, x.getIou, x.getLmAreaBbox, x.getLmAreaImage, x.getLmAspectRatio,
+          x.getTrAreaBbox, x.getTrAreaImage, x.getTrAreawrtLM, x.getTrAspectRatio)
+      }
+      else
+        List.fill(9)(0.0)
+  }
+
+  val tripletMatchingSegmentRelationLabel = property(triplets, cache = true) {
+    r: Relation =>
+      val aligned = triplets(r) ~> tripletToVisualTriplet
+      if (aligned.nonEmpty) {
+        val x = VisualTripletClassifier.classifier.scores(aligned.head)
+        if (x.toArray.exists(_.score.isNaN))
+          "-"
+        else
+          VisualTripletClassifier(aligned.head)
+      }
+      else
+        "-"
+  }
+
+  val tripletMatchingSegmentRelationLabelScores = property(triplets, cache = true, ordered = true) {
+    r: Relation =>
+      val aligned = triplets(r) ~> tripletToVisualTriplet
+      if (aligned.nonEmpty) {
+        getImageSpScores(aligned.head).map(y => y._1 + ": " + f"${y._2}%1.4f").mkString(",")
+      }
+      else
+        "-"
+  }
+
+  val tripletMatchingSegmentFeatures = property(triplets, cache = true) {
+    r: Relation =>
+      val (first, _, third) = getTripletArguments(r)
+      val trSegId = first.getPropertyFirstValue("alignedSegment")
+      val lmSegId = third.getPropertyFirstValue("alignedSegment")
+      if (trSegId != null && lmSegId != null) {
+        val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
+          .find(_.getSegmentId.toString.equalsIgnoreCase(trSegId))
+        val lmSeg = (phrases(third) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
+          .find(_.getSegmentId.toString.equalsIgnoreCase(lmSegId))
+        if (trSeg.nonEmpty && lmSeg.nonEmpty) {
+          val rels = (segments(trSeg) ~> -segmentRelationsToFirstArg)
+            .filter(x => x.getSecondSegmentId == lmSeg.get.getSegmentId)
+            .toList
+            .map(_.getRelation)
+            .distinct
+          rels
+        }
+        else
+          List()
+      }
+      else {
+        List()
+      }
+  }
+
   val tripletTrBeforeSp = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, _) = getTripletArguments(r)
@@ -760,6 +838,12 @@ object MultiModalSpRLDataModel extends DataModel {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
       headWordPos(first) + "::" + headWordPos(second) + "::" + headWordPos(third)
+  }
+
+  val tripletSpHeadWord = property(triplets, cache = true) {
+    r: Relation =>
+      val (_, second, _) = getTripletArguments(r)
+      headWordFrom(second)
   }
 
   val tripletPhrasePos = property(triplets, cache = true) {
@@ -896,9 +980,23 @@ object MultiModalSpRLDataModel extends DataModel {
     }
   }
 
-  private def getTripletArguments(r: Relation): (Phrase, Phrase, Phrase) = {
+  def getTripletArguments(r: Relation): (Phrase, Phrase, Phrase) = {
     ((triplets(r) ~> tripletToFirstArg).head, (triplets(r) ~> tripletToSecondArg).head, (triplets(r) ~> tripletToThirdArg).head)
   }
+
+  def getImageSpScores(r: ImageTriplet) = {
+    val x = VisualTripletClassifier.classifier.scores(r)
+    val min = x.toArray.map(_.score).min
+    val sum = x.toArray.map(_.score - min).sum
+    val scores = x.toArray.sortBy(_.score * -1).map(y => (y.value, (y.score - min) / sum))
+    scores.map(x => {
+      if (x._2.isNaN || x._2.isInfinity)
+        (x._1, 0.0)
+      else
+        x
+    })
+  }
+
 
   private def getPairArguments(r: Relation): (Phrase, Phrase) = {
     ((pairs(r) ~> pairToFirstArg).head, (pairs(r) ~> pairToSecondArg).head)
