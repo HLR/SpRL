@@ -5,6 +5,7 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel.{triplets, _}
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.documentToSentenceGenerating
 import edu.tulane.cs.hetml.nlp.sprl.Helpers._
+import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel
 import mSpRLConfigurator._
 
 import scala.collection.JavaConversions._
@@ -44,13 +45,13 @@ object MultiModalPopulateData extends Logging {
 
     xmlReader.setRoles(phraseInstances)
 
-//    if (globalSpans) {
-//      phraseInstances.foreach {
-//        p =>
-//          p.setStart(p.getStart - p.getSentence.getStart)
-//          p.setEnd(p.getEnd - p.getSentence.getStart)
-//      }
-//    }
+    //    if (globalSpans) {
+    //      phraseInstances.foreach {
+    //        p =>
+    //          p.setStart(p.getStart - p.getSentence.getStart)
+    //          p.setEnd(p.getEnd - p.getSentence.getStart)
+    //      }
+    //    }
 
     alignmentReader.setAlignments(phraseInstances)
     if (populateImages) {
@@ -113,9 +114,11 @@ object MultiModalPopulateData extends Logging {
       lmFilter,
       isTrain
     )
-    triplets.populate(candidateRelations, isTrain)
-
     xmlReader.setTripletRelationTypes(candidateRelations)
+
+    triplets.populate(candidateRelations, isTrain)
+    val visualTriplets = (triplets() ~> tripletToVisualTriplet).toList
+    VisualTripletsDataModel.visualTriplets.populate(visualTriplets, isTrain)
 
     logger.info("Triplet population finished.")
   }

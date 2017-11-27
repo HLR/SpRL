@@ -4,9 +4,8 @@ import com.jmatio.io.MatFileReader;
 import com.jmatio.types.MLDouble;
 import edu.tulane.cs.hetml.nlp.BaseTypes.Document;
 import edu.tulane.cs.hetml.nlp.Xml.NlpXmlReader;
-import edu.tulane.cs.hetml.vision.*;
 
-import java.awt.*;
+import java.awt.geom.Rectangle2D;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -14,8 +13,8 @@ import java.util.List;
 
 /**
  * Reads CLEF Image dataset, given a directory
- * @author Umar Manzoor
  *
+ * @author Umar Manzoor
  */
 public class CLEFImageReader {
 
@@ -45,7 +44,7 @@ public class CLEFImageReader {
     private Hashtable<String, String> segmentReferitText = new Hashtable<String, String>();
     private Hashtable<String, String> segmentOntology = new Hashtable<String, String>();
     private Hashtable<String, String> redefindedRelations = new Hashtable<String, String>();
-    private Hashtable<String, String> segmentBoxes = new Hashtable<String, String>();
+    private Hashtable<String, Rectangle2D> segmentBoxes = new Hashtable<String, Rectangle2D>();
 
     private double imageWidth, imageHeight;
     PrintWriter printWriterTest;
@@ -154,6 +153,7 @@ public class CLEFImageReader {
     /*******************************************************/
     // Loading Referit Text for CLEF Segments
     // Storing information in HashTable for quick retrieval
+
     /*******************************************************/
     private void getReferitText(String directory) throws IOException {
         String file = directory + "/ReferGames.txt";
@@ -172,6 +172,7 @@ public class CLEFImageReader {
     /*******************************************************/
     // Loading Segment Box Information for CLEF Segments
     // Storing information in HashTable for quick retrieval
+
     /*******************************************************/
     private void getSegmentsBox(String directory) throws IOException {
         String file = directory + "/SegmentBoxes/segmentBoxes.txt";
@@ -180,7 +181,14 @@ public class CLEFImageReader {
         while ((line = reader.readLine()) != null) {
             String[] segBoxInfo = line.split(" ");
             String key = segBoxInfo[0] + "-" + segBoxInfo[1];
-            segmentBoxes.put(key, segBoxInfo[2]);
+            String[] boxDims = segBoxInfo[2].split("-");
+            Rectangle2D rec = new Rectangle2D.Double(
+                    Double.parseDouble(boxDims[0]),
+                    Double.parseDouble(boxDims[1]),
+                    Double.parseDouble(boxDims[2]),
+                    Double.parseDouble(boxDims[3])
+            );
+            segmentBoxes.put(key, rec);
         }
     }
 
@@ -275,6 +283,7 @@ public class CLEFImageReader {
     }
     /*******************************************************/
     // Loading Segments
+
     /*******************************************************/
     private void getSegments(String file) throws IOException {
         File d = new File(file);
@@ -364,7 +373,7 @@ public class CLEFImageReader {
                                 if (val == 3)
                                     rel = "beside";
                                 else if (val == 4) {
-                                    if(!useRedefinedRelations)
+                                    if (!useRedefinedRelations)
                                         // Original "x-aligned"
                                         rel = "x-aligned";
                                     else {
@@ -389,9 +398,9 @@ public class CLEFImageReader {
                                 else if (val == 6)
                                     rel = "below";
                                 else if (val == 7) {
-                                    if(!useRedefinedRelations)
+                                    if (!useRedefinedRelations)
                                         // Original "y-aligned"
-                                        rel= "y-aligned";
+                                        rel = "y-aligned";
                                     else {
                                         String key = imgId + "-" + firstSegmentId + "-" + secondSegmentId + "-" + "x-aligned";
                                         rel = redefindedRelations.get(key);
@@ -421,7 +430,8 @@ public class CLEFImageReader {
     private void getTrainingImages() throws IOException {
         if (readFullData) {
             getMatData(path + "/training.mat", true, "training");
-            getMatData(path + "/validation.mat", true, "validation");;
+            getMatData(path + "/validation.mat", true, "validation");
+            ;
         } else {
             getXMLImages(trainFilePath, true);
         }
@@ -486,8 +496,7 @@ public class CLEFImageReader {
 
         if (choose) {
             data = ((MLDouble) matReader.getMLArray(name)).getArray();
-        }
-        else
+        } else
             data = ((MLDouble) matReader.getMLArray(name)).getArray();
 
         if (data.length > 1) {
@@ -503,6 +512,7 @@ public class CLEFImageReader {
 
     /*******************************************************/
     // Loading Segments Ontology
+
     /*******************************************************/
     private void getSegmentsOntology(String file) throws IOException {
 
@@ -524,6 +534,7 @@ public class CLEFImageReader {
 
     /*******************************************************/
     // Loading Segments Ontology
+
     /*******************************************************/
     private void generateVisualTripletSegmentPairs() {
         generateVisualTripletsSegmentPairs(trainingImages, trainingSegments, true);
@@ -539,11 +550,11 @@ public class CLEFImageReader {
             }
 
             // Generate Pairs
-            for (int j =0; j<temp.size(); j++)
-                for (int k =0; k<temp.size();k++) {
+            for (int j = 0; j < temp.size(); j++)
+                for (int k = 0; k < temp.size(); k++) {
                     Segment trSeg = temp.get(j);
                     Segment lmSeg = temp.get(k);
-                    if(trSeg.getSegmentId()!=lmSeg.getSegmentId()) { // Ignore same index
+                    if (trSeg.getSegmentId() != lmSeg.getSegmentId()) { // Ignore same index
                         if (train)
                             trainImageTriplets.add(generateImageTriplet(i, trSeg, lmSeg));
                         else
@@ -552,45 +563,47 @@ public class CLEFImageReader {
                 }
         }
     }
+
     private ImageTriplet generateImageTriplet(Image i, Segment trSeg, Segment lmSeg) {
 
-        String trBox = trSeg.getBoxDimensions();
-        String lmBox = lmSeg.getBoxDimensions();
+        Rectangle2D trBox = trSeg.getBoxDimensions();
+        Rectangle2D lmBox = lmSeg.getBoxDimensions();
 
-        double trArea = calculateArea(trBox);
-        double lmArea = calculateArea(lmBox);
+        double trArea = RectangleHelper.calculateArea(trBox);
+        double lmArea = RectangleHelper.calculateArea(lmBox);
         double imageArea = imageWidth * imageHeight;
 
-        String boundingBox = generateBoundingBox(trBox, lmBox);
-        double boundingBoxArea = calculateArea(boundingBox);
+        Rectangle2D boundingBox = RectangleHelper.generateBoundingBox(trBox, lmBox);
+        double boundingBoxArea = RectangleHelper.calculateArea(boundingBox);
 
         //Feature 1
-        String trVector = getCentroidVector(trBox, lmBox, boundingBox);
+        double[] trVector = RectangleHelper.getCentroidVector(trBox, lmBox, boundingBox);
 
         //Feature 2
         double trAreawrtLM = trArea / lmArea;
 
         // Feature 3
-        double trAspectRatio = calculateAspectRatio(trBox);
-        double lmAspectRatio = calculateAspectRatio(lmBox);
+        double trAspectRatio = RectangleHelper.calculateAspectRatio(trBox);
+        double lmAspectRatio = RectangleHelper.calculateAspectRatio(lmBox);
 
         //Feature 4
-        double trAreaBbox = normalizeArea(trArea, boundingBoxArea);
-        double lmAreaBbox = normalizeArea(lmArea, boundingBoxArea);
+        double trAreaBbox = RectangleHelper.normalizeArea(trArea, boundingBoxArea);
+        double lmAreaBbox = RectangleHelper.normalizeArea(lmArea, boundingBoxArea);
 
         //Feature 5
-        double iou = getIntersectionOverUnion(trBox, lmBox);
+        double iou = RectangleHelper.getIntersectionOverUnion(trBox, lmBox);
 
         // Feature 6
-        double euclideanDistance = normalizeArea(getEuclideanDistance(trBox, lmBox), imageArea);
+        double euclideanDistance = RectangleHelper
+                .normalizeArea(RectangleHelper.getEuclideanDistance(trBox, lmBox), imageArea);
 
         // Feature 7
-        double trAreaImage = normalizeArea(trArea, imageArea);
-        double lmAreaImage = normalizeArea(lmArea, imageArea);
-        String imageBox = imageWidth + "-" + imageHeight;
+        double trAreaImage = RectangleHelper.normalizeArea(trArea, imageArea);
+        double lmAreaImage = RectangleHelper.normalizeArea(lmArea, imageArea);
 
-        return new ImageTriplet(i.getId(), trSeg.getSegmentId(), lmSeg.getSegmentId(), trBox, lmBox, imageBox, trVector, trAreawrtLM,
-                trAspectRatio, lmAspectRatio, trAreaBbox, lmAreaBbox, iou, euclideanDistance, trAreaImage, lmAreaImage);
+        return new ImageTriplet(i.getId(), trSeg.getSegmentId(), lmSeg.getSegmentId(), trBox, lmBox, imageWidth, imageHeight,
+                trVector[0], trVector[1], trAreawrtLM, trAspectRatio, lmAspectRatio, trAreaBbox, lmAreaBbox, iou,
+                euclideanDistance, trAreaImage, lmAreaImage);
     }
 
     private void printImageInformation() throws IOException {
@@ -612,127 +625,6 @@ public class CLEFImageReader {
             }
         }
         printWriterTest.close();
-    }
-    private String getCentroidVector(String trBox, String lmBox, String Boundingbox) {
-        String[] trInfo = trBox.split("-");
-        String[] lmInfo = trBox.split("-");
-
-
-        double trCenterX, trCenterY, lmCenterX, lmCenterY;
-        trCenterX = Double.parseDouble(trInfo[0]) + Double.parseDouble(trInfo[2]) * 0.5;
-        trCenterY = Double.parseDouble(trInfo[1]) + Double.parseDouble(trInfo[3]) * 0.5;
-
-        lmCenterX = Double.parseDouble(lmInfo[0]) + Double.parseDouble(lmInfo[2]) * 0.5;
-        lmCenterY = Double.parseDouble(lmInfo[1]) + Double.parseDouble(lmInfo[3]) * 0.5;
-
-        String[] boundingBoxInfo = Boundingbox.split("-");
-        String vector = (trCenterX - lmCenterX) / Double.parseDouble(boundingBoxInfo[2]) + "-"
-                + (trCenterY - lmCenterY) / Double.parseDouble(boundingBoxInfo[3]);
-        return vector;
-    }
-
-    private double getIntersectionOverUnion(String trBox, String lmBox) {
-        String[] trInfo = trBox.split("-");
-        String[] lmInfo = lmBox.split("-");
-
-        Rectangle tr = new Rectangle((int) Double.parseDouble(trInfo[0]), (int) Double.parseDouble(trInfo[1]), (int) Double.parseDouble(trInfo[2]), (int) Double.parseDouble(trInfo[3]));
-        Rectangle lm = new Rectangle((int) Double.parseDouble(lmInfo[0]), (int) Double.parseDouble(lmInfo[1]), (int) Double.parseDouble(lmInfo[2]), (int) Double.parseDouble(lmInfo[3]));
-        Rectangle intersection = tr.intersection(lm);
-        Rectangle union = tr.union(lm);
-
-        double intersectionArea = intersection.width*intersection.height;
-        double unionArea = union.width*union.height;
-
-        double iou = 0;
-        if(unionArea!=0)
-            iou = intersectionArea / unionArea;
-        return iou;
-    }
-
-    private String generateBoundingBox(String trBox, String lmBox) {
-        String[] trRect = trBox.split("-");
-        double trX = Double.parseDouble(trRect[0]);
-        double trY = Double.parseDouble(trRect[1]);
-        double trWidth = Double.parseDouble(trRect[2]);
-        double trHeight = Double.parseDouble(trRect[3]);
-
-        String[] lmRect = lmBox.split("-");
-        double lmX = Double.parseDouble(lmRect[0]);
-        double lmY = Double.parseDouble(lmRect[1]);
-        double lmWidth = Double.parseDouble(lmRect[2]);
-        double lmHeight = Double.parseDouble(lmRect[3]);
-
-        double minX, minY, maxX, maxY;
-
-        // Minimum X
-        if(trX > lmX)
-            minX = lmX;
-        else
-            minX = trX;
-
-        //Maximum X
-        if(trX + trWidth > lmX + lmWidth)
-            maxX = trX + trWidth;
-        else
-            maxX = lmX + lmWidth;
-
-        //Minimum Y
-        if(trY < lmY)
-            minY = trY;
-        else
-            minY = lmY;
-
-        //Minimum Y
-        if (trY+trHeight<lmY+lmHeight)
-            maxY = lmY + lmHeight;
-        else
-            maxY = trY + trHeight;
-
-        double bBoxWidth = maxX - minX;
-        double bBoxHeight = maxY - minY;
-
-        String bBox = minX + "-" + minY + "-" + bBoxWidth + "-" + bBoxHeight;
-        return bBox;
-    }
-
-    private double calculateArea(String box) {
-        String[] rect = box.split("-");
-        double width;
-        double height;
-        width = Double.parseDouble(rect[2]);
-        height = Double.parseDouble(rect[3]);
-        return width * height;
-    }
-
-    private double calculateAspectRatio(String box) {
-        String[] rect = box.split("-");
-        double width = Double.parseDouble(rect[2]);
-        double height = Double.parseDouble(rect[3]);
-        return width / height;
-    }
-    private double normalizeArea(double boxArea, double imageArea) {
-        return boxArea / imageArea;
-    }
-
-    private double getEuclideanDistance(String trBox, String lmBox) {
-
-        String[] trInfo = trBox.split("-");
-        String[] lmInfo = lmBox.split("-");
-
-        double x1 = Double.parseDouble(trInfo[0]);
-        double y1 = Double.parseDouble(trInfo[1]);
-        double x2 = Double.parseDouble(lmInfo[0]);
-        double y2 = Double.parseDouble(lmInfo[1]);
-
-        double  xDiff = x1-x2;
-        double  xSqr  = Math.pow(xDiff, 2);
-
-        double yDiff = y1-y2;
-        double ySqr = Math.pow(yDiff, 2);
-
-        double distance = Math.sqrt(xSqr + ySqr);
-
-        return distance;
     }
 
     public boolean isUseRedefinedRelations() {
