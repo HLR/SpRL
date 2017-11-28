@@ -27,8 +27,8 @@ object VisualTripletClassifiers {
     override def feature = List(visualTripletTrajector, visualTripletlandmark,
       visualTripletTrVector, visualTripletTrajectorAreaWRTLanmark, visualTripletTrajectorAspectRatio,
       visualTripletLandmarkAspectRatio, visualTripletTrajectorAreaWRTBbox, visualTripletLandmarkAreaWRTBbox, visualTripletIOU,
-      visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage)//,
-      //visualTripletTrLemma, visualTripletLmLemma, visualTripletTrPos, visualTripletLmPos,
-      //visualTripletTrajectorW2V, visualTripletlandmarkW2V)
+      visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage,
+      visualTripletTrajectorW2V, visualTripletlandmarkW2V, visualTripletTrLemma, visualTripletLmLemma,
+      visualTripletTrPos, visualTripletLmPos)
   }
 }
