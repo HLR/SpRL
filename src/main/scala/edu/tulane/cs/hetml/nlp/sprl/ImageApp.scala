@@ -18,7 +18,7 @@ object ImageApp extends App {
 
   val testsegments = CLEFGoogleNETReaderHelper.allSegments.filter(s => {testImages.exists(i=> i.getId==s.getAssociatedImageID)})
 
-//  testsegments.foreach( s=> s )
+  testsegments.foreach( s=> wordClassifierHelper.getScore(s.getExpression, s) )
 //  val readFullData = false
 //
 //  val CLEFDataset = new CLEFImageReader("data/mSprl/saiapr_tc-12", "data/mSprl/saiapr_tc-12/newSprl2017_train.xml",
