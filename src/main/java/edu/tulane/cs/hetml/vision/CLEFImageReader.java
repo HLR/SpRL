@@ -102,7 +102,7 @@ public class CLEFImageReader {
         // Generate Visual Triplet Pairs
         generateVisualTripletSegmentPairs();
         // Save to File
-        //printImageInformation();
+//        printImageInformation();
 
         System.out.println("Total Train Data " + trainingData.size());
 
@@ -608,21 +608,25 @@ public class CLEFImageReader {
 
     private void printImageInformation() throws IOException {
 
-        String path = "data/mSpRL/results/allImageSegments.txt";
+        String path = "data/mSpRL/results/matlabdata.txt";
         printWriterTest = new PrintWriter(path);
 
         for (Image i : testImages) {
+            int count = 0;
             for (Segment s : testSegments) {
                 if (i.getId().equals(s.getAssociatedImageID()))
-                    printWriterTest.println(i.getId() + " " + s.getSegmentId());
+                    count++;
             }
+            printWriterTest.println(i.getId() + " " + count);
         }
 
         for (Image i : trainingImages) {
+            int count = 0;
             for (Segment s : trainingSegments) {
                 if (i.getId().equals(s.getAssociatedImageID()))
-                    printWriterTest.println(i.getId() + " " + s.getSegmentId());
+                    count++;
             }
+            printWriterTest.println(i.getId() + " " + count);
         }
         printWriterTest.close();
     }

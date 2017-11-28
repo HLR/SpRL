@@ -1,7 +1,9 @@
 package edu.tulane.cs.hetml.nlp.sprl
 
+import edu.tulane.cs.hetml.nlp.sprl.Helpers.WordClassifierHelper
 import edu.tulane.cs.hetml.vision._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator.imageDataPath
 
 import scala.collection.JavaConversions._
 
@@ -9,18 +11,20 @@ import scala.collection.JavaConversions._
   */
 object ImageApp extends App {
 
-  val readFullData = false
-  /* Example 1 */
-//  val tensorflowExample1 = new HelloTF
-//  tensorflowExample1.TestGraph()
+  val wordClassifierHelper = new WordClassifierHelper
+  val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
 
-  /* Example 2 */
-//  val tensorflowLableImage = new LabelImage("data/imageModel","data/imageModel/28.jpg")
+  val testImages =  CLEFGoogleNETReaderHelper.testImages.take(2).toList
 
-  val CLEFDataset = new CLEFImageReader("data/mSprl/saiapr_tc-12", "data/mSprl/saiapr_tc-12/newSprl2017_train.xml",
-    "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml", readFullData, false)
+  val testsegments = CLEFGoogleNETReaderHelper.allSegments.filter(s => {testImages.exists(i=> i.getId==s.getAssociatedImageID)})
 
-  visualTriplets.populate(CLEFDataset.testImageTriplets)
+//  testsegments.foreach( s=> s )
+//  val readFullData = false
+//
+//  val CLEFDataset = new CLEFImageReader("data/mSprl/saiapr_tc-12", "data/mSprl/saiapr_tc-12/newSprl2017_train.xml",
+//    "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml", readFullData, false)
+
+  //  visualTriplets.populate(CLEFDataset.testImageTriplets)
 
   //val CLEFAnnotations = new CLEFAlignmentReader("data/annotatedFiles")
 
