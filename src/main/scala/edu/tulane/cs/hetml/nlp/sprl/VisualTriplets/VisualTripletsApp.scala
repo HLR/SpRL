@@ -15,24 +15,24 @@ object VisualTripletsApp extends App {
 
   val flickerTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "Flickr30k.majorityhead")
   val msCocoTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "MSCOCO.originalterm")
-  val isTrain = false
+  val isTrain = true
   val useBinaryClassifier = true
   val classifierDirectory = if (useBinaryClassifier) s"models/mSpRL/VisualTripletsBinarySPClassifier/" else
     s"models/mSpRL/VisualTriplets/"
   val classifierSuffix = "combined_perceptron"
   val trainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
   val testTriplets = flickerTripletReader.testImageTriplets ++ msCocoTripletReader.testImageTriplets
-  val spList = trainTriplets.groupBy(_.getSp.toLowerCase).filter(_._2.size > 0)
-//  trainTriplets.filter(x=> !frequent.contains(x.getSp.toLowerCase()))
-//    .foreach(_.setSp("none"))
-//
-//  testTriplets.filter(x=> !frequent.contains(x.getSp.toLowerCase()))
-//    .foreach(_.setSp("none"))
+  val spList = trainTriplets.groupBy(_.getSp.toLowerCase).filter(_._2.size > 0).keys.toList
+  //  trainTriplets.filter(x=> !frequent.contains(x.getSp.toLowerCase()))
+  //    .foreach(_.setSp("none"))
+  //
+  //  testTriplets.filter(x=> !frequent.contains(x.getSp.toLowerCase()))
+  //    .foreach(_.setSp("none"))
 
 
   if (isTrain) {
 
-    if(!useBinaryClassifier) {
+    if (!useBinaryClassifier) {
       visualTriplets.populate(trainTriplets)
       VisualTripletClassifier.modelSuffix = classifierSuffix
       VisualTripletClassifier.modelDir = classifierDirectory
@@ -41,30 +41,22 @@ object VisualTripletsApp extends App {
       VisualTripletClassifier.test(visualTriplets())
     }
     else {
-      val r = new Random(5)
-      trainTriplets.groupBy(_.getSp.toLowerCase).foreach(t => {
+      visualTriplets.populate(trainTriplets, isTrain)
+      trainTriplets.groupBy(_.getSp.toLowerCase).filter(x => spList.contains(x._1)).foreach(t => {
         val sp = t._1
-        // Negative Examples
-        val negTriplets = trainTriplets.filter(t=> !t.getSp.equalsIgnoreCase(sp))
-        val negExamples = r.shuffle(negTriplets.toList).take(t._2.size * 5)
-
         // Training SP classifiers
-        val examples = t._2 ++ negExamples
-        visualTriplets.populate(examples, isTrain)
-
         val s = new VisualTripletBinarySPClassifier(sp)
         s.modelSuffix = sp
         s.modelDir = classifierDirectory
         s.learn(50)
         println(sp)
-        s.test(examples)
+        s.test(visualTriplets())
         s.save()
-        visualTriplets.clear()
       })
     }
   }
   else {
-    if(!useBinaryClassifier) {
+    if (!useBinaryClassifier) {
       VisualTripletClassifier.modelSuffix = classifierSuffix
       VisualTripletClassifier.modelDir = classifierDirectory
       VisualTripletClassifier.load()
@@ -76,11 +68,11 @@ object VisualTripletsApp extends App {
       ReportHelper.saveEvalResults(outStream, "preposition", results)
     }
     else {
-      //visualTriplets.populate(testTriplets, isTrain)
+      visualTriplets.populate(testTriplets, isTrain)
       testTriplets.groupBy(_.getSp.toLowerCase).foreach(t => {
         val sp = t._1
-        if(spList.contains(sp.toLowerCase())) {
-          visualTriplets.populate(t._2, isTrain)
+        if (spList.contains(sp.toLowerCase())) {
+          //visualTriplets.populate(t._2, isTrain)
           val s = new VisualTripletBinarySPClassifier(sp)
           s.modelSuffix = sp
           s.modelDir = classifierDirectory
@@ -89,7 +81,7 @@ object VisualTripletsApp extends App {
           val results = s.test()
           val outStream = new FileOutputStream(s"data/mSprl/results/preposition-binary-prediction-${sp}.txt")
           ReportHelper.saveEvalResults(outStream, "binary-preposition", results)
-          visualTriplets.clear()
+          //visualTriplets.clear()
         }
       })
     }
