@@ -16,7 +16,7 @@ object VisualTripletsApp extends App {
   val flickerTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "Flickr30k.majorityhead")
   val msCocoTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "MSCOCO.originalterm")
   val isTrain = true
-  val useBinaryClassifier = true
+  val useBinaryClassifier = false
   val classifierDirectory = if (useBinaryClassifier) s"models/mSpRL/VisualTripletsBinarySPClassifier/" else
     s"models/mSpRL/VisualTriplets/"
   val classifierSuffix = "combined_perceptron"

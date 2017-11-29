@@ -15,7 +15,7 @@ object VisualTripletClassifiers {
       visualTripletTrVector, visualTripletTrajectorAreaWRTLanmark, visualTripletTrajectorAspectRatio,
       visualTripletLandmarkAspectRatio, visualTripletTrajectorAreaWRTBbox, visualTripletLandmarkAreaWRTBbox, visualTripletIOU,
       visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage,
-      //visualTripletTrLemma, visualTripletLmLemma, visualTripletTrPos, visualTripletLmPos
+      //visualTripletTrLemma, visualTripletLmLemma, visualTripletTrPos, visualTripletLmPos,
       visualTripletTrajectorW2V, visualTripletlandmarkW2V)
   }
 

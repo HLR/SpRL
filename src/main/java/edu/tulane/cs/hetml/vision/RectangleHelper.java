@@ -58,6 +58,22 @@ public class RectangleHelper {
         return Math.sqrt(xSqr + ySqr);
     }
 
+    public static double getAbove(Rectangle2D trBox, Rectangle2D lmBox, double height) {
+        return Math.max(0, (lmBox.getY()- trBox.getY()) / height);
+    }
+
+    public static double getBelow(Rectangle2D trBox, Rectangle2D lmBox, double height) {
+        return Math.max(0, (trBox.getY() - lmBox.getY()) / height);
+    }
+
+    public static double getLeft(Rectangle2D trBox, Rectangle2D lmBox, double width) {
+        return Math.max(0, (trBox.getX() - lmBox.getX()) / width);
+    }
+
+    public static double getRight(Rectangle2D trBox, Rectangle2D lmBox, double width) {
+        return Math.max(0, (lmBox.getX() - trBox.getX()) / width);
+    }
+
     public static Rectangle2D parseRectangle(String s, String delimeter) {
         String[] parts = s.split(delimeter);
 

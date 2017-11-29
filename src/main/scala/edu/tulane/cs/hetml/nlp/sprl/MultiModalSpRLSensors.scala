@@ -87,7 +87,7 @@ object MultiModalSpRLSensors {
 
   val matchingCandidates = List("NN", "JJR", "JJ", "NNP", "NNS")
 
-  val alignmentHelper = new WordClassifierHelper()
+  lazy val alignmentHelper = new WordClassifierHelper()
   def segmentToSegmentPhrasePairs(s: Segment): List[Relation] = {
     val image = images().filter(i => i.getId == s.getAssociatedImageID)
     val phrases = (images(image) ~> -documentToImage ~> documentToSentence ~> sentenceToPhrase)
