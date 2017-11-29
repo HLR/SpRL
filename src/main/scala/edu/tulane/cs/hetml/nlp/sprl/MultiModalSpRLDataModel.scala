@@ -8,6 +8,8 @@ import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
 import edu.tulane.cs.hetml.vision._
 
+import scala.collection.mutable.ListBuffer
+
 /** Created by Taher on 2017-01-11.
   */
 object MultiModalSpRLDataModel extends DataModel {
@@ -227,7 +229,7 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val matchingSegmentFeatures = property(phrases, cache = true, ordered = true) {
     p: Phrase =>
-      val segId = p.getPropertyFirstValue("alignedSegment")
+      val segId = p.getPropertyFirstValue("bestAlignment")
       if (segId != null) {
         val seg = (phrases(p) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
           .find(_.getSegmentId.toString.equalsIgnoreCase(segId))
@@ -250,12 +252,16 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val matchingSegment = property(phrases, cache = true) {
     p: Phrase =>
-      val seg = p.getPropertyFirstValue("alignedSegment")
+      val seg = p.getPropertyFirstValue("bestAlignment")
       if (seg == null) "" else seg
   }
 
   val similarityToMatchingSegment = property(phrases, cache = true) {
-    p: Phrase => if (p.containsProperty("alignedSegment")) 1.0 else 0.0
+    p: Phrase =>
+      if (p.containsProperty("bestAlignmentScore"))
+        p.getPropertyFirstValue("bestAlignmentScore").toDouble
+      else
+        0.0
   }
 
   val isImageConceptExactMatch = property(phrases, cache = true) {
@@ -682,8 +688,8 @@ object MultiModalSpRLDataModel extends DataModel {
   val tripletMatchingSegmentRelations = property(triplets, cache = true) {
     r: Relation =>
       val (first, _, third) = getTripletArguments(r)
-      val trSegId = first.getPropertyFirstValue("alignedSegment")
-      val lmSegId = third.getPropertyFirstValue("alignedSegment")
+      val trSegId = first.getPropertyFirstValue("bestAlignment")
+      val lmSegId = third.getPropertyFirstValue("bestAlignment")
       if (trSegId != null && lmSegId != null) {
         val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
           .find(_.getSegmentId.toString.equalsIgnoreCase(trSegId))
@@ -744,8 +750,8 @@ object MultiModalSpRLDataModel extends DataModel {
   val tripletMatchingSegmentFeatures = property(triplets, cache = true) {
     r: Relation =>
       val (first, _, third) = getTripletArguments(r)
-      val trSegId = first.getPropertyFirstValue("alignedSegment")
-      val lmSegId = third.getPropertyFirstValue("alignedSegment")
+      val trSegId = first.getPropertyFirstValue("bestAlignment")
+      val lmSegId = third.getPropertyFirstValue("bestAlignment")
       if (trSegId != null && lmSegId != null) {
         val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
           .find(_.getSegmentId.toString.equalsIgnoreCase(trSegId))

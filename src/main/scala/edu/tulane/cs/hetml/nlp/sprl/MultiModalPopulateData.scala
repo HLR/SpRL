@@ -9,6 +9,7 @@ import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel
 import mSpRLConfigurator._
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ListBuffer
 
 /** Created by Taher on 2017-02-12.
   */
@@ -54,11 +55,14 @@ object MultiModalPopulateData extends Logging {
     //    }
 
     alignmentReader.setAlignments(phraseInstances)
+
     if (populateImages) {
       images.populate(imageReader.getImageList, isTrain)
       segments.populate(imageReader.getSegmentList, isTrain)
       segmentRelations.populate(imageReader.getImageRelationList, isTrain)
       visualTriplets.populate(imageReader.getVisualTripletList, isTrain)
+
+      setBestAlignment
     }
 
     logger.info("Role population finished.")
@@ -140,5 +144,35 @@ object MultiModalPopulateData extends Logging {
 
     logger.info("Data population finished.")
   }
+
+  private def setBestAlignment() = {
+    alignmentMethod match {
+      case "gold" =>
+        phrases().foreach(p => {
+          if (p.containsProperty("goldAlignment")) {
+            p.addPropertyValue("bestAlignment", p.getPropertyFirstValue("goldAlignment"))
+            p.addPropertyValue("bestAlignmentScore", "1.0")
+          }
+        })
+      case _ =>
+        sentences().foreach(s => {
+          val phraseSegments = (sentences(s) ~> sentenceToPhrase)
+            .toList.flatMap(p => (phrases(p) ~> -segmentPhrasePairToPhrase).toList)
+            .sortBy(x => x.getProperty("similarity").toDouble).reverse
+          val usedSegments = ListBuffer[String]()
+          val usedPhrases = ListBuffer[String]()
+          phraseSegments.foreach(pair => {
+            if (!usedPhrases.contains(pair.getArgumentId(0)) && !usedSegments.contains(pair.getArgumentId(1))) {
+              usedPhrases.add(pair.getArgumentId(0))
+              usedSegments.add(pair.getArgumentId(1))
+              val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
+              p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
+              p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
+            }
+          })
+        })
+    }
+  }
+
 }
 

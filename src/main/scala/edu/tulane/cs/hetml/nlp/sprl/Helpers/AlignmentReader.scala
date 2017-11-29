@@ -49,7 +49,7 @@ class AlignmentReader(annotationDir: String, textDir: String) {
 
                     segments.foreach({
                       x =>
-                        phrase.head.addPropertyValue("alignedSegment", x(3))
+                        phrase.head.addPropertyValue("goldAlignment", x(3))
                     })
                 }
               }

@@ -26,14 +26,14 @@ class WordClassifierHelper {
     val imgSegs = allsegments.filter(s=> s.getAssociatedImageID==segment.getAssociatedImageID)
 
     //Create all possible combinations M x N
-    val segPairs = phrase.split(" ").flatMap(tok => {
+    val segPairs = phrase.split(" ").distinct.flatMap(tok => {
       imgSegs.map(is => {
         new WordSegment(tok, is, false, false, "")
       })
     }).toList
     val scoreVector = computeMatrix(segPairs)
     if (segment.getSegmentId <= scoreVector.size) {
-      scoreVector.indexOf(segment.getSegmentId - 1)
+      scoreVector(segment.getSegmentId - 1)
     } else {
       println("Warning: Mismatched Segment Id")
       0.0
