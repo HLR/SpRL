@@ -29,7 +29,6 @@ public class ImageTriplet {
     private double left;
     private double right;
 
-
     public ImageTriplet(String sp, String trajector, String landmark, Rectangle2D trBox, Rectangle2D lmBox, double imageWidth,
                         double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
                         double lmAspectRatio, double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance,
@@ -187,5 +186,37 @@ public class ImageTriplet {
 
     public void setLandmark(String landmark) {
         this.landmark = landmark;
+    }
+
+    public double getAbove() {
+        return above;
+    }
+
+    public void setAbove(double above) {
+        this.above = above;
+    }
+
+    public double getBelow() {
+        return below;
+    }
+
+    public void setBelow(double below) {
+        this.below = below;
+    }
+
+    public double getLeft() {
+        return left;
+    }
+
+    public void setLeft(double left) {
+        this.left = left;
+    }
+
+    public double getRight() {
+        return right;
+    }
+
+    public void setRight(double right) {
+        this.right = right;
     }
 }

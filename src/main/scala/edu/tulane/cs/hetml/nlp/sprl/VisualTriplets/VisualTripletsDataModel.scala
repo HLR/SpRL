@@ -104,6 +104,26 @@ object VisualTripletsDataModel extends DataModel {
       t.getLmAreaImage
   }
 
+  val visualTripletAbove = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getAbove
+  }
+
+  val visualTripletBelow = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getBelow
+  }
+
+  val visualTripletLeft = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getLeft
+  }
+
+  val visualTripletRight = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getRight
+  }
+
   val visualTripletTrPos = property(visualTriplets, cache = true) {
     t: ImageTriplet =>
       val w = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).toList.minBy(_.getStart)
@@ -133,4 +153,5 @@ object VisualTripletsDataModel extends DataModel {
       val w = tokens.maxBy(_.getStart)
       getLemma(w).mkString
   }
+
 }
