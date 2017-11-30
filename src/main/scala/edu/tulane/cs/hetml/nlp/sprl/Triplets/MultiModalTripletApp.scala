@@ -106,13 +106,14 @@ object MultiModalTripletApp extends App with Logging {
     TripletDirectionClassifier.save()
     TripletImageRegionClassifier.save()
 
-    if(fineTunePrepositionClassifier) {
+    if (fineTunePrepositionClassifier) {
       val classifierDirectory = s"models/mSpRL/VisualTriplets/"
       val classifierSuffix = "combined_perceptron"
       VisualTripletClassifier.modelSuffix = classifierSuffix
       VisualTripletClassifier.modelDir = classifierDirectory
       VisualTripletClassifier.load()
-      val visualTriplets = (triplets() ~> tripletToVisualTriplet).toList
+      val visualTriplets = (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
+      VisualTripletClassifier.test(visualTriplets)
       VisualTripletClassifier.learn(10)
       VisualTripletClassifier.test(visualTriplets)
       VisualTripletClassifier.modelSuffix += "_tuned"
