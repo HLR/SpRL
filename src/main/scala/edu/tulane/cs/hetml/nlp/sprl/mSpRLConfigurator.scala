@@ -16,7 +16,7 @@ object mSpRLConfigurator {
   val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//"data/TrainSet.xml"
   val suffix = ""
   val model = FeatureSets.BaseLineWithImage
-  var isTrain = false
+  var isTrain = true
   val useAnntotatedClef = true
   val jointTrain = false
   val skipIndividualClassifiersTraining = false  /* When using joint train, it will ignore individual classifiers
@@ -24,7 +24,7 @@ object mSpRLConfigurator {
   val iterations = 50
   val useConstraints = true
   val fineTunePrepositionClassifier = true
-  val alignmentMethod = "gold" // possible values: "classifier" "gold", "w2v"
+  val alignmentMethod = "w2v" // possible values: "classifier" "gold", "w2v"
   val imageConstraints = model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val populateImages = true //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val globalSpans = false // set true when dataset has global spans for roles

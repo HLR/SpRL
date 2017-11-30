@@ -24,12 +24,16 @@ public class ImageTriplet {
     private double euclideanDistance; // F6
     private double trAreaImage; // F7
     private double lmAreaImage; // F7
+    private double above;
+    private double below;
+    private double left;
+    private double right;
+
 
     public ImageTriplet(String sp, String trajector, String landmark, Rectangle2D trBox, Rectangle2D lmBox, double imageWidth,
                         double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
-                        double lmAspectRatio,
-                        double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance, double trAreaImage,
-                        double lmAreaImage) {
+                        double lmAspectRatio, double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance,
+                        double trAreaImage, double lmAreaImage, double above, double below, double left, double right) {
         this.setSp(sp);
         this.setTrajector(trajector);
         this.setLandmark(landmark);
@@ -48,6 +52,10 @@ public class ImageTriplet {
         this.euclideanDistance = euclideanDistance;
         this.trAreaImage = trAreaImage;
         this.lmAreaImage = lmAreaImage;
+        this.above = above;
+        this.below = below;
+        this.left = left;
+        this.right = right;
     }
 
     public ImageTriplet(String imageId, int firstSegId, int secondSegId, Rectangle2D trBox, Rectangle2D lmBox,
