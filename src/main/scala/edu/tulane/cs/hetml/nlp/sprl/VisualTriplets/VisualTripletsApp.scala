@@ -30,15 +30,16 @@ object VisualTripletsApp extends App {
   //    .foreach(_.setSp("none"))
 
 
+  val visualClassifier = new VisualTripletClassifiers.VisualTripletClassifier()
   if (isTrain) {
 
     if (!useBinaryClassifier) {
       visualTriplets.populate(trainTriplets)
-      VisualTripletClassifier.modelSuffix = classifierSuffix
-      VisualTripletClassifier.modelDir = classifierDirectory
-      VisualTripletClassifier.learn(50)
-      VisualTripletClassifier.save()
-      VisualTripletClassifier.test(visualTriplets())
+      visualClassifier.modelSuffix = classifierSuffix
+      visualClassifier.modelDir = classifierDirectory
+      visualClassifier.learn(50)
+      visualClassifier.save()
+      visualClassifier.test(visualTriplets())
     }
     else {
       visualTriplets.populate(trainTriplets, isTrain)
@@ -57,13 +58,13 @@ object VisualTripletsApp extends App {
   }
   else {
     if (!useBinaryClassifier) {
-      VisualTripletClassifier.modelSuffix = classifierSuffix
-      VisualTripletClassifier.modelDir = classifierDirectory
-      VisualTripletClassifier.load()
+      visualClassifier.modelSuffix = classifierSuffix
+      visualClassifier.modelDir = classifierDirectory
+      visualClassifier.load()
 
       visualTriplets.populate(testTriplets, isTrain)
 
-      val results = VisualTripletClassifier.test()
+      val results = visualClassifier.test()
       val outStream = new FileOutputStream(s"data/mSprl/results/preposition-prediction-${classifierSuffix}.txt")
       ReportHelper.saveEvalResults(outStream, "preposition", results)
     }

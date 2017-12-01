@@ -21,11 +21,12 @@ object MultiModalSpRLDataModel extends DataModel {
   dummyPhrase.addPropertyValue("LANDMARK_id", dummyPhrase.getId)
   val undefined = "[undefined]"
 
-  val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-  val classifierSuffix = "combined_perceptron_tuned"
-  VisualTripletClassifier.modelSuffix = classifierSuffix
-  VisualTripletClassifier.modelDir = classifierDirectory
-  VisualTripletClassifier.load()
+  private val classifierDirectory = s"models/mSpRL/VisualTriplets/"
+  private val classifierSuffix = "combined_perceptron_tuned"
+  private val visualTripletClassifier = new VisualTripletClassifier()
+  visualTripletClassifier.modelSuffix = classifierSuffix
+  visualTripletClassifier.modelDir = classifierDirectory
+  visualTripletClassifier.load()
 
   var useVectorAverages = false
 
@@ -727,11 +728,11 @@ object MultiModalSpRLDataModel extends DataModel {
     r: Relation =>
       val aligned = triplets(r) ~> tripletToVisualTriplet
       if (aligned.nonEmpty) {
-        val x = VisualTripletClassifier.classifier.scores(aligned.head)
+        val x = visualTripletClassifier.classifier.scores(aligned.head)
         if (x.toArray.exists(_.score.isNaN))
           "-"
         else
-          VisualTripletClassifier(aligned.head)
+          visualTripletClassifier(aligned.head)
       }
       else
         "-"
@@ -991,7 +992,7 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
   def getImageSpScores(r: ImageTriplet) = {
-    val x = VisualTripletClassifier.classifier.scores(r)
+    val x = visualTripletClassifier.classifier.scores(r)
     val min = x.toArray.map(_.score).min
     val sum = x.toArray.map(_.score - min).sum
     val scores = x.toArray.sortBy(_.score * -1).map(y => (y.value, (y.score - min) / sum))

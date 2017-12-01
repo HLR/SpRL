@@ -6,7 +6,7 @@ import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel._
 
 object VisualTripletClassifiers {
 
-  object VisualTripletClassifier extends Learnable(visualTriplets) {
+  class VisualTripletClassifier extends Learnable(visualTriplets) {
     def label = visualTripletLabel
 
     override lazy val classifier = new SparseNetworkLearner()

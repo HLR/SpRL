@@ -147,6 +147,7 @@ object TripletSentenceLevelConstraints {
       a
   }
 
+  val visualTripletClassifier = new VisualTripletClassifiers.VisualTripletClassifier()
   val boostTripletByImageTriplet = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
@@ -154,7 +155,7 @@ object TripletSentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and (
-            (VisualTripletClassifiers.VisualTripletClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "region")
+            (visualTripletClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "region")
             )
       }
       a

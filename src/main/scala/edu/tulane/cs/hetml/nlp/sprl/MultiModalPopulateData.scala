@@ -1,5 +1,7 @@
 package edu.tulane.cs.hetml.nlp.sprl
 
+import java.io.PrintStream
+
 import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel.{triplets, _}
 import edu.tulane.cs.hetml.nlp.BaseTypes._
@@ -62,9 +64,23 @@ object MultiModalPopulateData extends Logging {
       segmentRelations.populate(imageReader.getImageRelationList, isTrain)
       visualTriplets.populate(imageReader.getVisualTripletList, isTrain)
 
-      setBestAlignment
+      setBestAlignment()
     }
 
+    val suffix = if (isTrain) "train" else "gold"
+    val writer = new PrintStream(s"$resultsDir/alignments_$suffix.txt")
+    val docAlignments = phraseInstances.filter(x => x.containsProperty("goldAlignment")).groupBy(x => x.getDocument)
+    docAlignments.foreach {
+      case (doc, phraseList) =>
+        val imageId = (documents(doc) ~> documentToImage).head.getId
+        val imFolder = doc.getId.split(Array('.', '/'))(1)
+        phraseList.foreach {
+          p =>
+            writer.println(s"$imFolder\t\t$imageId\t\t${p.getSentence.getId}\t\t${p.getSentence.getText}\t\t" +
+              s"${p.getStart}\t\t${p.getEnd}\t\t${p.getText}\t\t")
+        }
+    }
+    writer.close()
     logger.info("Role population finished.")
   }
 
@@ -101,7 +117,6 @@ object MultiModalPopulateData extends Logging {
     triplets.populate(candidateRelations, isTrain)
 
     xmlReader.setTripletRelationTypes(candidateRelations)
-
     logger.info("Triplet population finished.")
   }
 
@@ -129,6 +144,25 @@ object MultiModalPopulateData extends Logging {
 
     VisualTripletsDataModel.visualTriplets.populate(visualTriplets, isTrain)
 
+    val rels = xmlReader.getTripletsWithArguments()
+    val suffix = if (isTrain) "train" else "gold"
+    val writer = new PrintStream(s"$resultsDir/flat_relation_roles_$suffix.txt")
+
+    rels.foreach {
+      r =>
+        val sent = r.getParent.asInstanceOf[Sentence]
+        val tr = r.getArgument(0)
+        val sp = r.getArgument(1)
+        val lm = if (r.getArgument(2) != null) r.getArgument(2) else dummyPhrase
+        val imId = sent.getDocument.getId.split(Array('.', '/'))(2)
+        val imFolder = sent.getDocument.getId.split(Array('.', '/'))(1)
+
+        writer.println(s"$imFolder\t\t$imId\t\t${sent.getId}" +
+          s"\t\t${tr.getStart}\t\t${tr.getEnd}\t\t${tr.getText}" +
+          s"\t\t${sp.getStart}\t\t${sp.getEnd}\t\t${sp.getText}" +
+          s"\t\t${lm.getStart}\t\t${lm.getEnd}\t\t${lm.getText}")
+    }
+    writer.close()
     logger.info("Triplet population finished.")
   }
 
@@ -171,8 +205,10 @@ object MultiModalPopulateData extends Logging {
               usedPhrases.add(pair.getArgumentId(0))
               usedSegments.add(pair.getArgumentId(1))
               val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
-              p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
-              p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
+              if (pair.getProperty("similarity").toDouble > 0.3) {
+                p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
+                p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
+              }
             }
           })
         })
