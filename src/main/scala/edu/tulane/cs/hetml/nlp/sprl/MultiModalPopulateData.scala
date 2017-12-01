@@ -124,8 +124,10 @@ object MultiModalPopulateData extends Logging {
     val visualTriplets =
       if (isTrain)
         (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
+          .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
       else
         (triplets() ~> tripletToVisualTriplet).toList
+          .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
 
     VisualTripletsDataModel.visualTriplets.populate(visualTriplets, isTrain)
 
@@ -171,8 +173,10 @@ object MultiModalPopulateData extends Logging {
               usedPhrases.add(pair.getArgumentId(0))
               usedSegments.add(pair.getArgumentId(1))
               val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
-              p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
-              p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
+              if(pair.getProperty("similarity").toDouble > 0.30) {
+                p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
+                p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
+              }
             }
           })
         })

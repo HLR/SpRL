@@ -80,42 +80,48 @@ object MultiModalTripletApp extends App with Logging {
       x => lmCandidatesTrain.exists(_.getId == x.getId)
     )
 
-    TripletRelationClassifier.learn(iterations)
-    TripletRelationClassifier.test(triplets())
-
-    TripletGeneralTypeClassifier.learn(iterations)
-    TripletGeneralTypeClassifier.test(triplets())
-
-    TripletSpecificTypeClassifier.learn(iterations)
-    //TripletSpecificTypeClassifier.test(triplets())
-
-    TripletRegionClassifier.learn(iterations)
-    TripletRegionClassifier.test(triplets())
-
-    TripletDirectionClassifier.learn(iterations)
-    TripletDirectionClassifier.test(triplets())
-
-    TripletImageRegionClassifier.learn(iterations)
-    TripletImageRegionClassifier.test(triplets())
-
-
-    TripletRelationClassifier.save()
-    TripletGeneralTypeClassifier.save()
-    TripletSpecificTypeClassifier.save()
-    TripletRegionClassifier.save()
-    TripletDirectionClassifier.save()
-    TripletImageRegionClassifier.save()
+//    TripletRelationClassifier.learn(iterations)
+//    TripletRelationClassifier.test(triplets())
+//
+//    TripletGeneralTypeClassifier.learn(iterations)
+//    TripletGeneralTypeClassifier.test(triplets())
+//
+//    TripletSpecificTypeClassifier.learn(iterations)
+//    //TripletSpecificTypeClassifier.test(triplets())
+//
+//    TripletRegionClassifier.learn(iterations)
+//    TripletRegionClassifier.test(triplets())
+//
+//    TripletDirectionClassifier.learn(iterations)
+//    TripletDirectionClassifier.test(triplets())
+//
+//    TripletImageRegionClassifier.learn(iterations)
+//    TripletImageRegionClassifier.test(triplets())
+//
+//
+//    TripletRelationClassifier.save()
+//    TripletGeneralTypeClassifier.save()
+//    TripletSpecificTypeClassifier.save()
+//    TripletRegionClassifier.save()
+//    TripletDirectionClassifier.save()
+//    TripletImageRegionClassifier.save()
 
     if (fineTunePrepositionClassifier) {
       val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-      val classifierSuffix = "combined_perceptron"
+      val classifierSuffix = "frequent_clefsp_perceptron"
       VisualTripletClassifier.modelSuffix = classifierSuffix
       VisualTripletClassifier.modelDir = classifierDirectory
-      VisualTripletClassifier.load()
-      val visualTriplets = (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-      VisualTripletClassifier.test(visualTriplets)
-      VisualTripletClassifier.learn(10)
-      VisualTripletClassifier.test(visualTriplets)
+      //VisualTripletClassifier.load()
+      //VisualTripletClassifier.test(visualTriplets)
+      val t = VisualTripletsDataModel.visualTriplets().toList
+      val trs = t.map(x=> VisualTripletsDataModel.visualTripletTrajector(x))
+      val lms = t.map(x=> VisualTripletsDataModel.visualTripletlandmark(x))
+      VisualTripletClassifier.learn(50)
+
+      val outStream = new FileOutputStream(s"$resultsDir/clefprep.txt", false)
+      val trainVT = VisualTripletClassifier.test(t)
+      ReportHelper.saveEvalResults(outStream, "CLEF Prep", trainVT)
+
       VisualTripletClassifier.modelSuffix += "_tuned"
       VisualTripletClassifier.save()
     }
@@ -136,7 +142,7 @@ object MultiModalTripletApp extends App with Logging {
     TripletImageRegionClassifier.load()
 
     val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-    val classifierSuffix = "combined_perceptron_tuned"
+    val classifierSuffix = "frequent_clefsp_perceptron" //"frequent_clefsp_perceptron_tuned"
     VisualTripletClassifier.modelSuffix = classifierSuffix
     VisualTripletClassifier.modelDir = classifierDirectory
     VisualTripletClassifier.load()
@@ -170,43 +176,45 @@ object MultiModalTripletApp extends App with Logging {
 
       //ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
 
-      val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
+//      val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
 
-      val tr = TrajectorRoleClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Trajector(within data model)", tr)
+//      val tr = TrajectorRoleClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Trajector(within data model)", tr)
+//
+//      val sp = IndicatorRoleClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Spatial Indicator(within data model)", sp)
+//
+//      val lm = LandmarkRoleClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Landmark(within data model)", lm)
+//
+//      val relation = TripletRelationClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Relation(within data model)", relation)
+//
+//      val general = TripletGeneralTypeClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "General(within data model)", general)
+//
+//      val direction = TripletDirectionClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Direction(within data model)", direction)
+//
+//      val region = TripletRegionClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
+//
+//      val imRegion = TripletImageRegionClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Image Region(within data model)", imRegion)
 
-      val sp = IndicatorRoleClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Spatial Indicator(within data model)", sp)
+      VisualTripletClassifier.test()
 
-      val lm = LandmarkRoleClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Landmark(within data model)", lm)
+//      val visual = VisualTripletClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Visual triplet(within data model)", visual)
 
-      val relation = TripletRelationClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Relation(within data model)", relation)
-
-      val general = TripletGeneralTypeClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "General(within data model)", general)
-
-      val direction = TripletDirectionClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Direction(within data model)", direction)
-
-      val region = TripletRegionClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
-
-      val imRegion = TripletImageRegionClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Image Region(within data model)", imRegion)
-
-      val visual = VisualTripletClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Visual triplet(within data model)", visual)
-
-      report(x => TripletRelationClassifier(x),
-        x => TrajectorRoleClassifier(x),
-        x => LandmarkRoleClassifier(x),
-        x => IndicatorRoleClassifier(x),
-        x => TripletGeneralTypeClassifier(x),
-        x => TripletDirectionClassifier(x),
-        x => TripletRegionClassifier(x)
-      )
+//      report(x => TripletRelationClassifier(x),
+//        x => TrajectorRoleClassifier(x),
+//        x => LandmarkRoleClassifier(x),
+//        x => IndicatorRoleClassifier(x),
+//        x => TripletGeneralTypeClassifier(x),
+//        x => TripletDirectionClassifier(x),
+//        x => TripletRegionClassifier(x)
+//      )
     }
     else {
 

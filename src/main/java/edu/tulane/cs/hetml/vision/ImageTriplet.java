@@ -60,7 +60,7 @@ public class ImageTriplet {
     public ImageTriplet(String imageId, int firstSegId, int secondSegId, Rectangle2D trBox, Rectangle2D lmBox,
                         double imageWidth, double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
                         double lmAspectRatio, double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance,
-                        double trAreaImage, double lmAreaImage) {
+                        double trAreaImage, double lmAreaImage, double above, double below, double left, double right) {
         this.setImageId(imageId);
         this.setFirstSegId(firstSegId);
         this.setSecondSegId(secondSegId);
@@ -79,6 +79,10 @@ public class ImageTriplet {
         this.euclideanDistance = euclideanDistance;
         this.trAreaImage = trAreaImage;
         this.lmAreaImage = lmAreaImage;
+        this.above = above;
+        this.below = below;
+        this.left = left;
+        this.right = right;
     }
 
     public String getSp() {

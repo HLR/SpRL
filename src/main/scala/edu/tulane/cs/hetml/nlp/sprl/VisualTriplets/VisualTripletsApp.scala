@@ -19,10 +19,20 @@ object VisualTripletsApp extends App {
   val useBinaryClassifier = false
   val classifierDirectory = if (useBinaryClassifier) s"models/mSpRL/VisualTripletsBinarySPClassifier/" else
     s"models/mSpRL/VisualTriplets/"
-  val classifierSuffix = "combined_perceptron"
-  val trainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
-  val testTriplets = flickerTripletReader.testImageTriplets ++ msCocoTripletReader.testImageTriplets
-  val spList = trainTriplets.groupBy(_.getSp.toLowerCase).filter(_._2.size > 0).keys.toList
+  val classifierSuffix = "frequent_clefsp_perceptron"
+//  val trainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
+//  val testTriplets = flickerTripletReader.testImageTriplets ++ msCocoTripletReader.testImageTriplets
+  val allCombinedTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets ++
+    flickerTripletReader.testImageTriplets ++ msCocoTripletReader.testImageTriplets
+  val frequentClefSpList = List("on", "in", "at", "above", "in_front_of", "behind", "next_to")
+
+//  val frequentClefSp = allCombinedTriplets.groupBy(_.getSp.toLowerCase).filter(x => {
+//    frequentClefSpList.contains(x._1.toLowerCase) })
+  val frequentClefSp = allCombinedTriplets.filter(x => { frequentClefSpList.contains(x.getSp.toLowerCase) })
+
+//  frequentClefSp.groupBy(_.getSp.toLowerCase).foreach(x => {
+//   println(x._1 + "->" + x._2.size)
+//  })
   //  trainTriplets.filter(x=> !frequent.contains(x.getSp.toLowerCase()))
   //    .foreach(_.setSp("none"))
   //
@@ -33,7 +43,7 @@ object VisualTripletsApp extends App {
   if (isTrain) {
 
     if (!useBinaryClassifier) {
-      visualTriplets.populate(trainTriplets)
+      visualTriplets.populate(frequentClefSp)
       VisualTripletClassifier.modelSuffix = classifierSuffix
       VisualTripletClassifier.modelDir = classifierDirectory
       VisualTripletClassifier.learn(50)
@@ -41,49 +51,49 @@ object VisualTripletsApp extends App {
       VisualTripletClassifier.test(visualTriplets())
     }
     else {
-      visualTriplets.populate(trainTriplets, isTrain)
-      trainTriplets.groupBy(_.getSp.toLowerCase).filter(x => spList.contains(x._1)).foreach(t => {
-        val sp = t._1
-        // Training SP classifiers
-        val s = new VisualTripletBinarySPClassifier(sp)
-        s.modelSuffix = sp
-        s.modelDir = classifierDirectory
-        s.learn(50)
-        println(sp)
-        s.test(visualTriplets())
-        s.save()
-      })
+//      visualTriplets.populate(trainTriplets, isTrain)
+//      trainTriplets.groupBy(_.getSp.toLowerCase).filter(x => spList.contains(x._1)).foreach(t => {
+//        val sp = t._1
+//        // Training SP classifiers
+//        val s = new VisualTripletBinarySPClassifier(sp)
+//        s.modelSuffix = sp
+//        s.modelDir = classifierDirectory
+//        s.learn(50)
+//        println(sp)
+//        s.test(visualTriplets())
+//        s.save()
+//      })
     }
   }
   else {
     if (!useBinaryClassifier) {
-      VisualTripletClassifier.modelSuffix = classifierSuffix
-      VisualTripletClassifier.modelDir = classifierDirectory
-      VisualTripletClassifier.load()
-
-      visualTriplets.populate(testTriplets, isTrain)
-
-      val results = VisualTripletClassifier.test()
-      val outStream = new FileOutputStream(s"data/mSprl/results/preposition-prediction-${classifierSuffix}.txt")
-      ReportHelper.saveEvalResults(outStream, "preposition", results)
+//      VisualTripletClassifier.modelSuffix = classifierSuffix
+//      VisualTripletClassifier.modelDir = classifierDirectory
+//      VisualTripletClassifier.load()
+//
+//      visualTriplets.populate(testTriplets, isTrain)
+//
+//      val results = VisualTripletClassifier.test()
+//      val outStream = new FileOutputStream(s"data/mSprl/results/preposition-prediction-${classifierSuffix}.txt")
+//      ReportHelper.saveEvalResults(outStream, "preposition", results)
     }
     else {
-      visualTriplets.populate(testTriplets, isTrain)
-      testTriplets.groupBy(_.getSp.toLowerCase).foreach(t => {
-        val sp = t._1
-        if (spList.contains(sp.toLowerCase())) {
-          //visualTriplets.populate(t._2, isTrain)
-          val s = new VisualTripletBinarySPClassifier(sp)
-          s.modelSuffix = sp
-          s.modelDir = classifierDirectory
-          s.load()
-          println(sp)
-          val results = s.test()
-          val outStream = new FileOutputStream(s"data/mSprl/results/preposition-binary-prediction-${sp}.txt")
-          ReportHelper.saveEvalResults(outStream, "binary-preposition", results)
-          //visualTriplets.clear()
-        }
-      })
+//      visualTriplets.populate(testTriplets, isTrain)
+//      testTriplets.groupBy(_.getSp.toLowerCase).foreach(t => {
+//        val sp = t._1
+//        if (spList.contains(sp.toLowerCase())) {
+//          //visualTriplets.populate(t._2, isTrain)
+//          val s = new VisualTripletBinarySPClassifier(sp)
+//          s.modelSuffix = sp
+//          s.modelDir = classifierDirectory
+//          s.load()
+//          println(sp)
+//          val results = s.test()
+//          val outStream = new FileOutputStream(s"data/mSprl/results/preposition-binary-prediction-${sp}.txt")
+//          ReportHelper.saveEvalResults(outStream, "binary-preposition", results)
+//          //visualTriplets.clear()
+//        }
+//      })
     }
   }
 }
