@@ -11,13 +11,13 @@ object VisualTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = List(visualTripletTrajector, visualTripletlandmark//,
-//      visualTripletTrVector, visualTripletTrajectorAreaWRTLanmark, visualTripletTrajectorAspectRatio,
-//      visualTripletLandmarkAspectRatio, visualTripletTrajectorAreaWRTBbox, visualTripletLandmarkAreaWRTBbox, visualTripletIOU,
-//      visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage,
-//      visualTripletBelow, visualTripletAbove, visualTripletLeft, visualTripletRight,
-//      visualTripletTrLemma, visualTripletLmLemma, visualTripletTrPos, visualTripletLmPos,
-//      visualTripletTrajectorW2V, visualTripletlandmarkW2V
+    override def feature = List(visualTripletTrajector, visualTripletlandmark,
+      visualTripletTrVector, visualTripletTrajectorAreaWRTLanmark, visualTripletTrajectorAspectRatio,
+      visualTripletLandmarkAspectRatio, visualTripletTrajectorAreaWRTBbox, visualTripletLandmarkAreaWRTBbox, visualTripletIOU,
+      visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage,
+      visualTripletBelow, visualTripletAbove, visualTripletLeft, visualTripletRight, visualTripletUnion, visualTripletIntersection
+      //visualTripletTrLemma, visualTripletLmLemma, visualTripletTrPos, visualTripletLmPos,
+      //visualTripletTrajectorW2V, visualTripletlandmarkW2V
     )
   }
 

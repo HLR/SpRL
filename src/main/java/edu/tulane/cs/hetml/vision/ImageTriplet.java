@@ -28,11 +28,31 @@ public class ImageTriplet {
     private double below;
     private double left;
     private double right;
+    private double intersectionArea;
+
+    public double getIntersectionArea() {
+        return intersectionArea;
+    }
+
+    public void setIntersectionArea(double intersectionArea) {
+        this.intersectionArea = intersectionArea;
+    }
+
+    public double getUnionArea() {
+        return unionArea;
+    }
+
+    public void setUnionArea(double unionArea) {
+        this.unionArea = unionArea;
+    }
+
+    private double unionArea;
 
     public ImageTriplet(String sp, String trajector, String landmark, Rectangle2D trBox, Rectangle2D lmBox, double imageWidth,
                         double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
                         double lmAspectRatio, double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance,
-                        double trAreaImage, double lmAreaImage, double above, double below, double left, double right) {
+                        double trAreaImage, double lmAreaImage, double above, double below, double left, double right,
+                        double intersectionArea, double unionArea) {
         this.setSp(sp);
         this.setTrajector(trajector);
         this.setLandmark(landmark);
@@ -55,12 +75,15 @@ public class ImageTriplet {
         this.below = below;
         this.left = left;
         this.right = right;
+        this.intersectionArea = intersectionArea;
+        this.unionArea = unionArea;
     }
 
     public ImageTriplet(String imageId, int firstSegId, int secondSegId, Rectangle2D trBox, Rectangle2D lmBox,
                         double imageWidth, double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
                         double lmAspectRatio, double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance,
-                        double trAreaImage, double lmAreaImage, double above, double below, double left, double right) {
+                        double trAreaImage, double lmAreaImage, double above, double below, double left, double right,
+                        double intersectionArea, double unionArea) {
         this.setImageId(imageId);
         this.setFirstSegId(firstSegId);
         this.setSecondSegId(secondSegId);
@@ -83,6 +106,8 @@ public class ImageTriplet {
         this.below = below;
         this.left = left;
         this.right = right;
+        this.intersectionArea = intersectionArea;
+        this.unionArea = unionArea;
     }
 
     public String getSp() {

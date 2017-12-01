@@ -81,41 +81,41 @@ object MultiModalTripletApp extends App with Logging {
       x => lmCandidatesTrain.exists(_.getId == x.getId)
     )
 
-    TripletRelationClassifier.learn(iterations)
-    TripletRelationClassifier.test(triplets())
-
-    TripletGeneralTypeClassifier.learn(iterations)
-    TripletGeneralTypeClassifier.test(triplets())
-
-    TripletSpecificTypeClassifier.learn(iterations)
-    //TripletSpecificTypeClassifier.test(triplets())
-
-    TripletRegionClassifier.learn(iterations)
-    TripletRegionClassifier.test(triplets())
-
-    TripletDirectionClassifier.learn(iterations)
-    TripletDirectionClassifier.test(triplets())
-
-    TripletImageRegionClassifier.learn(iterations)
-    TripletImageRegionClassifier.test(triplets())
-
-
-    TripletRelationClassifier.save()
-    TripletGeneralTypeClassifier.save()
-    TripletSpecificTypeClassifier.save()
-    TripletRegionClassifier.save()
-    TripletDirectionClassifier.save()
-    TripletImageRegionClassifier.save()
+//    TripletRelationClassifier.learn(iterations)
+//    TripletRelationClassifier.test(triplets())
+//
+//    TripletGeneralTypeClassifier.learn(iterations)
+//    TripletGeneralTypeClassifier.test(triplets())
+//
+//    TripletSpecificTypeClassifier.learn(iterations)
+//    //TripletSpecificTypeClassifier.test(triplets())
+//
+//    TripletRegionClassifier.learn(iterations)
+//    TripletRegionClassifier.test(triplets())
+//
+//    TripletDirectionClassifier.learn(iterations)
+//    TripletDirectionClassifier.test(triplets())
+//
+//    TripletImageRegionClassifier.learn(iterations)
+//    TripletImageRegionClassifier.test(triplets())
+//
+//
+//    TripletRelationClassifier.save()
+//    TripletGeneralTypeClassifier.save()
+//    TripletSpecificTypeClassifier.save()
+//    TripletRegionClassifier.save()
+//    TripletDirectionClassifier.save()
+//    TripletImageRegionClassifier.save()
 
     if (fineTunePrepositionClassifier) {
       val classifierDirectory = s"models/mSpRL/VisualTriplets/"
       val classifierSuffix = "combined_perceptron"
       visualClassifier.modelSuffix = classifierSuffix
       visualClassifier.modelDir = classifierDirectory
-      visualClassifier.load()
+      //visualClassifier.load()
       val visualTriplets = (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-      visualClassifier.test(visualTriplets)
-      visualClassifier.learn(10)
+      //visualClassifier.test(visualTriplets)
+      visualClassifier.learn(50)
       visualClassifier.test(visualTriplets)
       visualClassifier.modelSuffix += "_tuned"
       visualClassifier.save()

@@ -609,9 +609,15 @@ public class CLEFImageReader {
         //Feature 11
         double right = RectangleHelper.getRight(trBox, lmBox, i.getWidth());
 
+        // Feature 12
+        double intersection = RectangleHelper.getIntersectionArea(trBox, lmBox, imageArea);
+
+        // Feature 13
+        double union = RectangleHelper.getUnionArea(trBox, lmBox, imageArea);
+
         return new ImageTriplet(i.getId(), trSeg.getSegmentId(), lmSeg.getSegmentId(), trBox, lmBox, i.getWidth(), i.getHeight(),
                 trVector[0], trVector[1], trAreawrtLM, trAspectRatio, lmAspectRatio, trAreaBbox, lmAreaBbox, iou,
-                euclideanDistance, trAreaImage, lmAreaImage, above, below, left, right);
+                euclideanDistance, trAreaImage, lmAreaImage, above, below, left, right, intersection, union);
     }
 
     private void printImageInformation() throws IOException {

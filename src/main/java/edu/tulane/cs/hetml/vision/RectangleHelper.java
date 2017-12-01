@@ -24,6 +24,20 @@ public class RectangleHelper {
         return iou;
     }
 
+    public static double getIntersectionArea(Rectangle2D trBox, Rectangle2D lmBox, double imageArea) {
+        Rectangle2D intersection = trBox.createIntersection(lmBox);
+
+        double intersectionArea = calculateArea(intersection) / imageArea;
+        return Math.abs(intersectionArea);
+    }
+
+    public static double getUnionArea(Rectangle2D trBox, Rectangle2D lmBox, double imageArea) {
+        Rectangle2D union = trBox.createUnion(lmBox);
+
+        double unionArea = calculateArea(union) / imageArea;
+        return unionArea;
+    }
+
     public static Rectangle2D generateBoundingBox(Rectangle2D trBox, Rectangle2D lmBox) {
         double minX = Math.min(trBox.getMinX(), lmBox.getMinX());
         double maxX = Math.max(trBox.getMaxX(), lmBox.getMaxX());

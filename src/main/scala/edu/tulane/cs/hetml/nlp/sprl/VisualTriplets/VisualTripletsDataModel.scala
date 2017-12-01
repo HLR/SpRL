@@ -154,4 +154,13 @@ object VisualTripletsDataModel extends DataModel {
       getLemma(w).mkString
   }
 
+  val visualTripletIntersection = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getIntersectionArea
+  }
+
+  val visualTripletUnion = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getUnionArea
+  }
 }
