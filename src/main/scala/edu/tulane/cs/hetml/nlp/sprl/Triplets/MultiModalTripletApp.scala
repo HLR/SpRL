@@ -81,31 +81,31 @@ object MultiModalTripletApp extends App with Logging {
       x => lmCandidatesTrain.exists(_.getId == x.getId)
     )
 
-//    TripletRelationClassifier.learn(iterations)
-//    TripletRelationClassifier.test(triplets())
-//
-//    TripletGeneralTypeClassifier.learn(iterations)
-//    TripletGeneralTypeClassifier.test(triplets())
-//
-//    TripletSpecificTypeClassifier.learn(iterations)
-//    //TripletSpecificTypeClassifier.test(triplets())
-//
-//    TripletRegionClassifier.learn(iterations)
-//    TripletRegionClassifier.test(triplets())
-//
-//    TripletDirectionClassifier.learn(iterations)
-//    TripletDirectionClassifier.test(triplets())
-//
-//    TripletImageRegionClassifier.learn(iterations)
-//    TripletImageRegionClassifier.test(triplets())
-//
-//
-//    TripletRelationClassifier.save()
-//    TripletGeneralTypeClassifier.save()
-//    TripletSpecificTypeClassifier.save()
-//    TripletRegionClassifier.save()
-//    TripletDirectionClassifier.save()
-//    TripletImageRegionClassifier.save()
+    TripletRelationClassifier.learn(iterations)
+    TripletRelationClassifier.test(triplets())
+
+    TripletGeneralTypeClassifier.learn(iterations)
+    TripletGeneralTypeClassifier.test(triplets())
+
+    TripletSpecificTypeClassifier.learn(iterations)
+    //TripletSpecificTypeClassifier.test(triplets())
+
+    TripletRegionClassifier.learn(iterations)
+    TripletRegionClassifier.test(triplets())
+
+    TripletDirectionClassifier.learn(iterations)
+    TripletDirectionClassifier.test(triplets())
+
+    TripletImageRegionClassifier.learn(iterations)
+    TripletImageRegionClassifier.test(triplets())
+
+
+    TripletRelationClassifier.save()
+    TripletGeneralTypeClassifier.save()
+    TripletSpecificTypeClassifier.save()
+    TripletRegionClassifier.save()
+    TripletDirectionClassifier.save()
+    TripletImageRegionClassifier.save()
 
     if (fineTunePrepositionClassifier) {
       val classifierDirectory = s"models/mSpRL/VisualTriplets/"
@@ -160,7 +160,6 @@ object MultiModalTripletApp extends App with Logging {
 
       val tripletList = triplets.getTestingInstances
         .filter(x => TripletRelationClassifier(x) == "Relation").toList
-
 
       ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
         x => TripletGeneralTypeClassifier(x),

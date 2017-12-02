@@ -248,8 +248,8 @@ object TripletSentenceLevelConstraints {
           boostGeneralByDirection(x) and
           boostGeneralByRegion(x) and
           regionShouldHaveLandmark(x) //and
-          discardRelationByImage(x) and
-          approveRelationByImage(x)
+//          discardRelationByImage(x) and
+//          approveRelationByImage(x)
       //relationsShouldNotHaveCommonRoles(x)
       //noDuplicates(x)
 

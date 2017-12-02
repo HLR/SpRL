@@ -18,11 +18,12 @@ object VisualTripletsApp extends App {
 
   val flickerTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "Flickr30k.majorityhead")
   val msCocoTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "MSCOCO.originalterm")
-  val isTrain = false
+  val isTrain = true
   val useBinaryClassifier = false
   val classifierDirectory = if (useBinaryClassifier) s"models/mSpRL/VisualTripletsBinarySPClassifier/" else
     s"models/mSpRL/VisualTriplets/"
   val classifierSuffix = "combined_perceptron"
+  val classifierOnSuffix = "combined_on_perceptron"
   val trainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
   val testTriplets = flickerTripletReader.testImageTriplets ++ msCocoTripletReader.testImageTriplets
   val spList = trainTriplets.groupBy(_.getSp.toLowerCase).filter(_._2.size > 0).keys.toList
@@ -33,7 +34,14 @@ object VisualTripletsApp extends App {
   //    .foreach(_.setSp("none"))
 
 
+  val onClassifier = new VisualTripletClassifiers.VisualTripletOnClassifier()
   val visualClassifier = new VisualTripletClassifiers.VisualTripletClassifier()
+
+  visualClassifier.modelSuffix = classifierSuffix
+  visualClassifier.modelDir = classifierDirectory
+  onClassifier.modelSuffix = classifierOnSuffix
+  onClassifier.modelDir = classifierDirectory
+
   if (isTrain) {
 
     val trainInstances = new ListBuffer[ImageTriplet]()
@@ -47,18 +55,22 @@ object VisualTripletsApp extends App {
       trainInstances += new ImageTriplet(parts(0), parts(1), parts(2), trBox, lmBox
         , imageWidth, imageHeight, parts(7).toDouble, parts(8).toDouble,
         parts(9).toDouble, parts(10).toDouble, parts(11).toDouble, parts(12).toDouble, parts(13).toDouble, parts(14).toDouble,
-        parts(15).toDouble, parts(16).toDouble, parts(17).toDouble, parts(18).toDouble, parts(19).toDouble, parts(20).toDouble,
+        parts(15).toDouble, parts(16).toDouble, parts(17).toDouble, parts(18).toDouble,
+        RectangleHelper.getBelow(trBox, lmBox, imageHeight), parts(20).toDouble,
         parts(21).toDouble, RectangleHelper.getIntersectionArea(trBox, lmBox, imageWidth * imageHeight), RectangleHelper.getUnionArea(trBox, lmBox, imageWidth * imageHeight)
       )
     }
-
     if (!useBinaryClassifier) {
       visualTriplets.populate(trainInstances)
-      visualClassifier.modelSuffix = classifierSuffix
-      visualClassifier.modelDir = classifierDirectory
+      val t = trainInstances.filter(x => x.getSp !="on" && x.getAbove > 0 && x.getBelow == 0&& x.getIntersectionArea>0).toList
+      println(trainInstances.count(x => x.getSp =="on" && x.getAbove > 0 && x.getBelow == 0 && x.getIntersectionArea>0))
+      println(trainInstances.count(x => x.getSp !="on" && x.getAbove > 0 && x.getBelow== 0&& x.getIntersectionArea>0))
       visualClassifier.learn(50)
+      onClassifier.learn(50)
       visualClassifier.save()
+      onClassifier.save()
       visualClassifier.test(visualTriplets())
+      onClassifier.test(visualTriplets())
     }
     else {
       visualTriplets.populate(trainTriplets, isTrain)
@@ -97,13 +109,12 @@ object VisualTripletsApp extends App {
         }
       }
 
-      visualClassifier.modelSuffix = classifierSuffix
-      visualClassifier.modelDir = classifierDirectory
       visualClassifier.load()
-
+      onClassifier.load()
       visualTriplets.populate(testInstances, isTrain)
 
       val results = visualClassifier.test()
+      onClassifier.test()
 //      val outStream = new FileOutputStream(s"data/mSprl/results/preposition-prediction-${classifierSuffix}.txt")
 //      ReportHelper.saveEvalResults(outStream, "preposition", results)
     }
