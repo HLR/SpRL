@@ -9,7 +9,7 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
+import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import edu.tulane.cs.hetml.vision.CLEFAlignmentReader
@@ -51,7 +51,6 @@ object MultiModalTripletApp extends App with Logging {
 
   populateRoleDataFromAnnotatedCorpus()
   val visualClassifier = new VisualTripletClassifier()
-
   if (isTrain) {
     println("training started ...")
 
@@ -138,9 +137,19 @@ object MultiModalTripletApp extends App with Logging {
 
     val classifierDirectory = s"models/mSpRL/VisualTriplets/"
     val classifierSuffix = "combined_perceptron_tuned"
+    val classifierOnSuffix = "combined_on_perceptron"
+    val classifierInFrontOfSuffix = "combined_InFrontOf_perceptron"
+
     visualClassifier.modelSuffix = classifierSuffix
     visualClassifier.modelDir = classifierDirectory
+    VisualTripletOnClassifier.modelSuffix = classifierOnSuffix
+    VisualTripletOnClassifier.modelDir = classifierDirectory
+    VisualTripletInFrontOfClassifier.modelSuffix = classifierInFrontOfSuffix
+    VisualTripletInFrontOfClassifier.modelDir = classifierDirectory
+
     visualClassifier.load()
+    VisualTripletOnClassifier.load()
+    VisualTripletInFrontOfClassifier.load()
 
     val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases().toList)
     val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)

@@ -6,7 +6,7 @@ import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers
+import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator
 
 import scala.collection.JavaConversions._
@@ -147,7 +147,7 @@ object TripletSentenceLevelConstraints {
       a
   }
 
-  val visualTripletClassifier = new VisualTripletClassifiers.VisualTripletClassifier()
+  val visualTripletClassifier = new VisualTripletClassifier()
   val boostTripletByImageTriplet = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
@@ -213,6 +213,21 @@ object TripletSentenceLevelConstraints {
       a
   }
 
+  val approveRelationByPreposition = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets ).foreach {
+        x =>
+          val vT = triplets(x) ~> tripletToVisualTriplet
+          vT.foreach(t => {
+            a = a and ((VisualTripletInFrontOfClassifier on t is "true") ==>
+              (TripletRelationClassifier on x is "Relation"))
+          })
+      }
+      a
+  }
+
   //  val uniqueSegmentAssignment = ConstrainedClassifier.constraint[Sentence] {
   //    var a: FirstOrderConstraint = null
   //    s: Sentence =>
@@ -247,9 +262,10 @@ object TripletSentenceLevelConstraints {
           boostTripletByGeneralType(x) and
           boostGeneralByDirection(x) and
           boostGeneralByRegion(x) and
-          regionShouldHaveLandmark(x) //and
-//          discardRelationByImage(x) and
-//          approveRelationByImage(x)
+          regionShouldHaveLandmark(x) and
+          discardRelationByImage(x) and
+          approveRelationByImage(x) //and
+          //approveRelationByPreposition(x)
       //relationsShouldNotHaveCommonRoles(x)
       //noDuplicates(x)
 
