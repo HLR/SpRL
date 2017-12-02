@@ -148,6 +148,9 @@ object TripletSentenceLevelConstraints {
   }
 
   val visualTripletClassifier = new VisualTripletClassifier()
+  visualTripletClassifier.modelDir = s"models/mSpRL/VisualTriplets/"
+  visualTripletClassifier.modelSuffix = "combined_perceptron_tuned"
+  visualTripletClassifier.load()
   val boostTripletByImageTriplet = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
@@ -213,17 +216,49 @@ object TripletSentenceLevelConstraints {
       a
   }
 
+
   val approveRelationByPreposition = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
       a = new FirstOrderConstant(true)
       (sentences(s) ~> sentenceToTriplets ).foreach {
         x =>
-          val vT = triplets(x) ~> tripletToVisualTriplet
-          vT.foreach(t => {
-            a = a and ((VisualTripletInFrontOfClassifier on t is "true") ==>
+          val vT = (triplets(x) ~> tripletToVisualTriplet).headOption
+          if(vT.nonEmpty) {
+            a = a and ((visualTripletClassifier on vT.get is "in_front_of") ==>
               (TripletRelationClassifier on x is "Relation"))
-          })
+          }
+      }
+      a
+  }
+
+  val prepositionsConsistency = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets ~> tripletToVisualTriplet).foreach {
+        x =>
+          a = a and (
+            (VisualTripletInFrontOfClassifier on x is "true") ==>
+              (VisualTripletOnClassifier on x isNot "true") and
+              (VisualTripletInClassifier on x isNot "true") and
+              (VisualTripletAboveClassifier on x isNot "true")
+            ) and
+            ((VisualTripletOnClassifier on x is "true") ==>
+            (VisualTripletInFrontOfClassifier on x isNot "true") and
+            (VisualTripletInClassifier on x isNot "true") and
+            (VisualTripletAboveClassifier on x isNot "true")
+            ) and
+            ((VisualTripletInClassifier on x is "true") ==>
+            (VisualTripletOnClassifier on x isNot "true") and
+            (VisualTripletInFrontOfClassifier on x isNot "true") and
+            (VisualTripletAboveClassifier on x isNot "true")
+            ) and
+            ((VisualTripletAboveClassifier on x is "true") ==>
+              (VisualTripletOnClassifier on x isNot "true") and
+              (VisualTripletInClassifier on x isNot "true") and
+              (VisualTripletInFrontOfClassifier on x isNot "true")
+            )
       }
       a
   }
@@ -263,9 +298,10 @@ object TripletSentenceLevelConstraints {
           boostGeneralByDirection(x) and
           boostGeneralByRegion(x) and
           regionShouldHaveLandmark(x) and
-          discardRelationByImage(x) and
-          approveRelationByImage(x) //and
-          //approveRelationByPreposition(x)
+          //discardRelationByImage(x) and
+          //approveRelationByImage(x) //and
+          //prepositionsConsistency(x) and
+          approveRelationByPreposition(x)
       //relationsShouldNotHaveCommonRoles(x)
       //noDuplicates(x)
 
