@@ -146,8 +146,8 @@ object MultiModalPopulateData extends Logging {
 
     triplets.populate(candidateRelations, isTrain)
     val visualTriplets =
-      (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-        .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
+        (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
+          .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
 
     VisualTripletsDataModel.visualTriplets.populate(visualTriplets, isTrain)
 

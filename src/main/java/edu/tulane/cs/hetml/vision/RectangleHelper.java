@@ -13,6 +13,10 @@ public class RectangleHelper {
 
     public static double getIntersectionOverUnion(Rectangle2D trBox, Rectangle2D lmBox) {
         Rectangle2D intersection = trBox.createIntersection(lmBox);
+
+        if(intersection.getHeight()<= 0 || intersection.getWidth()<= 0)
+            return  0;
+
         Rectangle2D union = trBox.createUnion(lmBox);
 
         double intersectionArea = calculateArea(intersection);
@@ -26,6 +30,8 @@ public class RectangleHelper {
 
     public static double getIntersectionArea(Rectangle2D trBox, Rectangle2D lmBox, double imageArea) {
         Rectangle2D intersection = trBox.createIntersection(lmBox);
+        if(intersection.getHeight()<= 0 || intersection.getWidth()<= 0)
+            return  0;
 
         double intersectionArea = calculateArea(intersection) / imageArea;
         return Math.abs(intersectionArea);
@@ -77,7 +83,7 @@ public class RectangleHelper {
     }
 
     public static double getBelow(Rectangle2D trBox, Rectangle2D lmBox, double height) {
-        return Math.max(0, (trBox.getY() - lmBox.getY()) / height);
+        return Math.max(0, ((trBox.getY() + trBox.getHeight()) - (lmBox.getY() + lmBox.getHeight())) / height);
     }
 
     public static double getLeft(Rectangle2D trBox, Rectangle2D lmBox, double width) {
