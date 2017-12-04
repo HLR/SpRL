@@ -11,7 +11,10 @@ var App = function () {
     self.pageSize = 15;
 
     self.setCurrentPhrase = function (id) {
-        self.currentPhrase({});
+        self.currentPhrase({
+            resetSeg: function() {
+            }
+        });
         var image = self.currentImage();
         for(var i in image.phrases){
             if(image.phrases[i].id == id){
