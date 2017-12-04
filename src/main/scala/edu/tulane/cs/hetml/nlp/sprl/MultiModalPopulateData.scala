@@ -82,10 +82,9 @@ object MultiModalPopulateData extends Logging {
               segStr = s"${seg.get.getSegmentId}\t\t" +
                 s"${seg.get.getBoxDimensions.getX}\t\t${seg.get.getBoxDimensions.getY}\t\t" +
                 s"${seg.get.getBoxDimensions.getWidth}\t\t${seg.get.getBoxDimensions.getHeight}\t\t"
-
-              writer.println(s"$imFolder\t\t$imageId\t\t${p.getSentence.getId}\t\t${p.getSentence.getText}\t\t" +
-                s"${p.getStart}\t\t${p.getEnd}\t\t${p.getText}\t\t$segStr")
             }
+            writer.println(s"$imFolder\t\t$imageId\t\t${p.getSentence.getId}\t\t${p.getSentence.getText}\t\t" +
+              s"${p.getStart}\t\t${p.getEnd}\t\t${p.getText}\t\t$segStr")
         }
     }
     writer.close()
