@@ -68,16 +68,24 @@ object MultiModalPopulateData extends Logging {
     }
 
     val suffix = if (isTrain) "train" else "gold"
-    val writer = new PrintStream(s"$resultsDir/alignments_$suffix.txt")
-    val docAlignments = phraseInstances.filter(x => x.containsProperty("goldAlignment")).groupBy(x => x.getDocument)
-    docAlignments.foreach {
+    val writer = new PrintStream(s"$resultsDir/phrases_$suffix.txt")
+    val docs = phraseInstances.groupBy(x => x.getDocument)
+    docs.foreach {
       case (doc, phraseList) =>
         val imageId = (documents(doc) ~> documentToImage).head.getId
         val imFolder = doc.getId.split(Array('.', '/'))(1)
         phraseList.foreach {
           p =>
-            writer.println(s"$imFolder\t\t$imageId\t\t${p.getSentence.getId}\t\t${p.getSentence.getText}\t\t" +
-              s"${p.getStart}\t\t${p.getEnd}\t\t${p.getText}\t\t")
+            val seg = (phrases(p) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair).headOption
+            var segStr = "-1\t\t-1\t\t-1\t\t-1\t\t-1"
+            if (seg.nonEmpty) {
+              segStr = s"${seg.get.getSegmentId}\t\t" +
+                s"${seg.get.getBoxDimensions.getX}\t\t${seg.get.getBoxDimensions.getY}\t\t" +
+                s"${seg.get.getBoxDimensions.getWidth}\t\t${seg.get.getBoxDimensions.getHeight}\t\t"
+
+              writer.println(s"$imFolder\t\t$imageId\t\t${p.getSentence.getId}\t\t${p.getSentence.getText}\t\t" +
+                s"${p.getStart}\t\t${p.getEnd}\t\t${p.getText}\t\t$segStr")
+            }
         }
     }
     writer.close()
@@ -138,8 +146,8 @@ object MultiModalPopulateData extends Logging {
 
     triplets.populate(candidateRelations, isTrain)
     val visualTriplets =
-        (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-          .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
+      (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
+        .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
 
     VisualTripletsDataModel.visualTriplets.populate(visualTriplets, isTrain)
 
@@ -156,7 +164,7 @@ object MultiModalPopulateData extends Logging {
         val imId = sent.getDocument.getId.split(Array('.', '/'))(2)
         val imFolder = sent.getDocument.getId.split(Array('.', '/'))(1)
 
-        writer.println(s"$imFolder\t\t$imId\t\t${sent.getId}" +
+        writer.println(s"$imFolder\t\t$imId\t\t${sent.getId}\t\t${sent.getText}" +
           s"\t\t${tr.getStart}\t\t${tr.getEnd}\t\t${tr.getText}" +
           s"\t\t${sp.getStart}\t\t${sp.getEnd}\t\t${sp.getText}" +
           s"\t\t${lm.getStart}\t\t${lm.getEnd}\t\t${lm.getText}")
@@ -204,7 +212,7 @@ object MultiModalPopulateData extends Logging {
               usedPhrases.add(pair.getArgumentId(0))
               usedSegments.add(pair.getArgumentId(1))
               val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
-              if(pair.getProperty("similarity").toDouble > 0.30) {
+              if (pair.getProperty("similarity").toDouble > 0.30) {
                 p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
                 p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
               }
