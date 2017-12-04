@@ -23,7 +23,7 @@
             relations
             <div class="scroll page-height" data-bind="foreach: currentImage().relations">
                 <div class="rel-row">
-                    <span data-bind="text:sentence"></span><br>
+                    <div data-bind="text:sentence" style="border-bottom:1px solid grey;margin-bottom:2px"></div>
                     <span class="phrase tr" data-bind="text: tr.text, attr: {'data-tr-id': trId}"></span>
                     <span class="phrase sp" data-bind="text: sp.text"></span>
                     <span class="phrase lm" data-bind="text: lm.text == null?'null':lm.text, attr: {'data-lm-id': lmId}"></span>
