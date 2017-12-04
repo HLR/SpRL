@@ -5,20 +5,26 @@ var App = function () {
     self.currentImage = ko.observable({
         relations:[]
     });
-    self.currentRelation = ko.observable({});
-    self.currentRelationIndex = ko.observable(-1);
+    self.currentPhrase = ko.observable({
+    });
     self.page = ko.observable(0);
     self.pageSize = 15;
+
+    self.setCurrentPhrase = function (id) {
+        self.currentPhrase({});
+        var image = self.currentImage();
+        for(var i in image.phrases){
+            if(image.phrases[i].id == id){
+                self.currentPhrase(image.phrases[i]);
+                break;
+            }
+        }
+    };
 
     self.goToImage = function (i) {
         self.currentImageIndex(i);
         self.currentImage(self.images()[i]);
-        self.currentRelation(-1);
-    };
-
-    self.goToRelation = function (i) {
-        self.currentRelation(self.currentImage().relations[i]);
-        self.currentRelationIndex(i);
+        self.currentPhrase({});
     };
 
     self.addModel = function (m) {
