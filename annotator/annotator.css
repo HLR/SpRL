@@ -62,3 +62,8 @@ table{
 .scroll{
     overflow-y: scroll;
 }
+.role-selected{
+    background-color: red!important;
+    font-weight: bold;
+    font-size: 10pt;
+}
