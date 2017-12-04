@@ -1,5 +1,22 @@
 var Phrase = function (line, i) {
     var self = this;
+    if (line == null) {
+        self.parts = [];
+        self.imFolder = null;
+        self.imId = null;
+        self.sentId = null;
+        self.sentence = null;
+        self.start = -1;
+        self.end = -1;
+        self.text = null;
+        self.id = null;
+        self.segId = -1;
+        self.segX = -1;
+        self.segY = -1;
+        self.segWidth = -1;
+        self.segHeight = -1;
+        return;
+    }
     self.parts = line.split("\t\t");
     self.imFolder = part(0);
     self.imId = part(1);
@@ -57,27 +74,12 @@ var Model = function (phrases, relations) {
             self.images[imId].phrases.push(phrases[i])
         }
         else {
-            var dummy = {
-                imFolder: imFolder,
-                imId: imId,
-                sentId: phrases[i].sentId,
-                sentence: phrases[i].sentence,
-                start: -1,
-                end: -1,
-                text: null,
-                id: phrases[i].imFolder + "_" + phrases[i].imId + "_" + phrases[i].sentId + "_-1_-1",
-                segId: -1,
-                segX: -1,
-                segY: -1,
-                segWidth: -1,
-                segHeight: -1
-            }
             self.images[imId] = {
                 'imFolder': imFolder,
-                'phrases': [dummy, phrases[i]],
+                'imId': imId,
+                'phrases': [phrases[i]],
                 'relations': []
             }
-            phraseDic[dummy.id] = dummy;
         }
         phraseDic[phrases[i].id] = phrases[i];
     }
@@ -88,5 +90,13 @@ var Model = function (phrases, relations) {
         relations[i].tr = phraseDic[relations[i].trId];
         relations[i].sp = phraseDic[relations[i].spId];
         relations[i].lm = phraseDic[relations[i].lmId];
+        if (relations[i].lm === undefined) {
+            relations[i].lm = new Phrase();
+            relations[i].lm.imFolder = relations[i].imFolder;
+            relations[i].lm.imId = relations[i].imId;
+            relations[i].lm.sentId = relations[i].sentId;
+            relations[i].lm.sentence = relations[i].sentence;
+            relations[i].lm.id = relations[i].lmId;
+        }
     }
 }
