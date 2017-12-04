@@ -9,7 +9,6 @@
     <input type='file' id="relations"> Phrases file:
     <input type='file' id="annotations">
     <button id="load">load</button>
-    <button id="save">save</button>
     <hr/>
     <div id="container">
         <div class="images-col">
@@ -23,32 +22,13 @@
             relations
             <div class="scroll page-height" data-bind="foreach: currentImage().relations">
                 <div class="rel-row">
-                    <div data-bind="text:sentence" style="border-bottom:1px solid grey;margin-bottom:2px"></div>
-                    <span class="phrase tr" data-bind="text: tr.text, attr: {'data-tr-id': trId}"></span>
+                    <span class="phrase tr" data-bind="text: tr.text, attr: {'data-index': $index, 'data-tr-id': trId, 'data-seg-id': tr.segId, 'data-seg-x': tr.segX, 'data-seg-y': tr.segY, 'data-seg-width': tr.segWidth, 'data-seg-height': tr.segHeight}"></span>
                     <span class="phrase sp" data-bind="text: sp.text"></span>
-                    <span class="phrase lm" data-bind="text: lm.text == null?'null':lm.text, attr: {'data-lm-id': lmId}"></span>
+                    <span class="phrase lm" data-bind="text: lm.text == null?'null':lm.text, attr: {'data-index': $index, 'data-lm-id': lmId, 'data-seg-id': lm.segId, 'data-seg-x': lm.segX, 'data-seg-y': lm.segY, 'data-seg-width': lm.segWidth, 'data-seg-height': lm.segHeight}"></span>
                 </div>
             </div>
         </div>
         <div class="image-col">
-            <div>
-                <div style="display: inline-block; width:100px">
-                    x:
-                    <span data-bind="text: app.currentPhrase().segX"></span>
-                    <br> y:
-                    <span data-bind="text: app.currentPhrase().segY"></span>
-                    <br> width:
-                    <span data-bind="text: app.currentPhrase().segWidth"></span>
-                    <br> height:
-                    <span data-bind="text: app.currentPhrase().segHeight"></span>
-                    <br>
-                </div>
-                <div style="display: inline-block;">
-                    <button id="reset" type="button">reset</button>
-                    <br>
-                    <button id="apply" type="button">apply</button>
-                </div>
-            </div>
             <canvas id="canvas" width="500" height="500"></canvas>
         </div>
     </div>
@@ -56,7 +36,6 @@
     <script type="text/javascript" src="jquery-3.2.1.min.js"></script>
     <script type='text/javascript' src='knockout-3.4.2.js'></script>
     <script type="text/javascript" src="types.js"></script>
-    <script type="text/javascript" src="FileSaver.js"></script>
     <script type="text/javascript" src="app.js"></script>
     <script type="text/javascript">
         $(function () {
@@ -75,60 +54,34 @@
                 drawImage(src)
             });
             $("#container").on("click", ".tr", function () {
+                var relIndex = parseInt($(this).data("index"));
                 var trId = $(this).data("tr-id");
-                $(".tr").removeClass("role-selected");
-                $(this).addClass("role-selected");
-                $(".lm").removeClass("role-selected");
-                app.setCurrentPhrase(trId);
-                var p = app.currentPhrase();
-                rect.startX = p.segX;
-                rect.startY = p.segY;
-                rect.h = p.segHeight;
-                rect.w = p.segWidth;
+                var segId = $(this).data("seg-id");
+                var segX = parseInt($(this).data("seg-x"));
+                var segY = parseInt($(this).data("seg-y"));
+                var segWidth = parseInt($(this).data("seg-width"));
+                var segHeight = parseInt($(this).data("seg-height"));
+                rect.startX = segX;
+                rect.startY = segY;
+                rect.h = segHeight;
+                rect.w = segWidth;
                 drawRectangle();
             });
             $("#container").on("click", ".lm", function () {
                 var relIndex = parseInt($(this).data("index"));
                 var lmId = $(this).data("lm-id");
-                $(".lm").removeClass("role-selected");
-                $(this).addClass("role-selected");
-                $(".tr").removeClass("role-selected");
-                app.setCurrentPhrase(lmId);
-                var p = app.currentPhrase();
-                rect.startX = p.segX;
-                rect.startY = p.segY;
-                rect.h = p.segHeight;
-                rect.w = p.segWidth;
+                var segId = $(this).data("seg-id");
+                var segX = parseInt($(this).data("seg-x"));
+                var segY = parseInt($(this).data("seg-y"));
+                var segWidth = parseInt($(this).data("seg-width"));
+                var segHeight = parseInt($(this).data("seg-height"));
+                rect.startX = segX;
+                rect.startY = segY;
+                rect.h = segHeight;
+                rect.w = segWidth;
                 drawRectangle();
-            });
-            $("#reset").click(function () {
-                var p = app.currentPhrase();
-                p.resetSeg();
-                app.currentPhrase(app.currentPhrase());
-                rect.startX = p.segX;
-                rect.startY = p.segY;
-                rect.h = p.segHeight;
-                rect.w = p.segWidth;
-                drawRectangle();
-            });
-            $("#apply").click(function () {
-                var p = app.currentPhrase();
-                p.segX = rect.startX;
-                p.segY = rect.startY;
-                p.segWidth = rect.w;
-                p.segHeight = rect.h;
-                if (p.segWidth < 0) {
-                    p.segX += p.segWidth;
-                    p.segWidth *= -1;
-                }
-                if (p.segHeight < 0) {
-                    p.segY += p.segHeight;
-                    p.segHeight *= -1;
-                }
-                app.currentPhrase(p);
             });
             function drawImage(src) {
-                ctx.clearRect(0, 0, 500, 500);
                 imageObj = new Image();
                 imageObj.onload = function () { ctx.drawImage(imageObj, 0, 0); };
                 imageObj.src = src;
@@ -174,11 +127,6 @@
                     loadData(e.target.result, false);
                 };
                 reader.readAsText(file);
-            });
-            $("#save").click(function () {
-                var text = app.getAnnotations();
-                var file = new File([text], "phrases.txt", { type: "text/plain;charset=utf-8" });
-                saveAs(file);
             });
             $("#load").click(function () {
                 if (relations.length == 0) {
