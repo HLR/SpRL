@@ -1,5 +1,12 @@
 var Phrase = function (line, i) {
     var self = this;
+    self.resetSeg = function() {
+        self.segX = self.origSegX;
+        self.segY = self.origSegY;
+        self.segWidth = self.origSegWidth;
+        self.segHeight = self.origSegHeight;
+    };
+
     if (line == null) {
         self.parts = [];
         self.imFolder = null;
@@ -15,22 +22,31 @@ var Phrase = function (line, i) {
         self.segY = -1;
         self.segWidth = -1;
         self.segHeight = -1;
-        return;
+        self.origSegX = -1;
+        self.origSegY = -1;
+        self.origSegWidth = -1;
+        self.origSegHeight = -1;
     }
-    self.parts = line.split("\t\t");
-    self.imFolder = part(0);
-    self.imId = part(1);
-    self.sentId = part(2);
-    self.sentence = part(3);
-    self.start = parseInt(part(4));
-    self.end = parseInt(part(5));
-    self.text = part(6);
-    self.id = self.imFolder + "_" + self.imId + "_" + self.sentId + "_" + self.start + "_" + self.end;
-    self.segId = parseInt(part(7));
-    self.segX = parseInt(part(8));
-    self.segY = parseInt(part(9));
-    self.segWidth = parseInt(part(10));
-    self.segHeight = parseInt(part(11));
+    else {
+        self.parts = line.split("\t\t");
+        self.imFolder = part(0);
+        self.imId = part(1);
+        self.sentId = part(2);
+        self.sentence = part(3);
+        self.start = parseInt(part(4));
+        self.end = parseInt(part(5));
+        self.text = part(6);
+        self.id = self.imFolder + "_" + self.imId + "_" + self.sentId + "_" + self.start + "_" + self.end;
+        self.segId = parseInt(part(7));
+        self.segX = parseInt(part(8));
+        self.segY = parseInt(part(9));
+        self.segWidth = parseInt(part(10));
+        self.segHeight = parseInt(part(11));
+        self.origSegX = self.segX;
+        self.origSegY = self.segY;
+        self.origSegWidth = self.segWidth;
+        self.origSegHeight = self.segHeight;
+    }
 
     function part(i) {
         if (i >= self.parts.length)
