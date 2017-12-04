@@ -10,6 +10,28 @@
     <input type='file' id="annotations">
     <button id="load">load</button>
     <hr/>
+    <div id="container">
+        <div class="images-col">
+            images
+            <div class="scroll page-height" data-bind="foreach: images">
+                <div class="im-row" data-bind="text: imId, attr: {'data-index': $index}, css: $parent.currentImageIndex() === $index()?'selected':''">
+                </div>
+            </div>
+        </div>
+        <div class="rels-col">
+            relations
+            <div class="scroll page-height" data-bind="foreach: currentImage().relations">
+                <div class="rel-row">
+                    <span class="phrase tr" data-bind="text: tr.text, attr: {'data-index': $index, 'data-tr-id': trId, 'data-seg-id': tr.segId, 'data-seg-x': tr.segX, 'data-seg-y': tr.segY, 'data-seg-width': tr.segWidth, 'data-seg-height': tr.segHeight}"></span>
+                    <span class="phrase sp" data-bind="text: sp.text"></span>
+                    <span class="phrase lm" data-bind="text: lm.text == null?'null':lm.text, attr: {'data-index': $index, 'data-lm-id': lmId, 'data-seg-id': lm.segId, 'data-seg-x': lm.segX, 'data-seg-y': lm.segY, 'data-seg-width': lm.segWidth, 'data-seg-height': lm.segHeight}"></span>
+                </div>
+            </div>
+        </div>
+        <div class="image-col">
+            <canvas id="canvas" width="500" height="500"></canvas>
+        </div>
+    </div>
 
     <script type="text/javascript" src="jquery-3.2.1.min.js"></script>
     <script type='text/javascript' src='knockout-3.4.2.js'></script>
@@ -17,9 +39,77 @@
     <script type="text/javascript" src="app.js"></script>
     <script type="text/javascript">
         $(function () {
+            var canvas = document.getElementById('canvas');
+            var ctx = canvas.getContext('2d');
             var relations = [];
             var phrases = [];
+            var rect = {};
+            var drag = false;
+            var imageObj = null;
 
+            $("#container").on("click", ".im-row", function () {
+                var index = parseInt($(this).data("index"));
+                app.goToImage(index);
+                var src = '../data/mSpRL/saiapr_tc-12/' + app.currentImage().imFolder + '/images/' + app.currentImage().imId + '.jpg'
+                drawImage(src)
+            });
+            $("#container").on("click", ".tr", function () {
+                var relIndex = parseInt($(this).data("index"));
+                var trId = $(this).data("tr-id");
+                var segId = $(this).data("seg-id");
+                var segX = parseInt($(this).data("seg-x"));
+                var segY = parseInt($(this).data("seg-y"));
+                var segWidth = parseInt($(this).data("seg-width"));
+                var segHeight = parseInt($(this).data("seg-height"));
+                rect.startX = segX;
+                rect.startY = segY;
+                rect.h = segHeight;
+                rect.w = segWidth;
+                drawRectangle();
+            });
+            $("#container").on("click", ".lm", function () {
+                var relIndex = parseInt($(this).data("index"));
+                var lmId = $(this).data("lm-id");
+                var segId = $(this).data("seg-id");
+                var segX = parseInt($(this).data("seg-x"));
+                var segY = parseInt($(this).data("seg-y"));
+                var segWidth = parseInt($(this).data("seg-width"));
+                var segHeight = parseInt($(this).data("seg-height"));
+                rect.startX = segX;
+                rect.startY = segY;
+                rect.h = segHeight;
+                rect.w = segWidth;
+                drawRectangle();
+            });
+            function drawImage(src) {
+                imageObj = new Image();
+                imageObj.onload = function () { ctx.drawImage(imageObj, 0, 0); };
+                imageObj.src = src;
+                canvas.addEventListener('mousedown', mouseDown, false);
+                canvas.addEventListener('mouseup', mouseUp, false);
+                canvas.addEventListener('mousemove', mouseMove, false);
+                function mouseDown(e) {
+                    rect.startX = e.pageX - this.offsetLeft;
+                    rect.startY = e.pageY - this.offsetTop;
+                    drag = true;
+                }
+
+                function mouseUp() { drag = false; }
+
+                function mouseMove(e) {
+                    if (drag) {
+                        rect.w = (e.pageX - this.offsetLeft) - rect.startX;
+                        rect.h = (e.pageY - this.offsetTop) - rect.startY;
+                        drawRectangle()
+                    }
+                }
+            }
+            function drawRectangle() {
+                ctx.clearRect(0, 0, 500, 500);
+                ctx.drawImage(imageObj, 0, 0);
+                ctx.strokeStyle = 'rgba(255,0,0,1)';
+                ctx.strokeRect(rect.startX, rect.startY, rect.w, rect.h);
+            }
             $("#relations").change(function (e) {
                 var reader = new FileReader();
                 var text = "";
@@ -39,11 +129,11 @@
                 reader.readAsText(file);
             });
             $("#load").click(function () {
-                if(relations.length == 0){
+                if (relations.length == 0) {
                     alert("No relation found");
                     return;
                 }
-                if(phrases.length == 0){
+                if (phrases.length == 0) {
                     alert("No phrase found");
                     return;
                 }
@@ -62,7 +152,7 @@
                 }
                 if (isRelation)
                     relations = data;
-                    else
+                else
                     phrases = data;
             }
         });
