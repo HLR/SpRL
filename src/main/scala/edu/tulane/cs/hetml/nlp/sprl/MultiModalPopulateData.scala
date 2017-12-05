@@ -131,12 +131,29 @@ object MultiModalPopulateData extends Logging {
 
     val suffix = if (isTrain) "train" else "gold"
 
-    val writer = new PrintStream(s"$resultsDir/phrases_$suffix.txt")
-    val docs = phrases().filter(_.getId != dummyPhrase.getId).groupBy(x => x.getDocument)
-    docs.foreach {
-      case (doc, phraseList) =>
+    var writer = new PrintStream(s"$resultsDir/phrases_${suffix}_0.txt")
+    var relWriter = new PrintStream(s"$resultsDir/flat_relation_roles_${suffix}_0.txt")
+    val split = documents().size / 5 + 1
+    var c = 0
+    var total = 0
+    var totalP = 0
+    val ts = (documents() ~> documentToSentence).toList
+    val tt = (documents() ~> documentToSentence ~> sentenceToTriplets).toList
+    val ts1 = sentences()
+    val tt1 = triplets()
+    val tp = phrases()
+    val tp1 = (documents() ~> documentToSentence ~> sentenceToPhrase).toList
+    documents().foreach {
+      doc =>
+        if (c % split == 0) {
+          writer = new PrintStream(s"$resultsDir/phrases_${suffix}_${c / split}.txt")
+          relWriter = new PrintStream(s"$resultsDir/flat_relation_roles_${suffix}_${c / split}.txt")
+        }
+        c = c + 1
         val imageId = (documents(doc) ~> documentToImage).head.getId
         val imFolder = doc.getId.split(Array('.', '/'))(1)
+        val phraseList = (documents(doc) ~> documentToSentence ~> sentenceToPhrase).toList
+        totalP += phraseList.size
         phraseList.foreach {
           p =>
             val seg = (phrases(p) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
@@ -150,26 +167,29 @@ object MultiModalPopulateData extends Logging {
             writer.println(s"$imFolder\t\t$imageId\t\t${p.getSentence.getId}\t\t${p.getSentence.getText}\t\t" +
               s"${p.getStart}\t\t${p.getEnd}\t\t${p.getText}\t\t$segStr")
         }
+        val docRels = (documents(doc) ~> documentToSentence ~> sentenceToTriplets)
+            .filter(x=> tripletIsRelation(x) == "Relation").toList
+        total += docRels.size
+        docRels.foreach {
+          r =>
+            val sent = r.getParent.asInstanceOf[Sentence]
+            val tr = r.getArgument(0)
+            val sp = r.getArgument(1)
+            val lm = if (r.getArgument(2) != null) r.getArgument(2) else dummyPhrase
+            val imId = sent.getDocument.getId.split(Array('.', '/'))(2)
+            val imFolder = sent.getDocument.getId.split(Array('.', '/'))(1)
+
+            relWriter.println(s"$imFolder\t\t$imId\t\t${sent.getId}\t\t${sent.getText}" +
+              s"\t\t${tr.getStart}\t\t${tr.getEnd}\t\t${tr.getText}" +
+              s"\t\t${sp.getStart}\t\t${sp.getEnd}\t\t${sp.getText}" +
+              s"\t\t${lm.getStart}\t\t${lm.getEnd}\t\t${lm.getText}")
+
+        }
     }
+    println(totalP)
+    println(total)
+
     writer.close()
-
-    val rels = triplets().filter(x => tripletIsRelation(x) == "Relation")
-    val relWriter = new PrintStream(s"$resultsDir/flat_relation_roles_$suffix.txt")
-
-    rels.foreach {
-      r =>
-        val sent = r.getParent.asInstanceOf[Sentence]
-        val tr = r.getArgument(0)
-        val sp = r.getArgument(1)
-        val lm = if (r.getArgument(2) != null) r.getArgument(2) else dummyPhrase
-        val imId = sent.getDocument.getId.split(Array('.', '/'))(2)
-        val imFolder = sent.getDocument.getId.split(Array('.', '/'))(1)
-
-        relWriter.println(s"$imFolder\t\t$imId\t\t${sent.getId}\t\t${sent.getText}" +
-          s"\t\t${tr.getStart}\t\t${tr.getEnd}\t\t${tr.getText}" +
-          s"\t\t${sp.getStart}\t\t${sp.getEnd}\t\t${sp.getText}" +
-          s"\t\t${lm.getStart}\t\t${lm.getEnd}\t\t${lm.getText}")
-    }
     relWriter.close()
     logger.info("Triplet population finished.")
   }
@@ -218,7 +238,8 @@ object MultiModalPopulateData extends Logging {
                 p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
               }
             }
-          })
+          }
+          )
         })
     }
   }
