@@ -6,9 +6,9 @@
 
 <body>
     Relations file:
-    <input type='file' id="relations"> Annotations file:
+    <input type='file' id="relations"> Phrases file:
     <input type='file' id="annotations">
-    <button id="load" data-bind="click: load">load</button>
+    <button id="load">load</button>
     <hr/>
 
     <script type="text/javascript" src="jquery-3.2.1.min.js"></script>
@@ -39,7 +39,15 @@
                 reader.readAsText(file);
             });
             $("#load").click(function () {
-
+                if(relations.length == 0){
+                    alert("No relation found");
+                    return;
+                }
+                if(phrases.length == 0){
+                    alert("No phrase found");
+                    return;
+                }
+                app.addModel(new Model(phrases, relations));
             });
             function loadData(text, isRelation) {
                 var lines = text.split("\n");
