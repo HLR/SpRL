@@ -718,10 +718,11 @@ object MultiModalSpRLDataModel extends DataModel {
       if (aligned.nonEmpty) {
         val x = aligned.head
         List(x.getEuclideanDistance, x.getIou, x.getLmAreaBbox, x.getLmAreaImage, x.getLmAspectRatio,
-          x.getTrAreaBbox, x.getTrAreaImage, x.getTrAreawrtLM, x.getTrAspectRatio)
+          x.getTrAreaBbox, x.getTrAreaImage, x.getTrAreawrtLM, x.getTrAspectRatio, x.getAbove, x.getBelow,
+          x.getLeft, x.getRight, x.getIntersectionArea, x.getUnionArea)
       }
       else
-        List.fill(9)(0.0)
+        List.fill(15)(0.0)
   }
 
   val tripletMatchingSegmentRelationLabel = property(triplets, cache = true) {

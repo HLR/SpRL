@@ -111,9 +111,9 @@ object MultiModalTripletApp extends App with Logging {
       val classifierSuffix = "combined_perceptron"
       visualClassifier.modelSuffix = classifierSuffix
       visualClassifier.modelDir = classifierDirectory
-      //visualClassifier.load()
+      visualClassifier.load()
       val visualTriplets = (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-      //visualClassifier.test(visualTriplets)
+      visualClassifier.test(visualTriplets)
       visualClassifier.learn(50)
       visualClassifier.test(visualTriplets)
       visualClassifier.modelSuffix += "_tuned"
@@ -137,19 +137,19 @@ object MultiModalTripletApp extends App with Logging {
 
     val classifierDirectory = s"models/mSpRL/VisualTriplets/"
     val classifierSuffix = "combined_perceptron_tuned"
-    val classifierOnSuffix = "combined_on_perceptron"
-    val classifierInFrontOfSuffix = "combined_InFrontOf_perceptron"
+//    val classifierOnSuffix = "combined_on_perceptron"
+//    val classifierInFrontOfSuffix = "combined_InFrontOf_perceptron"
 
     visualClassifier.modelSuffix = classifierSuffix
     visualClassifier.modelDir = classifierDirectory
-    VisualTripletOnClassifier.modelSuffix = classifierOnSuffix
-    VisualTripletOnClassifier.modelDir = classifierDirectory
-    VisualTripletInFrontOfClassifier.modelSuffix = classifierInFrontOfSuffix
-    VisualTripletInFrontOfClassifier.modelDir = classifierDirectory
+//    VisualTripletOnClassifier.modelSuffix = classifierOnSuffix
+//    VisualTripletOnClassifier.modelDir = classifierDirectory
+//    VisualTripletInFrontOfClassifier.modelSuffix = classifierInFrontOfSuffix
+//    VisualTripletInFrontOfClassifier.modelDir = classifierDirectory
 
     visualClassifier.load()
-    VisualTripletOnClassifier.load()
-    VisualTripletInFrontOfClassifier.load()
+//    VisualTripletOnClassifier.load()
+//    VisualTripletInFrontOfClassifier.load()
 
     val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases().toList)
     val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)

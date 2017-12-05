@@ -123,7 +123,7 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature = (tripletFeatures ++ (List(tripletMatchingSegmentRelations)))
+    override def feature = (tripletFeatures) //++ (List(tripletMatchingSegmentRelationFeatures)))
       .diff(List())
   }
 
@@ -132,7 +132,7 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature =  (tripletFeatures ++ (List(tripletMatchingSegmentRelations)))
+    override def feature =  (tripletFeatures) //++ (List(tripletMatchingSegmentRelationFeatures)))
       .diff(List(tripletLmVector))
   }
 
@@ -141,7 +141,7 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparseNetworkLearner()
 
-    override def feature =  List(tripletSpWordForm)
+    override def feature =  List(tripletMatchingSegmentRelationFeatures)
   }
 
 }

@@ -23,7 +23,7 @@ object mSpRLConfigurator {
                                                   * training and loads them from the disk*/
   val iterations = 50
   val useConstraints = true
-  val fineTunePrepositionClassifier = true
+  val fineTunePrepositionClassifier = false
   val alignmentMethod = "gold" // possible values: "classifier" "gold", "w2v"
   val imageConstraints = model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val populateImages = true //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage

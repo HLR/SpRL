@@ -204,7 +204,7 @@ object MultiModalPopulateData extends Logging {
               usedPhrases.add(pair.getArgumentId(0))
               usedSegments.add(pair.getArgumentId(1))
               val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
-              if(pair.getProperty("similarity").toDouble > 0.30) {
+              if(pair.getProperty("similarity").toDouble > 0.30 || alignmentMethod=="classifier") {
                 p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
                 p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
               }
