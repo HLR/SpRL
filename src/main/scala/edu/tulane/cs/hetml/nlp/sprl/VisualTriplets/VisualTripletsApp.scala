@@ -28,10 +28,10 @@ object VisualTripletsApp extends App {
   val externalTrainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
   val testTriplets = flickerTripletReader.testImageTriplets ++ msCocoTripletReader.testImageTriplets
 
-  val visualClassifier = new VisualTripletClassifiers.VisualTripletClassifier()
+//  val visualClassifier = new VisualTripletClassifiers.VisualTripletClassifier()
 
-  visualClassifier.modelSuffix = classifierSuffix
-  visualClassifier.modelDir = classifierDirectory
+//  visualClassifier.modelSuffix = classifierSuffix
+//  visualClassifier.modelDir = classifierDirectory
 
   VisualTripletOnClassifier.modelSuffix = classifierOnSuffix
   VisualTripletOnClassifier.modelDir = classifierDirectory
@@ -64,7 +64,7 @@ object VisualTripletsApp extends App {
     }
 
     visualTriplets.populate(externalTrainTriplets)
-    visualClassifier.learn(50)
+    VisualTripletClassifier.learn(50)
 //    VisualTripletOnClassifier.learn(50)
 //    VisualTripletInClassifier.learn(50)
 
@@ -107,7 +107,7 @@ object VisualTripletsApp extends App {
         }
       }
 
-    visualClassifier.load()
+    VisualTripletClassifier.load()
     VisualTripletOnClassifier.load()
     VisualTripletInFrontOfClassifier.load()
     VisualTripletInClassifier.load()

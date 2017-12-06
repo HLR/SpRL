@@ -6,7 +6,7 @@ import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel._
 
 object VisualTripletClassifiers {
 
-  class VisualTripletClassifier extends Learnable(visualTriplets) {
+  object VisualTripletClassifier extends Learnable(visualTriplets) {
     def label = visualTripletLabel
 
     override lazy val classifier = new SparseNetworkLearner()
@@ -15,9 +15,9 @@ object VisualTripletClassifiers {
       visualTripletTrVector, visualTripletTrajectorAreaWRTLanmark, visualTripletTrajectorAspectRatio,
       visualTripletLandmarkAspectRatio, visualTripletTrajectorAreaWRTBbox, visualTripletLandmarkAreaWRTBbox, visualTripletIOU,
       visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage,
-      visualTripletBelow, visualTripletAbove, visualTripletLeft, visualTripletRight, visualTripletUnion, visualTripletIntersection
+      visualTripletBelow, visualTripletAbove, visualTripletLeft, visualTripletRight, visualTripletUnion, visualTripletIntersection,
       //visualTripletTrLemma, visualTripletLmLemma, visualTripletTrPos, visualTripletLmPos,
-      //visualTripletTrajectorW2V, visualTripletlandmarkW2V
+      visualTripletTrajectorW2V, visualTripletlandmarkW2V
     )
   }
 

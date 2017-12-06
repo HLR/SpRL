@@ -126,6 +126,14 @@ object MultiModalSpRLSensors {
     pair.getArgumentId(0) == phrase.getId
   }
 
+  def sentenceToVisualTripletMatching(s: Sentence): List[ImageTriplet] = {
+    var vT = sentences(s) ~> sentenceToTriplets ~> tripletToVisualTriplet
+    if (vT.nonEmpty) {
+      vT = vT.filter(t => t.getSp!="-")
+    }
+    vT.toList
+  }
+
   def TripletToVisualTripletGenerating(r: Relation): List[ImageTriplet] = {
     val (first, second, third) = getTripletArguments(r)
     val trSegId = first.getPropertyFirstValue("bestAlignment")
@@ -139,7 +147,7 @@ object MultiModalSpRLSensors {
 
       if (trSeg.nonEmpty && lmSeg.nonEmpty) {
 
-        val imageRel = visualTriplets().filter(x => x.getImageId == trSeg.get.getAssociatedImageID &&
+        val imageRel = visualTripletsPairs().filter(x => x.getImageId == trSeg.get.getAssociatedImageID &&
           x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
 
         imageRel.foreach {
