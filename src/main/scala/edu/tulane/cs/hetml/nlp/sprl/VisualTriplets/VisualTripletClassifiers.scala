@@ -16,7 +16,6 @@ object VisualTripletClassifiers {
       visualTripletLandmarkAspectRatio, visualTripletTrajectorAreaWRTBbox, visualTripletLandmarkAreaWRTBbox, visualTripletIOU,
       visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage,
       visualTripletBelow, visualTripletAbove, visualTripletLeft, visualTripletRight, visualTripletUnion, visualTripletIntersection,
-      //visualTripletTrLemma, visualTripletLmLemma, visualTripletTrPos, visualTripletLmPos,
       visualTripletTrajectorW2V, visualTripletlandmarkW2V
     )
   }
@@ -26,7 +25,6 @@ object VisualTripletClassifiers {
     visualTripletLandmarkAspectRatio, visualTripletTrajectorAreaWRTBbox, visualTripletLandmarkAreaWRTBbox, visualTripletIOU,
     visualTripletEuclideanDistance, visualTripletTrajectorAreaWRTImage, visualTripletLandmarkAreaWRTImage,
     visualTripletBelow, visualTripletAbove, visualTripletLeft, visualTripletRight, visualTripletUnion, visualTripletIntersection,
-    //visualTripletTrLemma, visualTripletLmLemma, visualTripletTrPos, visualTripletLmPos,
     visualTripletTrajectorW2V, visualTripletlandmarkW2V)
 
   object VisualTripletOnClassifier extends Learnable(visualTriplets) {
