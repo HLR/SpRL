@@ -6,7 +6,7 @@ import java.util.regex.Pattern
 import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
-import edu.tulane.cs.hetml.nlp.sprl.Helpers.LexiconHelper
+import edu.tulane.cs.hetml.nlp.sprl.Helpers.{LexiconHelper, WordClassifierHelper}
 import edu.tulane.cs.hetml.vision._
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer
 import org.deeplearning4j.models.word2vec.Word2Vec
@@ -14,7 +14,7 @@ import org.deeplearning4j.models.word2vec.Word2Vec
 import scala.collection.immutable.HashMap
 import scala.collection.JavaConversions._
 import scala.util.matching.Regex
-import MultiModalSpRLDataModel.{_}
+import MultiModalSpRLDataModel._
 
 object MultiModalSpRLSensors {
 
@@ -87,6 +87,8 @@ object MultiModalSpRLSensors {
 
   val matchingCandidates = List("NN", "JJR", "JJ", "NNP", "NNS")
 
+  lazy val alignmentHelper = new WordClassifierHelper()
+
   def segmentToSegmentPhrasePairs(s: Segment): List[Relation] = {
     val image = images().filter(i => i.getId == s.getAssociatedImageID)
     val phrases = (images(image) ~> -documentToImage ~> documentToSentence ~> sentenceToPhrase)
@@ -98,15 +100,25 @@ object MultiModalSpRLSensors {
         r.setId(p.getId + "__" + s.getSegmentId)
         r.setArgumentId(0, p.getId)
         r.setArgumentId(1, s.getSegmentId.toString)
-        //        val head = getHeadword(p)
-        //        val sim = s.getSegmentConcept.split('-').map(x => getSimilarity(x, head.getText)).max
-        //        r.setProperty("similarity", sim.toString)
-        if (p.getPropertyValues("alignedSegment").contains(s.getSegmentId.toString)) {
-          r.setProperty("similarity", "1")
+        mSpRLConfigurator.alignmentMethod match {
+          case "gold" =>
+            if (p.getPropertyValues("goldAlignment").contains(s.getSegmentId.toString)) {
+              r.setProperty("similarity", "1")
+            }
+            else {
+              r.setProperty("similarity", "0")
+            }
+
+          case "w2v" =>
+            val head = getHeadword(p)
+            val sim = s.getSegmentConcept.split('-').map(x => getSimilarity(x, head.getText)).max
+            r.setProperty("similarity", sim.toString)
+
+          case "classifier" =>
+            val sim = alignmentHelper.getScore(p.getText, s)
+            r.setProperty("similarity", sim.toString)
         }
-        else {
-          r.setProperty("similarity", "0")
-        }
+
         r
     }
   }
@@ -115,10 +127,10 @@ object MultiModalSpRLSensors {
     pair.getArgumentId(0) == phrase.getId
   }
 
-  def TripletToVisualTripletGenerating(r: Relation): List[ImageTriplet] = {
+  def TripletToVisualTripletMatching(r: Relation, vt: ImageTriplet): Boolean = {
     val (first, second, third) = getTripletArguments(r)
-    val trSegId = first.getPropertyFirstValue("alignedSegment")
-    val lmSegId = third.getPropertyFirstValue("alignedSegment")
+    val trSegId = first.getPropertyFirstValue("bestAlignment")
+    val lmSegId = third.getPropertyFirstValue("bestAlignment")
     if (trSegId != null && lmSegId != null) {
 
       val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
@@ -128,26 +140,24 @@ object MultiModalSpRLSensors {
 
       if (trSeg.nonEmpty && lmSeg.nonEmpty) {
 
-        val imageRel = visualTriplets().filter(x => x.getImageId == trSeg.get.getAssociatedImageID &&
-          x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
-
-        imageRel.foreach {
-          x =>
-            x.setTrajector(headWordFrom(first).toLowerCase())
-            x.setLandmark(headWordFrom(third).toLowerCase())
-            if (x.getSp == null)
-              x.setSp("-")
-            if(tripletIsRelation(r) == "Relation")
-              x.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
-
+        if (vt.getImageId == trSeg.get.getAssociatedImageID &&
+          vt.getFirstSegId.toString == trSegId && vt.getSecondSegId.toString == lmSegId) {
+          if (vt.getSp == null)
+            vt.setSp("-")
+          if (tripletIsRelation(r) == "Relation")
+            vt.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
+          true
         }
-        imageRel.toList
+        else {
+          false
+        }
       }
-      else
-        List()
+      else {
+        false
+      }
     }
     else {
-      List()
+      false
     }
   }
 

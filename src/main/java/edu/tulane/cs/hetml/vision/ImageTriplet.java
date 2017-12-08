@@ -24,12 +24,74 @@ public class ImageTriplet {
     private double euclideanDistance; // F6
     private double trAreaImage; // F7
     private double lmAreaImage; // F7
+    private double above;
+    private double below;
+    private double left;
+    private double right;
+    private double intersectionArea;
+    private double unionArea;
+
+    public void setTrBox(Rectangle2D trBox) {
+        this.trBox = trBox;
+    }
+
+    public void setLmBox(Rectangle2D lmBox) {
+        this.lmBox = lmBox;
+    }
+
+    public void setImageWidth(double imageWidth) {
+        this.imageWidth = imageWidth;
+    }
+
+    public void setImageHeight(double imageHeight) {
+        this.imageHeight = imageHeight;
+    }
+
+    public void setTrVectorX(double trVectorX) {
+        this.trVectorX = trVectorX;
+    }
+
+    public void setTrVectorY(double trVectorY) {
+        this.trVectorY = trVectorY;
+    }
+
+    public void setTrAreawrtLM(double trAreawrtLM) {
+        this.trAreawrtLM = trAreawrtLM;
+    }
+
+    public void setTrAspectRatio(double trAspectRatio) {
+        this.trAspectRatio = trAspectRatio;
+    }
+
+    public void setLmAspectRatio(double lmAspectRatio) {
+        this.lmAspectRatio = lmAspectRatio;
+    }
+
+    public void setTrAreaBbox(double trAreaBbox) {
+        this.trAreaBbox = trAreaBbox;
+    }
+
+    public void setLmAreaBbox(double lmAreaBbox) {
+        this.lmAreaBbox = lmAreaBbox;
+    }
+
+    public void setIou(double iou) {
+        this.iou = iou;
+    }
+
+    public void setTrAreaImage(double trAreaImage) {
+        this.trAreaImage = trAreaImage;
+    }
+
+    public void setLmAreaImage(double lmAreaImage) {
+        this.lmAreaImage = lmAreaImage;
+    }
 
     public ImageTriplet(String sp, String trajector, String landmark, Rectangle2D trBox, Rectangle2D lmBox, double imageWidth,
                         double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
-                        double lmAspectRatio,
-                        double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance, double trAreaImage,
-                        double lmAreaImage) {
+                        double lmAspectRatio, double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance,
+                        double trAreaImage, double lmAreaImage, double above, double below, double left, double right,
+                        double intersectionArea, double unionArea) {
         this.setSp(sp);
         this.setTrajector(trajector);
         this.setLandmark(landmark);
@@ -48,12 +110,19 @@ public class ImageTriplet {
         this.euclideanDistance = euclideanDistance;
         this.trAreaImage = trAreaImage;
         this.lmAreaImage = lmAreaImage;
+        this.above = above;
+        this.below = below;
+        this.left = left;
+        this.right = right;
+        this.intersectionArea = intersectionArea;
+        this.unionArea = unionArea;
     }
 
     public ImageTriplet(String imageId, int firstSegId, int secondSegId, Rectangle2D trBox, Rectangle2D lmBox,
                         double imageWidth, double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
                         double lmAspectRatio, double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance,
-                        double trAreaImage, double lmAreaImage) {
+                        double trAreaImage, double lmAreaImage, double above, double below, double left, double right,
+                        double intersectionArea, double unionArea) {
         this.setImageId(imageId);
         this.setFirstSegId(firstSegId);
         this.setSecondSegId(secondSegId);
@@ -72,6 +141,12 @@ public class ImageTriplet {
         this.euclideanDistance = euclideanDistance;
         this.trAreaImage = trAreaImage;
         this.lmAreaImage = lmAreaImage;
+        this.above = above;
+        this.below = below;
+        this.left = left;
+        this.right = right;
+        this.intersectionArea = intersectionArea;
+        this.unionArea = unionArea;
     }
 
     public String getSp() {
@@ -180,4 +255,57 @@ public class ImageTriplet {
     public void setLandmark(String landmark) {
         this.landmark = landmark;
     }
+
+    public double getAbove() {
+        return above;
+    }
+
+    public void setAbove(double above) {
+        this.above = above;
+    }
+
+    public double getBelow() {
+        return below;
+    }
+
+    public void setBelow(double below) {
+        this.below = below;
+    }
+
+    public double getLeft() {
+        return left;
+    }
+
+    public void setLeft(double left) {
+        this.left = left;
+    }
+
+    public double getRight() {
+        return right;
+    }
+
+    public void setRight(double right) {
+        this.right = right;
+    }
+
+    public double getIntersectionArea() {
+        return intersectionArea;
+    }
+
+    public void setIntersectionArea(double intersectionArea) {
+        this.intersectionArea = intersectionArea;
+    }
+
+    public void setEuclideanDistance(double euclideanDistance) {
+        this.euclideanDistance = euclideanDistance;
+    }
+
+    public double getUnionArea() {
+        return unionArea;
+    }
+
+    public void setUnionArea(double unionArea) {
+        this.unionArea = unionArea;
+    }
+
 }

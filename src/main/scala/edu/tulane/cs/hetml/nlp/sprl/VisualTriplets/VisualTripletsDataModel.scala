@@ -12,20 +12,20 @@ import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 object VisualTripletsDataModel extends DataModel {
 
   val visualTriplets = node[ImageTriplet]
-//  val sentences = node[Sentence]
-//  val tokens = node[Token]
-//
-//  val tripletToSentence = edge(visualTriplets, sentences)
-//  tripletToSentence.addReverseSensor((x: ImageTriplet) => {
-//    val doc = new Document(x.getImageId)
-//    val text = x.getTrajector + " " + x.getSp + " " + x.getLandmark
-//    val s = new Sentence(doc, x.getImageId + "_" + x.getFirstSegId + "_" + x.getFirstSegId + "_" + x.getSp, 0,
-//      text.length, text)
-//    List(s)
-//  })
+  val sentences = node[Sentence]
+  val tokens = node[Token]
 
-//  val sentenceToToken = edge(sentences, tokens)
-//  sentenceToToken.addSensor(sentenceToTokenGenerating _)
+  val tripletToSentence = edge(visualTriplets, sentences)
+  tripletToSentence.addReverseSensor((x: ImageTriplet) => {
+    val doc = new Document(x.getImageId)
+    val text = x.getTrajector + " " + x.getSp + " " + x.getLandmark
+    val s = new Sentence(doc, x.getImageId + "_" + x.getFirstSegId + "_" + x.getFirstSegId + "_" + x.getSp, 0,
+      text.length, text)
+    List(s)
+  })
+
+  val sentenceToToken = edge(sentences, tokens)
+  sentenceToToken.addSensor(sentenceToTokenGenerating _)
 
   val visualTripletLabel = property(visualTriplets) {
     t: ImageTriplet =>
@@ -60,7 +60,7 @@ object VisualTripletsDataModel extends DataModel {
   val visualTripletTrajectorAreaWRTLanmark = property(visualTriplets) {
     t: ImageTriplet =>
       if(t.getTrAreawrtLM.isNaN)
-        logger.warn("")
+        logger.warn(s"Nan TrAreawrtLM in ${t.getTrajector}, ${t.getSp}, ${t.getLandmark} ")
       t.getTrAreawrtLM
   }
 
@@ -104,33 +104,63 @@ object VisualTripletsDataModel extends DataModel {
       t.getLmAreaImage
   }
 
-//  val visualTripletTrPos = property(visualTriplets, cache = true) {
-//    t: ImageTriplet =>
-//      val w = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).toList.minBy(_.getStart)
-//      getPos(w).mkString
-//  }
-//
-//  val visualTripletLmPos = property(visualTriplets, cache = true) {
-//    t: ImageTriplet =>
-//      val w = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).toList.maxBy(_.getStart)
-//      getPos(w).mkString
-//  }
-//
-//  val visualTripletTrLemma = property(visualTriplets, cache = true) {
-//    t: ImageTriplet =>
-//      val tokens = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).toList
-//      if(tokens.isEmpty)
-//        logger.warn("empty tokens")
-//      val w = tokens.minBy(_.getStart)
-//      getLemma(w).mkString
-//  }
-//
-//  val visualTripletLmLemma = property(visualTriplets, cache = true) {
-//    t: ImageTriplet =>
-//      val tokens = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).toList
-//      if(tokens.isEmpty)
-//        logger.warn("empty tokens")
-//      val w = tokens.maxBy(_.getStart)
-//      getLemma(w).mkString
-//  }
+  val visualTripletAbove = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getAbove
+  }
+
+  val visualTripletBelow = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getBelow
+  }
+
+  val visualTripletLeft = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getLeft
+  }
+
+  val visualTripletRight = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getRight
+  }
+
+  val visualTripletTrPos = property(visualTriplets, cache = true) {
+    t: ImageTriplet =>
+      val w = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).toList.minBy(_.getStart)
+      getPos(w).mkString
+  }
+
+  val visualTripletLmPos = property(visualTriplets, cache = true) {
+    t: ImageTriplet =>
+      val w = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).toList.maxBy(_.getStart)
+      getPos(w).mkString
+  }
+
+  val visualTripletTrLemma = property(visualTriplets, cache = true) {
+    t: ImageTriplet =>
+      val tokens = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).toList
+      if(tokens.isEmpty)
+        logger.warn("empty tokens")
+      val w = tokens.minBy(_.getStart)
+      getLemma(w).mkString
+  }
+
+  val visualTripletLmLemma = property(visualTriplets, cache = true) {
+    t: ImageTriplet =>
+      val tokens = (visualTriplets(t) ~> tripletToSentence ~> sentenceToToken).toList
+      if(tokens.isEmpty)
+        logger.warn("empty tokens")
+      val w = tokens.maxBy(_.getStart)
+      getLemma(w).mkString
+  }
+
+  val visualTripletIntersection = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getIntersectionArea
+  }
+
+  val visualTripletUnion = property(visualTriplets) {
+    t: ImageTriplet =>
+      t.getUnionArea
+  }
 }

@@ -78,9 +78,28 @@ public class ImageTripletReader {
                 double trAreaImage = RectangleHelper.normalizeArea(trArea, imageArea);
                 double lmAreaImage = RectangleHelper.normalizeArea(lmArea, imageArea);
 
+                //Feature 8
+                double above = RectangleHelper.getAbove(trBox, lmBox, imageHeight);
+
+                //Feature 9
+                double below = RectangleHelper.getBelow(trBox, lmBox, imageHeight);
+
+                //Feature 10
+                double left = RectangleHelper.getLeft(trBox, lmBox, imageWidth);
+
+                //Feature 11
+                double right = RectangleHelper.getRight(trBox, lmBox, imageWidth);
+
+                //Feature 12
+                double intersection = RectangleHelper.getIntersectionArea(trBox, lmBox, imageArea);
+
+                //Feature 13
+                double union = RectangleHelper.getUnionArea(trBox, lmBox, imageArea);
+
+
                 ImageTriplet it = new ImageTriplet(sp, tr, lm, trBox, lmBox, imageWidth, imageHeight, trVector[0],
                         trVector[1], trAreawrtLM, trAspectRatio, lmAspectRatio, trAreaBbox, lmAreaBbox, iou,
-                        euclideanDistance, trAreaImage, lmAreaImage);
+                        euclideanDistance, trAreaImage, lmAreaImage, above, below, left, right, intersection, union);
 
                 if(isTrain)
                     trainImageTriplets.add(it);

@@ -6,6 +6,7 @@ import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation, Sentence}
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraints._
+import edu.tulane.cs.hetml.vision.ImageTriplet
 
 object TripletSentenceLevelConstraintClassifiers {
 
@@ -60,4 +61,10 @@ object TripletSentenceLevelConstraintClassifiers {
     override val pathToHead = Some(-sentenceToTriplets)
   }
 
+//  object PrepositionConstraintClassifier extends ConstrainedClassifier[ImageTriplet, Sentence](PrepositionClassifier) {
+//    def subjectTo = prepositionConstraints
+//
+//    override val solver = erSolver
+//    override val pathToHead = Some(-sentenceToVisualTriplet)
+//  }
 }

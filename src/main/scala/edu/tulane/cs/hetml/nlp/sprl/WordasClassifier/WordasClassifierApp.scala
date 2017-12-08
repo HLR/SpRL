@@ -64,7 +64,7 @@ object WordasClassifierApp extends App {
     if(!useAnntotatedClef) {
         CLEFGoogleNETReaderHelper.allSegments.filter(s => {allImages.exists(i=> i.getId==s.getAssociatedImageID)})
     } else {
-      CLEFGoogleNETReaderHelper.allSegments.take(2).toList
+      CLEFGoogleNETReaderHelper.allSegments.toList
     }
 
   val allRefExp = CLEFGoogleNETReaderHelper.segRefExp
@@ -275,7 +275,6 @@ object WordasClassifierApp extends App {
     }).toList
     val norm = normalizeScores(scoresMatrix)
     val vector = combineScores(norm)
-    writer.println(vector.map(_.toDouble))
     val regionId = vector.indexOf(vector.max) + 1
     regionId
   }

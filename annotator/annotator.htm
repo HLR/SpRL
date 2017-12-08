@@ -1,0 +1,73 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="annotator.css">
+</head>
+
+<body>
+    Relations file:
+    <input type='file' id="relations"> Phrases file:
+    <input type='file' id="annotations">
+    <button id="load">load</button>
+    <hr/>
+
+    <script type="text/javascript" src="jquery-3.2.1.min.js"></script>
+    <script type='text/javascript' src='knockout-3.4.2.js'></script>
+    <script type="text/javascript" src="types.js"></script>
+    <script type="text/javascript" src="app.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            var relations = [];
+            var phrases = [];
+
+            $("#relations").change(function (e) {
+                var reader = new FileReader();
+                var text = "";
+                var file = e.target.files[0];
+                reader.onload = function (e) {
+                    loadData(e.target.result, true);
+                };
+                reader.readAsText(file);
+            });
+            $("#annotations").change(function (e) {
+                var reader = new FileReader();
+                var text = "";
+                var file = e.target.files[0];
+                reader.onload = function (e) {
+                    loadData(e.target.result, false);
+                };
+                reader.readAsText(file);
+            });
+            $("#load").click(function () {
+                if(relations.length == 0){
+                    alert("No relation found");
+                    return;
+                }
+                if(phrases.length == 0){
+                    alert("No phrase found");
+                    return;
+                }
+                app.addModel(new Model(phrases, relations));
+            });
+            function loadData(text, isRelation) {
+                var lines = text.split("\n");
+                var data = []
+                for (var l = 0; l < lines.length; l++) {
+                    if (lines[l] === "")
+                        continue;
+                    if (isRelation)
+                        data.push(new Relation(lines[l], l));
+                    else
+                        data.push(new Phrase(lines[l], l));
+                }
+                if (isRelation)
+                    relations = data;
+                    else
+                    phrases = data;
+            }
+        });
+
+    </script>
+</body>
+
+</html>

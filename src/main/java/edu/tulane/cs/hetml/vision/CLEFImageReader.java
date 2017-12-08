@@ -4,7 +4,10 @@ import com.jmatio.io.MatFileReader;
 import com.jmatio.types.MLDouble;
 import edu.tulane.cs.hetml.nlp.BaseTypes.Document;
 import edu.tulane.cs.hetml.nlp.Xml.NlpXmlReader;
+import sun.awt.image.ToolkitImage;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.io.*;
 import java.util.ArrayList;
@@ -35,9 +38,6 @@ public class CLEFImageReader {
 
     public List<Segment> allSegments;
 
-    public List<ImageTriplet> trainImageTriplets;
-    public List<ImageTriplet> testImageTriplets;
-
     private boolean useRedefinedRelations;
 
     private Hashtable<Integer, String> MapCode2Concept = new Hashtable<Integer, String>();
@@ -46,7 +46,6 @@ public class CLEFImageReader {
     private Hashtable<String, String> redefindedRelations = new Hashtable<String, String>();
     private Hashtable<String, Rectangle2D> segmentBoxes = new Hashtable<String, Rectangle2D>();
 
-    private double imageWidth, imageHeight;
     PrintWriter printWriterTest;
 
     public CLEFImageReader(String directory, String trainFilePath, String testFilePath, Boolean readFullData, Boolean useRedefinedRelations) throws IOException {
@@ -63,8 +62,6 @@ public class CLEFImageReader {
         if (!d.isDirectory()) {
             throw new IOException(directory + " is not a directory!");
         }
-        imageHeight = 360;
-        imageWidth = 480;
         trainingData = new ArrayList<>();
         testData = new ArrayList<>();
 
@@ -74,12 +71,10 @@ public class CLEFImageReader {
         trainingImages = new ArrayList<>();
         trainingSegments = new ArrayList<>();
         trainingRelations = new ArrayList<>();
-        trainImageTriplets = new ArrayList<>();
         // Test Data
         testImages = new ArrayList<>();
         testSegments = new ArrayList<>();
         testRelations = new ArrayList<>();
-        testImageTriplets = new ArrayList<>();
 
         // all Segment
         allSegments = new ArrayList<>();
@@ -91,18 +86,13 @@ public class CLEFImageReader {
         getRedefinedRelations(directory);
         // Load Concepts
         getConcepts(directory);
-        //Load Referit Data
-//        getReferitText(directory);
+
         // Load Training
         getTrainingImages();
         // Load Testing
         getTestImages();
         // Load all Images
         getallImages(directory);
-        // Generate Visual Triplet Pairs
-        generateVisualTripletSegmentPairs();
-        // Save to File
-        //printImageInformation();
 
         System.out.println("Total Train Data " + trainingData.size());
 
@@ -181,13 +171,7 @@ public class CLEFImageReader {
         while ((line = reader.readLine()) != null) {
             String[] segBoxInfo = line.split(" ");
             String key = segBoxInfo[0] + "-" + segBoxInfo[1];
-            String[] boxDims = segBoxInfo[2].split("-");
-            Rectangle2D rec = new Rectangle2D.Double(
-                    Double.parseDouble(boxDims[0]),
-                    Double.parseDouble(boxDims[1]),
-                    Double.parseDouble(boxDims[2]),
-                    Double.parseDouble(boxDims[3])
-            );
+            Rectangle2D rec = RectangleHelper.parseRectangle(segBoxInfo[2], "-");
             segmentBoxes.put(key, rec);
         }
     }
@@ -265,7 +249,7 @@ public class CLEFImageReader {
     // Loading Images
 
     /*******************************************************/
-    private void getImages(String folder) {
+    private void getImages(String folder) throws IOException {
         File d = new File(folder);
 
         if (d.exists()) {
@@ -273,11 +257,13 @@ public class CLEFImageReader {
             for (File f : d.listFiles()) {
                 String label = f.getName();
                 String[] split = label.split("\\.");
-
+                ToolkitImage image = (ToolkitImage) Toolkit.getDefaultToolkit().getImage(f.getAbsolutePath());
+                int width = image.getWidth();
+                int height = image.getHeight();
                 if (trainingData.contains(split[0]))
-                    trainingImages.add(new Image(label, split[0], imageWidth, imageHeight));
+                    trainingImages.add(new Image(label, split[0], width, height));
                 if (testData.contains(split[0]))
-                    testImages.add(new Image(label, split[0], imageWidth, imageHeight));
+                    testImages.add(new Image(label, split[0],  width, height));
             }
         }
     }
@@ -532,106 +518,4 @@ public class CLEFImageReader {
         }
     }
 
-    /*******************************************************/
-    // Loading Segments Ontology
-
-    /*******************************************************/
-    private void generateVisualTripletSegmentPairs() {
-        generateVisualTripletsSegmentPairs(trainingImages, trainingSegments, true);
-        generateVisualTripletsSegmentPairs(testImages, testSegments, false);
-    }
-
-    private void generateVisualTripletsSegmentPairs(List<Image> images, List<Segment> segments, boolean train) {
-        for (Image i : images) {
-            List<Segment> temp = new ArrayList<>();
-            for (Segment s : segments) {
-                if (i.getId().equals(s.getAssociatedImageID()))
-                    temp.add(s);
-            }
-
-            // Generate Pairs
-            for (int j = 0; j < temp.size(); j++)
-                for (int k = 0; k < temp.size(); k++) {
-                    Segment trSeg = temp.get(j);
-                    Segment lmSeg = temp.get(k);
-                    if (trSeg.getSegmentId() != lmSeg.getSegmentId()) { // Ignore same index
-                        if (train)
-                            trainImageTriplets.add(generateImageTriplet(i, trSeg, lmSeg));
-                        else
-                            testImageTriplets.add(generateImageTriplet(i, trSeg, lmSeg));
-                    }
-                }
-        }
-    }
-
-    private ImageTriplet generateImageTriplet(Image i, Segment trSeg, Segment lmSeg) {
-
-        Rectangle2D trBox = trSeg.getBoxDimensions();
-        Rectangle2D lmBox = lmSeg.getBoxDimensions();
-
-        double trArea = RectangleHelper.calculateArea(trBox);
-        double lmArea = RectangleHelper.calculateArea(lmBox);
-        double imageArea = imageWidth * imageHeight;
-
-        Rectangle2D boundingBox = RectangleHelper.generateBoundingBox(trBox, lmBox);
-        double boundingBoxArea = RectangleHelper.calculateArea(boundingBox);
-
-        //Feature 1
-        double[] trVector = RectangleHelper.getCentroidVector(trBox, lmBox, boundingBox);
-
-        //Feature 2
-        double trAreawrtLM = trArea / lmArea;
-
-        // Feature 3
-        double trAspectRatio = RectangleHelper.calculateAspectRatio(trBox);
-        double lmAspectRatio = RectangleHelper.calculateAspectRatio(lmBox);
-
-        //Feature 4
-        double trAreaBbox = RectangleHelper.normalizeArea(trArea, boundingBoxArea);
-        double lmAreaBbox = RectangleHelper.normalizeArea(lmArea, boundingBoxArea);
-
-        //Feature 5
-        double iou = RectangleHelper.getIntersectionOverUnion(trBox, lmBox);
-
-        // Feature 6
-        double euclideanDistance = RectangleHelper
-                .normalizeArea(RectangleHelper.getEuclideanDistance(trBox, lmBox), imageArea);
-
-        // Feature 7
-        double trAreaImage = RectangleHelper.normalizeArea(trArea, imageArea);
-        double lmAreaImage = RectangleHelper.normalizeArea(lmArea, imageArea);
-
-        return new ImageTriplet(i.getId(), trSeg.getSegmentId(), lmSeg.getSegmentId(), trBox, lmBox, imageWidth, imageHeight,
-                trVector[0], trVector[1], trAreawrtLM, trAspectRatio, lmAspectRatio, trAreaBbox, lmAreaBbox, iou,
-                euclideanDistance, trAreaImage, lmAreaImage);
-    }
-
-    private void printImageInformation() throws IOException {
-
-        String path = "data/mSpRL/results/allImageSegments.txt";
-        printWriterTest = new PrintWriter(path);
-
-        for (Image i : testImages) {
-            for (Segment s : testSegments) {
-                if (i.getId().equals(s.getAssociatedImageID()))
-                    printWriterTest.println(i.getId() + " " + s.getSegmentId());
-            }
-        }
-
-        for (Image i : trainingImages) {
-            for (Segment s : trainingSegments) {
-                if (i.getId().equals(s.getAssociatedImageID()))
-                    printWriterTest.println(i.getId() + " " + s.getSegmentId());
-            }
-        }
-        printWriterTest.close();
-    }
-
-    public boolean isUseRedefinedRelations() {
-        return useRedefinedRelations;
-    }
-
-    public void setUseRedefinedRelations(boolean useRedefinedRelations) {
-        this.useRedefinedRelations = useRedefinedRelations;
-    }
 }

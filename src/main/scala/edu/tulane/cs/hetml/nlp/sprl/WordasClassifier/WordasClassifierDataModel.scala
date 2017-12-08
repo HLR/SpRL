@@ -22,6 +22,7 @@ object WordasClassifierDataModel extends DataModel {
   val images = node[Image]((i: Image) => i.getId)
   val segments = node[Segment]((s: Segment) => s.getUniqueId)
   val wordsegments = node[WordSegment]
+  val allCombinationsWordSegments = node[WordSegment]
   val expressionSegmentPairs = node[Relation]((r: Relation) => r.getId)
 
   val trainedWordClassifier = new mutable.HashMap[String, SingleWordasClassifer]()
@@ -107,6 +108,49 @@ object WordasClassifierDataModel extends DataModel {
     })
   }
 
+  def getPredictedWordSegId(w : WordSegment) : Int = {
+    val imgSegs = allCombinationsWordSegments().filter(t => t.getSegment.getAssociatedImageID==w.getSegment.getAssociatedImageID)
+      .toList.sortBy(t=> t.getSegment.getSegmentId)
+    computeMatrix(imgSegs)
+    0
+  }
+
+  def getActualWordSegId(w : WordSegment) : Int = {
+    w.getSegment.getSegmentId
+  }
+
+  def computeMatrix(instances: List[WordSegment]): Int = {
+
+    val scoresMatrix = instances.groupBy(i => i.getWord).map(w => {
+      computeScore(w._1, w._2)
+    }).toList
+    val norm = normalizeScores(scoresMatrix)
+    val vector = combineScores(norm)
+    val regionId = vector.indexOf(vector.max) + 1
+    regionId
+  }
+  def computeScore(word: String, instances: List[WordSegment]): List[Double] = {
+    instances.map(i => {
+      getWordClassifierScore(word, i)
+    })
+  }
+
+  def getWordClassifierScore(word: String, i: WordSegment) : Double ={
+    if(trainedWordClassifier.contains(word)) {
+      val c = trainedWordClassifier(word)
+      val scores = c.classifier.scores(i)
+      if(scores.size()>0) {
+        val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
+        orgValue(0).score
+      }
+      else {
+        0.0
+      }
+    }
+    else
+      0.0
+  }
+
   def getPredictedSegId(r: Relation) : String = {
 
     val allSenSegPairs = expressionSegmentPairs().filter(i => i.getArgumentId(0)==r.getArgumentId(0)).toList.sortWith(sortBySegId)
@@ -126,7 +170,7 @@ object WordasClassifierDataModel extends DataModel {
 
     sen.getText.split(" ").foreach(w => {
       val ws = new WordSegment(w, seg, false, false, "")
-      val (index, score) = getWordClassifierScore(w, ws)
+      val (index, score) = getWordClassifierScoreforExpression(w, ws)
       if(index != -1)
         scoreFeatureArray(index) = score
     })
@@ -140,7 +184,7 @@ object WordasClassifierDataModel extends DataModel {
     Integer.parseInt(r1.getArgumentId(1).split("_")(1)) < Integer.parseInt(r2.getArgumentId(1).split("_")(1))
   }
 
-  def getWordClassifierScore(word: String, i: WordSegment) : (Int, Double) = {
+  def getWordClassifierScoreforExpression(word: String, i: WordSegment) : (Int, Double) = {
     if(trainedWordClassifier.contains(word)) {
       val c = trainedWordClassifier(word)
       val scores = c.classifier.scores(i)

@@ -6,7 +6,6 @@ import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator
 
 import scala.collection.JavaConversions._
@@ -147,19 +146,6 @@ object TripletSentenceLevelConstraints {
       a
   }
 
-  val boostTripletByImageTriplet = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and (
-            (VisualTripletClassifiers.VisualTripletClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "region")
-            )
-      }
-      a
-  }
-
   val boostGeneralByRegion = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
@@ -212,6 +198,126 @@ object TripletSentenceLevelConstraints {
       a
   }
 
+  val approveRelationByMultiPreposition = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets ).foreach {
+        x =>
+          val vT = (triplets(x) ~> tripletToVisualTriplet).headOption
+          if(vT.nonEmpty) {
+            vT.get.getSp match {
+              case "in_front_of" =>
+                a = a and ((PrepositionClassifier on vT.get is "in_front_of") ==> (TripletRelationClassifier on x is "Relation"))
+              case "on" =>
+                a = a and ((PrepositionClassifier on vT.get is "on") ==> (TripletRelationClassifier on x is "Relation"))
+              case "in" =>
+                a = a and ((PrepositionClassifier on vT.get is "in") ==> (TripletRelationClassifier on x is "Relation"))
+              case "above" =>
+                a = a and ((PrepositionClassifier on vT.get is "above") ==> (TripletRelationClassifier on x is "Relation"))
+              case "along_the_left_side_of" =>
+                a = a and ((PrepositionClassifier on vT.get is "along_the_left_side_of") ==> (TripletRelationClassifier on x is "Relation"))
+              case "around" =>
+                a = a and ((PrepositionClassifier on vT.get is "around") ==> (TripletRelationClassifier on x is "Relation"))
+              case "at" =>
+                a = a and ((PrepositionClassifier on vT.get is "at") ==> (TripletRelationClassifier on x is "Relation"))
+              case "at_each_side" =>
+                a = a and ((PrepositionClassifier on vT.get is "at_each_side") ==> (TripletRelationClassifier on x is "Relation"))
+              case "behind" =>
+                a = a and ((PrepositionClassifier on vT.get is "behind") ==> (TripletRelationClassifier on x is "Relation"))
+              case "between" =>
+                a = a and ((PrepositionClassifier on vT.get is "between") ==> (TripletRelationClassifier on x is "Relation"))
+              case "in_between" =>
+                a = a and ((PrepositionClassifier on vT.get is "in_between") ==> (TripletRelationClassifier on x is "Relation"))
+              case "leaning_on" =>
+                a = a and ((PrepositionClassifier on vT.get is "leaning_on") ==> (TripletRelationClassifier on x is "Relation"))
+              case "next_to" =>
+                a = a and ((PrepositionClassifier on vT.get is "next_to") ==> (TripletRelationClassifier on x is "Relation"))
+              case "on_each_side" =>
+                a = a and ((PrepositionClassifier on vT.get is "on_each_side") ==> (TripletRelationClassifier on x is "Relation"))
+              case "outside" =>
+                a = a and ((PrepositionClassifier on vT.get is "outside") ==> (TripletRelationClassifier on x is "Relation"))
+              case "over" =>
+                a = a and ((PrepositionClassifier on vT.get is "over") ==> (TripletRelationClassifier on x is "Relation"))
+              case "sitting_around" =>
+                a = a and ((PrepositionClassifier on vT.get is "sitting_around") ==> (TripletRelationClassifier on x is "Relation"))
+              case _ =>
+                a
+            }
+          }
+      }
+      a
+  }
+
+  val agreePrepositionClassifer = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets ).foreach {
+        x =>
+          val vT = (triplets(x) ~> tripletToVisualTriplet).headOption
+          val textSp = (triplets(x) ~> tripletToSecondArg).head.getText.toLowerCase.trim.replaceAll(" ", "_")
+          if(vT.nonEmpty) {
+            a = a and ((TripletRelationClassifier on x is "Relation") ==> (PrepositionClassifier on vT.get is textSp))
+          }
+      }
+      a
+  }
+
+//  val approveRelationByBinaryPreposition = ConstrainedClassifier.constraint[Sentence] {
+//    var a: FirstOrderConstraint = null
+//    s: Sentence =>
+//      a = new FirstOrderConstant(true)
+//      (sentences(s) ~> sentenceToTriplets ).foreach {
+//        x =>
+//          val vT = (triplets(x) ~> tripletToVisualTriplet).headOption
+//          if(vT.nonEmpty) {
+//            vT.get.getSp match {
+//              case "in_front_of" =>
+//                a = a and ((VisualTripletInFrontOfClassifier on vT.get is "in_front_of") ==> (TripletRelationClassifier on x is "Relation"))
+//              case "on" =>
+//                a = a and ((VisualTripletOnClassifier on vT.get is "on") ==> (TripletRelationClassifier on x is "Relation"))
+//              case "in" =>
+//                a = a and ((VisualTripletInClassifier on vT.get is "in") ==> (TripletRelationClassifier on x is "Relation"))
+//              case "above" =>
+//                a = a and ((VisualTripletAboveClassifier on vT.get is "above") ==> (TripletRelationClassifier on x is "Relation"))
+//            }
+//          }
+//      }
+//      a
+//  }
+
+//  val prepositionsConsistency = ConstrainedClassifier.constraint[Sentence] {
+//    var a: FirstOrderConstraint = null
+//    s: Sentence =>
+//      a = new FirstOrderConstant(true)
+//      (sentences(s) ~> sentenceToTriplets ~> tripletToVisualTriplet).foreach {
+//        x =>
+//          a = a and (
+//            (VisualTripletInFrontOfClassifier on x is "true") ==>
+//              (VisualTripletOnClassifier on x isNot "true") and
+//              (VisualTripletInClassifier on x isNot "true") and
+//              (VisualTripletAboveClassifier on x isNot "true")
+//            ) and
+//            ((VisualTripletOnClassifier on x is "true") ==>
+//            (VisualTripletInFrontOfClassifier on x isNot "true") and
+//            (VisualTripletInClassifier on x isNot "true") and
+//            (VisualTripletAboveClassifier on x isNot "true")
+//            ) and
+//            ((VisualTripletInClassifier on x is "true") ==>
+//            (VisualTripletOnClassifier on x isNot "true") and
+//            (VisualTripletInFrontOfClassifier on x isNot "true") and
+//            (VisualTripletAboveClassifier on x isNot "true")
+//            ) and
+//            ((VisualTripletAboveClassifier on x is "true") ==>
+//              (VisualTripletOnClassifier on x isNot "true") and
+//              (VisualTripletInClassifier on x isNot "true") and
+//              (VisualTripletInFrontOfClassifier on x isNot "true")
+//            )
+//      }
+//      a
+//  }
+
   //  val uniqueSegmentAssignment = ConstrainedClassifier.constraint[Sentence] {
   //    var a: FirstOrderConstraint = null
   //    s: Sentence =>
@@ -235,6 +341,23 @@ object TripletSentenceLevelConstraints {
   //      a
   //  }
 
+//  val boostTripletByImageTriplet = ConstrainedClassifier.constraint[Sentence] {
+//    var a: FirstOrderConstraint = null
+//    s: Sentence =>
+//      a = new FirstOrderConstant(true)
+//      (sentences(s) ~> sentenceToTriplets).foreach {
+//        x =>
+//          val vT = (triplets(x) ~> tripletToVisualTriplet).headOption
+//          if(vT.nonEmpty) {
+//            a = a and (
+//              (PrepositionClassifier on vT.get isNot "None") <==> (TripletRelationClassifier on x is "Relation")
+//              )
+//          }
+//      }
+//      a
+//  }
+
+
   val tripletConstraints = ConstrainedClassifier.constraint[Sentence] {
 
     x: Sentence =>
@@ -248,16 +371,25 @@ object TripletSentenceLevelConstraints {
           boostGeneralByRegion(x) and
           regionShouldHaveLandmark(x) and
           discardRelationByImage(x) and
-          approveRelationByImage(x)
+          approveRelationByImage(x) //and
+          //prepositionsConsistency(x) and
+//          approveRelationByMultiPreposition(x) and
+//          agreePrepositionClassifer(x)
       //relationsShouldNotHaveCommonRoles(x)
       //noDuplicates(x)
+      //boostTripletByImageTriplet(x)
 
       //      if (mSpRLConfigurator.imageConstraints)
       //        a = a and
-      //          boostTripletByImage(x) and
+
       //          //boostTrajectorByImage(x) and
       //          uniqueSegmentAssignment(x)
       a
   }
 
+  val prepositionConstraints = ConstrainedClassifier.constraint[Sentence] {
+    x: Sentence =>
+      var a = agreePrepositionClassifer(x)
+      a
+  }
 }
