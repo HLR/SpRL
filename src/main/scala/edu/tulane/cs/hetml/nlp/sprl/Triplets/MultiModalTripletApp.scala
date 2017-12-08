@@ -74,11 +74,28 @@ object MultiModalTripletApp extends App with Logging {
   })
   FileUtils.forceMkdir(new File(resultsDir))
 
-  populateRoleDataFromAnnotatedCorpus()
+  if (isTrain && trainPrepositionClassifier) {
+    populateVisualTripletsFromExternalData()
+    PrepositionClassifier.learn(iterations)
+    PrepositionAroundClassifier.learn(iterations)
+    PrepositionAtClassifier.learn(iterations)
+    PrepositionBehindClassifier.learn(iterations)
+    PrepositionBetweenClassifier.learn(iterations)
+    PrepositionInBetweenClassifier.learn(iterations)
+    PrepositionInClassifier.learn(iterations)
+    PrepositionInTheMiddleOfClassifier.learn(iterations)
+    PrepositionLeaningOnClassifier.learn(iterations)
+    PrepositionNearClassifier.learn(iterations)
+    PrepositionNextToClassifier.learn(iterations)
+    PrepositionOnClassifier.learn(iterations)
+    PrepositionOnEachSideClassifier.learn(iterations)
+    PrepositionOverClassifier.learn(iterations)
+    PrepositionSittingAroundClassifier.learn(iterations)
+    PrepositionWithClassifier.learn(iterations)
+    visualTriplets.clear()
+  }
 
-  // Visual Triplets - MSCOCO / Flicker
-  // Populate them only for Train
-  populateVisualTripletsFromExternalData()
+  populateRoleDataFromAnnotatedCorpus()
 
   if (isTrain) {
     println("training started ...")
@@ -105,7 +122,7 @@ object MultiModalTripletApp extends App with Logging {
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTrain.exists(_.getId == x.getId),
-      x => IndicatorRoleClassifier(x) == "Indicator",
+      x => IndicatorRoleClassifier(x) == "true",
       x => lmCandidatesTrain.exists(_.getId == x.getId)
     )
 
@@ -145,51 +162,28 @@ object MultiModalTripletApp extends App with Logging {
 
     if (trainPrepositionClassifier) {
 
-      PrepositionClassifier.learn(iterations)
-
-      PrepositionAroundClassifier.learn(iterations)
-      PrepositionAtClassifier.learn(iterations)
-      PrepositionBehindClassifier.learn(iterations)
-      PrepositionBetweenClassifier.learn(iterations)
-      PrepositionInBetweenClassifier.learn(iterations)
-      PrepositionInClassifier.learn(iterations)
-      PrepositionInTheMiddleOfClassifier.learn(iterations)
-      PrepositionLeaningOnClassifier.learn(iterations)
-      PrepositionNearClassifier.learn(iterations)
-      PrepositionNextToClassifier.learn(iterations)
-      PrepositionOnClassifier.learn(iterations)
-      PrepositionOnEachSideClassifier.learn(iterations)
-      PrepositionOverClassifier.learn(iterations)
-      PrepositionSittingAroundClassifier.learn(iterations)
-      PrepositionWithClassifier.learn(iterations)
-      //clear datamodel
-      visualTriplets.clear()
-
-      val visualTripletsFiltered = (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-      PrepositionClassifier.test(visualTripletsFiltered)
-
-      visualTriplets.populate(visualTripletsFiltered, isTrain)
+      val visualTripletsFiltered = visualTriplets().toList.filter(x => x.getSp != null)
 
       //fine tune with clef examples
-      PrepositionClassifier.learn(10)
-      PrepositionAroundClassifier.learn(10)
-      PrepositionAtClassifier.learn(10)
-      PrepositionBehindClassifier.learn(10)
-      PrepositionBetweenClassifier.learn(10)
-      PrepositionInBetweenClassifier.learn(10)
-      PrepositionInClassifier.learn(10)
-      PrepositionInTheMiddleOfClassifier.learn(10)
-      PrepositionLeaningOnClassifier.learn(10)
-      PrepositionNearClassifier.learn(10)
-      PrepositionNextToClassifier.learn(10)
-      PrepositionOnClassifier.learn(10)
-      PrepositionOnEachSideClassifier.learn(10)
-      PrepositionOverClassifier.learn(10)
-      PrepositionSittingAroundClassifier.learn(10)
-      PrepositionWithClassifier.learn(10)
+      PrepositionClassifier.learn(10, visualTripletsFiltered)
+      PrepositionAroundClassifier.learn(10, visualTripletsFiltered)
+      PrepositionAtClassifier.learn(10, visualTripletsFiltered)
+      PrepositionBehindClassifier.learn(10, visualTripletsFiltered)
+      PrepositionBetweenClassifier.learn(10, visualTripletsFiltered)
+      PrepositionInBetweenClassifier.learn(10, visualTripletsFiltered)
+      PrepositionInClassifier.learn(10, visualTripletsFiltered)
+      PrepositionInTheMiddleOfClassifier.learn(10, visualTripletsFiltered)
+      PrepositionLeaningOnClassifier.learn(10, visualTripletsFiltered)
+      PrepositionNearClassifier.learn(10, visualTripletsFiltered)
+      PrepositionNextToClassifier.learn(10, visualTripletsFiltered)
+      PrepositionOnClassifier.learn(10, visualTripletsFiltered)
+      PrepositionOnEachSideClassifier.learn(10, visualTripletsFiltered)
+      PrepositionOverClassifier.learn(10, visualTripletsFiltered)
+      PrepositionSittingAroundClassifier.learn(10, visualTripletsFiltered)
+      PrepositionWithClassifier.learn(10, visualTripletsFiltered)
       // Train on clef only
-      PrepositionInFrontOfClassifier.learn(iterations)
-      PrepositionAboveClassifier.learn(iterations)
+      PrepositionInFrontOfClassifier.learn(iterations, visualTripletsFiltered)
+      PrepositionAboveClassifier.learn(iterations, visualTripletsFiltered)
 
       PrepositionClassifier.test(visualTripletsFiltered)
 
@@ -313,25 +307,16 @@ object MultiModalTripletApp extends App with Logging {
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTest.exists(_.getId == x.getId),
-      x => IndicatorRoleClassifier(x) == "Indicator",
+      x => IndicatorRoleClassifier(x) == "true",
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
     if (!useConstraints) {
-      val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
-      val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
-      val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
+      val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "true").toList
+      val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "true").toList
+      val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "true").toList
 
       val tripletList = triplets.getTestingInstances
-        .filter(x => TripletRelationClassifier(x) == "Relation").toList
-
-//      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
-//        x => TripletGeneralTypeClassifier(x),
-//        x => TripletSpecificTypeClassifier(x),
-//        x => TripletRegionClassifier(x),
-//        x => TripletDirectionClassifier(x),
-//        s"$resultsDir/${expName}${suffix}.xml")
-
-      //ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+        .filter(x => TripletRelationClassifier(x) == "true").toList
 
       val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
 
@@ -522,22 +507,22 @@ object MultiModalTripletApp extends App with Logging {
     }
   }
 
-  val all = triplets().map(x => (x.getArgument(1).getText, tripletMatchingSegmentRelationLabelScores(x), tripletIsRelation(x), x))
-    .filter(x => !x._2.equals("-")).toList
-  val rels = all.filter(_._3.equalsIgnoreCase("Relation"))
-  val noRels = all.filter(_._3.equalsIgnoreCase("None"))
-  val tp = rels.count(x => x._2.split(":").head == x._1)
-  val fn = rels.size - tp
-  val fp = noRels.count(x => x._2.split(":").head == x._1)
-  val tn = noRels.size - fp
-  val writer = new PrintStream(s"$resultsDir/preposition-prediction_${isTrain}.txt")
-  writer.println("Aligned ground truth: " + rels.size)
-  writer.println("tp: " + tp)
-  writer.println("tn: " + tn)
-  writer.println("fp: " + fp)
-  writer.println("fn: " + fn)
-  all.sortBy(_._3).foreach(x => writer.println(x._3 + "[" + x._4.getProperty("ActualId") + "](" + x._4.getArgument(0).getText + ", " + x._1 + ", " +
-    x._4.getArgument(2).getText + ") :: " + x._2 + " :: "))
-  writer.close()
+//  val all = triplets().map(x => (x.getArgument(1).getText, tripletMatchingSegmentRelationLabelScores(x), tripletIsRelation(x), x))
+//    .filter(x => !x._2.equals("-")).toList
+//  val rels = all.filter(_._3.equalsIgnoreCase("Relation"))
+//  val noRels = all.filter(_._3.equalsIgnoreCase("None"))
+//  val tp = rels.count(x => x._2.split(":").head == x._1)
+//  val fn = rels.size - tp
+//  val fp = noRels.count(x => x._2.split(":").head == x._1)
+//  val tn = noRels.size - fp
+//  val writer = new PrintStream(s"$resultsDir/preposition-prediction_${isTrain}.txt")
+//  writer.println("Aligned ground truth: " + rels.size)
+//  writer.println("tp: " + tp)
+//  writer.println("tn: " + tn)
+//  writer.println("fp: " + fp)
+//  writer.println("fn: " + fn)
+//  all.sortBy(_._3).foreach(x => writer.println(x._3 + "[" + x._4.getProperty("ActualId") + "](" + x._4.getArgument(0).getText + ", " + x._1 + ", " +
+//    x._4.getArgument(2).getText + ") :: " + x._2 + " :: "))
+//  writer.close()
 }
 

@@ -58,36 +58,45 @@ object MultiModalSpRLTripletClassifiers {
     override def feature = phraseFeatures
   }
 
-  object TrajectorRoleClassifier extends Learnable(phrases) {
-    def label = trajectorRole
+  val p = new SparsePerceptron.Parameters()
+  p.learningRate = .1
+  p.thickness = 2
 
-    override lazy val classifier = new SparsePerceptron()
+  object TrajectorRoleClassifier extends Learnable(phrases) {
+    def label = trajectorRole is "Trajector"
+
+    override lazy val classifier = new SparsePerceptron(p)
 
     override def feature = phraseFeatures
   }
 
   object LandmarkRoleClassifier extends Learnable(phrases) {
-    def label = landmarkRole
+    def label = landmarkRole is "Landmark"
 
-    override lazy val classifier = new SparsePerceptron()
+    override lazy val classifier = new SparsePerceptron(p)
 
     override def feature = (phraseFeatures ++ List(lemma, headWordLemma))
       .diff(List())
   }
 
   object IndicatorRoleClassifier extends Learnable(phrases) {
-    def label = indicatorRole
+    def label = indicatorRole is "Indicator"
 
-    override lazy val classifier = new SparsePerceptron()
+    override lazy val classifier = new SparsePerceptron(p)
 
     override def feature = (phraseFeatures(FeatureSets.BaseLine) ++ List(headSubCategorization))
       .diff(List(headWordPos, headWordFrom, headDependencyRelation))
   }
 
   object TripletRelationClassifier extends Learnable(triplets) {
-    def label = tripletIsRelation
+    def label = tripletIsRelation is "Relation"
 
-    override lazy val classifier = new SparsePerceptron()
+    override lazy val classifier = new SparseNetworkLearner {
+      val p = new SparseAveragedPerceptron.Parameters()
+      p.learningRate = .1
+      p.thickness = 2
+      baseLTU = new SparseAveragedPerceptron(p)
+    }
 
     override def feature =  (tripletFeatures)
       .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))

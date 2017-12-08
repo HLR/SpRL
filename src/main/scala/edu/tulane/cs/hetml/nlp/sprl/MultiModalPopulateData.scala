@@ -1,5 +1,6 @@
 package edu.tulane.cs.hetml.nlp.sprl
 
+import java.awt.geom.Rectangle2D
 import java.io.PrintStream
 
 import edu.illinois.cs.cogcomp.saul.util.Logging
@@ -7,7 +8,7 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.documentToSentenceGenerating
 import edu.tulane.cs.hetml.nlp.sprl.Helpers._
-import edu.tulane.cs.hetml.vision.ImageTripletReader
+import edu.tulane.cs.hetml.vision.{ImageTriplet, ImageTripletReader, Segment}
 import mSpRLConfigurator._
 
 import scala.collection.JavaConversions._
@@ -20,7 +21,7 @@ object MultiModalPopulateData extends Logging {
 
   lazy val xmlReader = new SpRLXmlReader(if (isTrain) trainFile else testFile, globalSpans)
   lazy val imageReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, isTrain)
-  lazy val alignmentReader = new AlignmentReader(alignmentAnnotationPath, alignmentTextPath)
+  lazy val alignmentReader = new AlignmentReader(alignmentAnnotationPath, isTrain)
 
   def populateRoleDataFromAnnotatedCorpus(populateNullPairs: Boolean = true): Unit = {
     logger.info("Role population started ...")
@@ -48,21 +49,12 @@ object MultiModalPopulateData extends Logging {
 
     xmlReader.setRoles(phraseInstances)
 
-    //    if (globalSpans) {
-    //      phraseInstances.foreach {
-    //        p =>
-    //          p.setStart(p.getStart - p.getSentence.getStart)
-    //          p.setEnd(p.getEnd - p.getSentence.getStart)
-    //      }
-    //    }
-
     alignmentReader.setAlignments(phraseInstances)
 
     if (populateImages) {
       images.populate(imageReader.getImageList, isTrain)
-      segments.populate(imageReader.getSegmentList, isTrain)
-      //visualTripletsPairs.populate(imageReader.getVisualTripletList, isTrain)
-
+      val segs = getAdjustedSegments(imageReader.getSegmentList)
+      segments.populate(segs, isTrain)
       setBestAlignment()
     }
 
@@ -122,11 +114,6 @@ object MultiModalPopulateData extends Logging {
     xmlReader.setTripletRelationTypes(candidateRelations)
 
     triplets.populate(candidateRelations, isTrain)
-    val visualTripletsFiltered =
-      (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-        .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
-
-    visualTriplets.populate(visualTripletsFiltered, isTrain)
 
     logger.info("Triplet population finished.")
   }
@@ -149,16 +136,55 @@ object MultiModalPopulateData extends Logging {
     logger.info("Data population finished.")
   }
 
-  def populateVisualTripletsFromExternalData() : Unit = {
+  def populateVisualTripletsFromExternalData(): Unit = {
     val flickerTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "Flickr30k.majorityhead")
     val msCocoTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "MSCOCO.originalterm")
 
     val externalTrainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
 
-    if(trainPrepositionClassifier && isTrain) {
-      println("Populating Visual Triplets...")
+    if (trainPrepositionClassifier && isTrain) {
+      println("Populating Visual Triplets from External Dataset...")
       visualTriplets.populate(externalTrainTriplets, isTrain)
     }
+  }
+
+  private def getAdjustedSegments(segments: List[Segment]): List[Segment] = {
+    val alignedPhrases = phrases().filter(_.containsProperty("goldAlignment"))
+    val update = alignedPhrases.filter(_.getPropertyFirstValue("goldAlignment") != "-1")
+    val addNew = alignedPhrases.filter(_.getPropertyFirstValue("goldAlignment") == "-1")
+
+    update.foreach {
+      p =>
+        val seg = segments.find(x =>
+          x.getAssociatedImageID == p.getPropertyFirstValue("imageId") &&
+            x.getSegmentId == p.getPropertyFirstValue("segId").toInt
+        ).get
+        val im = images().find(_.getId == seg.getAssociatedImageID).get
+        val x = Math.min(im.getWidth, Math.max(0, p.getPropertyFirstValue("segX").toDouble))
+        val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
+        val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
+        val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
+
+        seg.getBoxDimensions.setRect(x, y, w, h)
+    }
+    var sId = 1000
+    val newSegs = addNew.map {
+      p =>
+        val imId = p.getPropertyFirstValue("imageId")
+        val im = images().find(_.getId == imId).get
+        val x = Math.min(im.getWidth, Math.max(0, p.getPropertyFirstValue("segX").toDouble))
+        val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
+        val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
+        val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
+        sId += 1
+        p.removeProperty("segId")
+        p.addPropertyValue("segId", sId.toString)
+        p.removeProperty("goldAlignment")
+        p.addPropertyValue("goldAlignment", sId.toString)
+        new Segment(imId, sId, -1, "", headWordFrom(p), new Rectangle2D.Double(x, y, w, h))
+    }
+
+    segments ++ newSegs
   }
 
   private def setBestAlignment() = {
@@ -182,8 +208,9 @@ object MultiModalPopulateData extends Logging {
               usedPhrases.add(pair.getArgumentId(0))
               usedSegments.add(pair.getArgumentId(1))
               val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
-              if(pair.getProperty("similarity").toDouble > 0.30 || alignmentMethod=="classifier") {
+              if (pair.getProperty("similarity").toDouble > 0.30 || alignmentMethod == "classifier") {
                 p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
+                p.addPropertyValue("imageId", pair.getArgument(1).asInstanceOf[Segment].getAssociatedImageID)
                 p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
               }
             }
