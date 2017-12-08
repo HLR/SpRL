@@ -66,27 +66,6 @@ object MultiModalPopulateData extends Logging {
       setBestAlignment()
     }
 
-    val suffix = if (isTrain) "train" else "gold"
-    val writer = new PrintStream(s"$resultsDir/phrases_$suffix.txt")
-    val docs = phraseInstances.groupBy(x => x.getDocument)
-    docs.foreach {
-      case (doc, phraseList) =>
-        val imageId = (documents(doc) ~> documentToImage).head.getId
-        val imFolder = doc.getId.split(Array('.', '/'))(1)
-        phraseList.foreach {
-          p =>
-            val seg = (phrases(p) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair).headOption
-            var segStr = "-1\t\t-1\t\t-1\t\t-1\t\t-1"
-            if (seg.nonEmpty) {
-              segStr = s"${seg.get.getSegmentId}\t\t" +
-                s"${seg.get.getBoxDimensions.getX}\t\t${seg.get.getBoxDimensions.getY}\t\t" +
-                s"${seg.get.getBoxDimensions.getWidth}\t\t${seg.get.getBoxDimensions.getHeight}\t\t"
-            }
-            writer.println(s"$imFolder\t\t$imageId\t\t${p.getSentence.getId}\t\t${p.getSentence.getText}\t\t" +
-              s"${p.getStart}\t\t${p.getEnd}\t\t${p.getText}\t\t$segStr")
-        }
-    }
-    writer.close()
     logger.info("Role population finished.")
   }
 
@@ -143,32 +122,12 @@ object MultiModalPopulateData extends Logging {
     xmlReader.setTripletRelationTypes(candidateRelations)
 
     triplets.populate(candidateRelations, isTrain)
-    if(!isTrain) {
-      val visualTripletsFiltered =
-          (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-            .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
+    val visualTripletsFiltered =
+      (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
+        .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
 
-      visualTriplets.populate(visualTripletsFiltered, isTrain)
-    }
-    val rels = xmlReader.getTripletsWithArguments()
-    val suffix = if (isTrain) "train" else "gold"
-    val writer = new PrintStream(s"$resultsDir/flat_relation_roles_$suffix.txt")
+    visualTriplets.populate(visualTripletsFiltered, isTrain)
 
-    rels.foreach {
-      r =>
-        val sent = r.getParent.asInstanceOf[Sentence]
-        val tr = r.getArgument(0)
-        val sp = r.getArgument(1)
-        val lm = if (r.getArgument(2) != null) r.getArgument(2) else dummyPhrase
-        val imId = sent.getDocument.getId.split(Array('.', '/'))(2)
-        val imFolder = sent.getDocument.getId.split(Array('.', '/'))(1)
-
-        writer.println(s"$imFolder\t\t$imId\t\t${sent.getId}\t\t${sent.getText}" +
-          s"\t\t${tr.getStart}\t\t${tr.getEnd}\t\t${tr.getText}" +
-          s"\t\t${sp.getStart}\t\t${sp.getEnd}\t\t${sp.getText}" +
-          s"\t\t${lm.getStart}\t\t${lm.getEnd}\t\t${lm.getText}")
-    }
-    writer.close()
     logger.info("Triplet population finished.")
   }
 
@@ -228,7 +187,8 @@ object MultiModalPopulateData extends Logging {
                 p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
               }
             }
-          })
+          }
+          )
         })
     }
   }
