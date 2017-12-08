@@ -9,8 +9,6 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import edu.tulane.cs.hetml.vision.CLEFAlignmentReader
 import org.apache.commons.io.FileUtils
@@ -41,7 +39,33 @@ object MultiModalTripletApp extends App with Logging {
     TripletSpecificTypeClassifier,
     TripletRegionClassifier,
     TripletDirectionClassifier,
-    TripletImageRegionClassifier
+    PrepositionClassifier,
+    TripletRegionTPPClassifier,
+    TripletRegionEQClassifier,
+    TripletRegionDCClassifier,
+    TripletRegionECClassifier,
+    TripletRegionPOClassifier,
+    TripletDirectionAboveClassifier,
+    TripletDirectionBehindClassifier,
+    TripletDirectionBelowClassifier,
+    TripletDirectionFrontClassifier,
+    TripletDirectionLeftClassifier,
+    TripletDirectionRightClassifier,
+    PrepositionAroundClassifier,
+    PrepositionAtClassifier,
+    PrepositionBehindClassifier,
+    PrepositionBetweenClassifier,
+    PrepositionInBetweenClassifier,
+    PrepositionInClassifier,
+    PrepositionInTheMiddleOfClassifier,
+    PrepositionLeaningOnClassifier,
+    PrepositionNearClassifier,
+    PrepositionNextToClassifier,
+    PrepositionOnClassifier,
+    PrepositionOnEachSideClassifier,
+    PrepositionOverClassifier,
+    PrepositionSittingAroundClassifier,
+    PrepositionWithClassifier
   )
   classifiers.foreach(x => {
     x.modelDir = s"models/mSpRL/triplet/$featureSet/"
@@ -50,7 +74,11 @@ object MultiModalTripletApp extends App with Logging {
   FileUtils.forceMkdir(new File(resultsDir))
 
   populateRoleDataFromAnnotatedCorpus()
-  val visualClassifier = new VisualTripletClassifier()
+
+  // Visual Triplets - MSCOCO / Flicker
+  // Populate them only for Train
+  populateVisualTripletsFromExternalData()
+
   if (isTrain) {
     println("training started ...")
 
@@ -92,12 +120,111 @@ object MultiModalTripletApp extends App with Logging {
     TripletRegionClassifier.learn(iterations)
     TripletRegionClassifier.test(triplets())
 
+    TripletRegionTPPClassifier.learn(iterations)
+    TripletRegionEQClassifier.learn(iterations)
+    TripletRegionDCClassifier.learn(iterations)
+    TripletRegionECClassifier.learn(iterations)
+    TripletRegionPOClassifier.learn(iterations)
+
     TripletDirectionClassifier.learn(iterations)
     TripletDirectionClassifier.test(triplets())
 
-    TripletImageRegionClassifier.learn(iterations)
-    TripletImageRegionClassifier.test(triplets())
+    TripletDirectionAboveClassifier.learn(iterations)
+    TripletDirectionBehindClassifier.learn(iterations)
+    TripletDirectionBelowClassifier.learn(iterations)
+    TripletDirectionFrontClassifier.learn(iterations)
+    TripletDirectionLeftClassifier.learn(iterations)
+    TripletDirectionRightClassifier.learn(iterations)
 
+    if (trainPrepositionClassifier) {
+
+      PrepositionClassifier.learn(iterations)
+
+      PrepositionAroundClassifier.learn(iterations)
+      PrepositionAtClassifier.learn(iterations)
+      PrepositionBehindClassifier.learn(iterations)
+      PrepositionBetweenClassifier.learn(iterations)
+      PrepositionInBetweenClassifier.learn(iterations)
+      PrepositionInClassifier.learn(iterations)
+      PrepositionInTheMiddleOfClassifier.learn(iterations)
+      PrepositionLeaningOnClassifier.learn(iterations)
+      PrepositionNearClassifier.learn(iterations)
+      PrepositionNextToClassifier.learn(iterations)
+      PrepositionOnClassifier.learn(iterations)
+      PrepositionOnEachSideClassifier.learn(iterations)
+      PrepositionOverClassifier.learn(iterations)
+      PrepositionSittingAroundClassifier.learn(iterations)
+      PrepositionWithClassifier.learn(iterations)
+      //clear datamodel
+      visualTriplets.clear()
+
+      val visualTripletsFiltered = (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
+      PrepositionClassifier.test(visualTripletsFiltered)
+
+      visualTriplets.populate(visualTripletsFiltered, isTrain)
+
+      //fine tune with clef examples
+      PrepositionClassifier.learn(10)
+      PrepositionAroundClassifier.learn(10)
+      PrepositionAtClassifier.learn(10)
+      PrepositionBehindClassifier.learn(10)
+      PrepositionBetweenClassifier.learn(10)
+      PrepositionInBetweenClassifier.learn(10)
+      PrepositionInClassifier.learn(10)
+      PrepositionInTheMiddleOfClassifier.learn(10)
+      PrepositionLeaningOnClassifier.learn(10)
+      PrepositionNearClassifier.learn(10)
+      PrepositionNextToClassifier.learn(10)
+      PrepositionOnClassifier.learn(10)
+      PrepositionOnEachSideClassifier.learn(10)
+      PrepositionOverClassifier.learn(10)
+      PrepositionSittingAroundClassifier.learn(10)
+      PrepositionWithClassifier.learn(10)
+      // Train on clef only
+      PrepositionInFrontOfClassifier.learn(iterations)
+      PrepositionAboveClassifier.learn(iterations)
+
+      PrepositionClassifier.test(visualTripletsFiltered)
+
+      PrepositionAboveClassifier.test(visualTripletsFiltered)
+      PrepositionAroundClassifier.test(visualTripletsFiltered)
+      PrepositionAtClassifier.test(visualTripletsFiltered)
+      PrepositionBehindClassifier.test(visualTripletsFiltered)
+      PrepositionBetweenClassifier.test(visualTripletsFiltered)
+      PrepositionInBetweenClassifier.test(visualTripletsFiltered)
+      PrepositionInClassifier.test(visualTripletsFiltered)
+      PrepositionInFrontOfClassifier.test(visualTripletsFiltered)
+      PrepositionInTheMiddleOfClassifier.test(visualTripletsFiltered)
+      PrepositionLeaningOnClassifier.test(visualTripletsFiltered)
+      PrepositionNearClassifier.test(visualTripletsFiltered)
+      PrepositionNextToClassifier.test(visualTripletsFiltered)
+      PrepositionOnClassifier.test(visualTripletsFiltered)
+      PrepositionOnEachSideClassifier.test(visualTripletsFiltered)
+      PrepositionOverClassifier.test(visualTripletsFiltered)
+      PrepositionSittingAroundClassifier.test(visualTripletsFiltered)
+      PrepositionWithClassifier.test(visualTripletsFiltered)
+
+      PrepositionClassifier.save()
+
+      PrepositionAboveClassifier.save()
+      PrepositionAroundClassifier.save()
+      PrepositionAtClassifier.save()
+      PrepositionBehindClassifier.save()
+      PrepositionBetweenClassifier.save()
+      PrepositionInBetweenClassifier.save()
+      PrepositionInClassifier.save()
+      PrepositionInFrontOfClassifier.save()
+      PrepositionInTheMiddleOfClassifier.save()
+      PrepositionLeaningOnClassifier.save()
+      PrepositionNearClassifier.save()
+      PrepositionNextToClassifier.save()
+      PrepositionOnClassifier.save()
+      PrepositionOnEachSideClassifier.save()
+      PrepositionOverClassifier.save()
+      PrepositionSittingAroundClassifier.save()
+      PrepositionWithClassifier.save()
+
+    }
 
     TripletRelationClassifier.save()
     TripletGeneralTypeClassifier.save()
@@ -106,19 +233,19 @@ object MultiModalTripletApp extends App with Logging {
     TripletDirectionClassifier.save()
     TripletImageRegionClassifier.save()
 
-    if (fineTunePrepositionClassifier) {
-      val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-      val classifierSuffix = "combined_perceptron"
-      visualClassifier.modelSuffix = classifierSuffix
-      visualClassifier.modelDir = classifierDirectory
-      //visualClassifier.load()
-      val visualTriplets = (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-      //visualClassifier.test(visualTriplets)
-      visualClassifier.learn(50)
-      visualClassifier.test(visualTriplets)
-      visualClassifier.modelSuffix += "_tuned"
-      visualClassifier.save()
-    }
+    TripletRegionTPPClassifier.save()
+    TripletRegionEQClassifier.save()
+    TripletRegionDCClassifier.save()
+    TripletRegionECClassifier.save()
+    TripletRegionPOClassifier.save()
+
+    TripletDirectionAboveClassifier.save()
+    TripletDirectionBehindClassifier.save()
+    TripletDirectionBelowClassifier.save()
+    TripletDirectionFrontClassifier.save()
+    TripletDirectionLeftClassifier.save()
+    TripletDirectionRightClassifier.save()
+
   }
 
   if (!isTrain) {
@@ -134,22 +261,7 @@ object MultiModalTripletApp extends App with Logging {
     TripletRegionClassifier.load()
     TripletDirectionClassifier.load()
     TripletImageRegionClassifier.load()
-
-    val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-    val classifierSuffix = "combined_perceptron_tuned"
-    val classifierOnSuffix = "combined_on_perceptron"
-    val classifierInFrontOfSuffix = "combined_InFrontOf_perceptron"
-
-    visualClassifier.modelSuffix = classifierSuffix
-    visualClassifier.modelDir = classifierDirectory
-    VisualTripletOnClassifier.modelSuffix = classifierOnSuffix
-    VisualTripletOnClassifier.modelDir = classifierDirectory
-    VisualTripletInFrontOfClassifier.modelSuffix = classifierInFrontOfSuffix
-    VisualTripletInFrontOfClassifier.modelDir = classifierDirectory
-
-    visualClassifier.load()
-    VisualTripletOnClassifier.load()
-    VisualTripletInFrontOfClassifier.load()
+    PrepositionClassifier.load()
 
     val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases().toList)
     val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)
@@ -205,7 +317,7 @@ object MultiModalTripletApp extends App with Logging {
       val imRegion = TripletImageRegionClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Image Region(within data model)", imRegion)
 
-      val visual = visualClassifier.test()
+      val visual = PrepositionClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Visual triplet(within data model)", visual)
 
       report(x => TripletRelationClassifier(x),
@@ -259,8 +371,11 @@ object MultiModalTripletApp extends App with Logging {
       val region = TripletRegionConstraintClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
 
-      val visual = visualClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Visual triplet(within data model)", visual)
+      val imRegion = TripletImageRegionClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Image Region(within data model)", imRegion)
+
+      val visual = PrepositionConstraintClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Preposition(within data model)", visual)
 
       report(x => TripletRelationConstraintClassifier(x),
         x => TRConstraintClassifier(x),

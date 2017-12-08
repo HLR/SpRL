@@ -29,24 +29,63 @@ public class ImageTriplet {
     private double left;
     private double right;
     private double intersectionArea;
-
-    public double getIntersectionArea() {
-        return intersectionArea;
-    }
-
-    public void setIntersectionArea(double intersectionArea) {
-        this.intersectionArea = intersectionArea;
-    }
-
-    public double getUnionArea() {
-        return unionArea;
-    }
-
-    public void setUnionArea(double unionArea) {
-        this.unionArea = unionArea;
-    }
-
     private double unionArea;
+
+    public void setTrBox(Rectangle2D trBox) {
+        this.trBox = trBox;
+    }
+
+    public void setLmBox(Rectangle2D lmBox) {
+        this.lmBox = lmBox;
+    }
+
+    public void setImageWidth(double imageWidth) {
+        this.imageWidth = imageWidth;
+    }
+
+    public void setImageHeight(double imageHeight) {
+        this.imageHeight = imageHeight;
+    }
+
+    public void setTrVectorX(double trVectorX) {
+        this.trVectorX = trVectorX;
+    }
+
+    public void setTrVectorY(double trVectorY) {
+        this.trVectorY = trVectorY;
+    }
+
+    public void setTrAreawrtLM(double trAreawrtLM) {
+        this.trAreawrtLM = trAreawrtLM;
+    }
+
+    public void setTrAspectRatio(double trAspectRatio) {
+        this.trAspectRatio = trAspectRatio;
+    }
+
+    public void setLmAspectRatio(double lmAspectRatio) {
+        this.lmAspectRatio = lmAspectRatio;
+    }
+
+    public void setTrAreaBbox(double trAreaBbox) {
+        this.trAreaBbox = trAreaBbox;
+    }
+
+    public void setLmAreaBbox(double lmAreaBbox) {
+        this.lmAreaBbox = lmAreaBbox;
+    }
+
+    public void setIou(double iou) {
+        this.iou = iou;
+    }
+
+    public void setTrAreaImage(double trAreaImage) {
+        this.trAreaImage = trAreaImage;
+    }
+
+    public void setLmAreaImage(double lmAreaImage) {
+        this.lmAreaImage = lmAreaImage;
+    }
 
     public ImageTriplet(String sp, String trajector, String landmark, Rectangle2D trBox, Rectangle2D lmBox, double imageWidth,
                         double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
@@ -248,4 +287,25 @@ public class ImageTriplet {
     public void setRight(double right) {
         this.right = right;
     }
+
+    public double getIntersectionArea() {
+        return intersectionArea;
+    }
+
+    public void setIntersectionArea(double intersectionArea) {
+        this.intersectionArea = intersectionArea;
+    }
+
+    public void setEuclideanDistance(double euclideanDistance) {
+        this.euclideanDistance = euclideanDistance;
+    }
+
+    public double getUnionArea() {
+        return unionArea;
+    }
+
+    public void setUnionArea(double unionArea) {
+        this.unionArea = unionArea;
+    }
+
 }

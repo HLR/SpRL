@@ -126,6 +126,14 @@ object MultiModalSpRLSensors {
     pair.getArgumentId(0) == phrase.getId
   }
 
+  def sentenceToVisualTripletMatching(s: Sentence): List[ImageTriplet] = {
+    var vT = sentences(s) ~> sentenceToTriplets ~> tripletToVisualTriplet
+    if (vT.nonEmpty) {
+      vT = vT.filter(t => t.getSp!="-")
+    }
+    vT.toList
+  }
+
   def TripletToVisualTripletGenerating(r: Relation): List[ImageTriplet] = {
     val (first, second, third) = getTripletArguments(r)
     val trSegId = first.getPropertyFirstValue("bestAlignment")
@@ -139,13 +147,47 @@ object MultiModalSpRLSensors {
 
       if (trSeg.nonEmpty && lmSeg.nonEmpty) {
 
-        val imageRel = visualTriplets().filter(x => x.getImageId == trSeg.get.getAssociatedImageID &&
+        val imageRel = visualTripletsPairs().filter(x => x.getImageId == trSeg.get.getAssociatedImageID &&
           x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
 
         imageRel.foreach {
           x =>
             x.setTrajector(headWordFrom(first).toLowerCase())
             x.setLandmark(headWordFrom(third).toLowerCase())
+            if (x.getSp == null)
+              x.setSp("-")
+            if(tripletIsRelation(r) == "Relation")
+              x.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
+
+        }
+        imageRel.toList
+      }
+      else if(trSeg.nonEmpty) { // NULL Landmark
+
+        val imageRel = visualTripletsPairs().filter(x => x.getImageId == trSeg.get.getAssociatedImageID &&
+          x.getFirstSegId.toString == trSegId)
+
+        imageRel.foreach {
+          x =>
+            x.setTrajector(headWordFrom(first).toLowerCase())
+            // update landmark features
+            x.setLandmark("none")
+            x.setAbove(0)
+            x.setBelow(0)
+            x.setEuclideanDistance(0)
+            x.setIntersectionArea(0)
+            x.setIou(0)
+            x.setLeft(0)
+            x.setLmAreaBbox(0)
+            x.setLmAreaImage(0)
+            x.setRight(0)
+            x.setLmAspectRatio(0)
+            x.setTrAreaBbox(0)
+            x.setTrAreawrtLM(0)
+            x.setTrVectorX(0)
+            x.setTrVectorY(0)
+            x.setUnionArea(0)
+
             if (x.getSp == null)
               x.setSp("-")
             if(tripletIsRelation(r) == "Relation")

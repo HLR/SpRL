@@ -3,11 +3,11 @@ package edu.tulane.cs.hetml.nlp.sprl
 import java.io.PrintStream
 
 import edu.illinois.cs.cogcomp.saul.util.Logging
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel.{triplets, _}
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.documentToSentenceGenerating
 import edu.tulane.cs.hetml.nlp.sprl.Helpers._
-import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel
+import edu.tulane.cs.hetml.vision.ImageTripletReader
 import mSpRLConfigurator._
 
 import scala.collection.JavaConversions._
@@ -62,7 +62,7 @@ object MultiModalPopulateData extends Logging {
       images.populate(imageReader.getImageList, isTrain)
       segments.populate(imageReader.getSegmentList, isTrain)
       segmentRelations.populate(imageReader.getImageRelationList, isTrain)
-      visualTriplets.populate(imageReader.getVisualTripletList, isTrain)
+      visualTripletsPairs.populate(imageReader.getVisualTripletList, isTrain)
 
       setBestAlignment()
     }
@@ -144,12 +144,13 @@ object MultiModalPopulateData extends Logging {
     xmlReader.setTripletRelationTypes(candidateRelations)
 
     triplets.populate(candidateRelations, isTrain)
-    val visualTriplets =
-        (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-          .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
+    if(!isTrain) {
+      val visualTripletsFiltered =
+          (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
+            .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
 
-    VisualTripletsDataModel.visualTriplets.populate(visualTriplets, isTrain)
-
+      visualTriplets.populate(visualTripletsFiltered, isTrain)
+    }
     val rels = xmlReader.getTripletsWithArguments()
     val suffix = if (isTrain) "train" else "gold"
     val writer = new PrintStream(s"$resultsDir/flat_relation_roles_$suffix.txt")
@@ -190,6 +191,18 @@ object MultiModalPopulateData extends Logging {
     logger.info("Data population finished.")
   }
 
+  def populateVisualTripletsFromExternalData() : Unit = {
+    val flickerTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "Flickr30k.majorityhead")
+    val msCocoTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "MSCOCO.originalterm")
+
+    val externalTrainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
+
+    if(trainPrepositionClassifier && isTrain) {
+      println("Populating Visual Triplets...")
+      visualTriplets.populate(externalTrainTriplets, isTrain)
+    }
+  }
+
   private def setBestAlignment() = {
     alignmentMethod match {
       case "gold" =>
@@ -211,7 +224,7 @@ object MultiModalPopulateData extends Logging {
               usedPhrases.add(pair.getArgumentId(0))
               usedSegments.add(pair.getArgumentId(1))
               val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
-              if (pair.getProperty("similarity").toDouble > 0.30) {
+              if(pair.getProperty("similarity").toDouble > 0.30 || alignmentMethod=="classifier") {
                 p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
                 p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
               }
@@ -220,6 +233,5 @@ object MultiModalPopulateData extends Logging {
         })
     }
   }
-
 }
 
