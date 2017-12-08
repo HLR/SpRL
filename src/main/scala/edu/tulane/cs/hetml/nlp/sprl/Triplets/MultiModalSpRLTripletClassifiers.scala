@@ -36,7 +36,7 @@ object MultiModalSpRLTripletClassifiers {
     ) ++
       (featureSet match {
         case FeatureSets.BaseLineWithImage => List(tripletLmMatchingSegmentSimilarity,
-          tripletTrMatchingSegmentSimilarity)
+          tripletTrMatchingSegmentSimilarity, tripletMatchingSegmentRelationFeatures)
         case FeatureSets.WordEmbedding => List(tripletTrVector, tripletLmVector)
         case FeatureSets.WordEmbeddingPlusImage => List(tripletTrVector, tripletLmVector,
           tripletLmMatchingSegmentSimilarity, tripletTrMatchingSegmentSimilarity)
@@ -61,12 +61,7 @@ object MultiModalSpRLTripletClassifiers {
   object TrajectorRoleClassifier extends Learnable(phrases) {
     def label = trajectorRole
 
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.thickness = 2
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
+    override lazy val classifier = new SparsePerceptron()
 
     override def feature = phraseFeatures
   }
@@ -74,13 +69,7 @@ object MultiModalSpRLTripletClassifiers {
   object LandmarkRoleClassifier extends Learnable(phrases) {
     def label = landmarkRole
 
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.thickness = 2
-      baseLTU = new SparseAveragedPerceptron(p)
-
-    }
+    override lazy val classifier = new SparsePerceptron()
 
     override def feature = (phraseFeatures ++ List(lemma, headWordLemma))
       .diff(List())
@@ -89,12 +78,7 @@ object MultiModalSpRLTripletClassifiers {
   object IndicatorRoleClassifier extends Learnable(phrases) {
     def label = indicatorRole
 
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.thickness = 2
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
+    override lazy val classifier = new SparsePerceptron()
 
     override def feature = (phraseFeatures(FeatureSets.BaseLine) ++ List(headSubCategorization))
       .diff(List(headWordPos, headWordFrom, headDependencyRelation))
@@ -103,10 +87,10 @@ object MultiModalSpRLTripletClassifiers {
   object TripletRelationClassifier extends Learnable(triplets) {
     def label = tripletIsRelation
 
-    override lazy val classifier = new SparseNetworkLearner()
+    override lazy val classifier = new SparsePerceptron()
 
     override def feature =  (tripletFeatures)
-      .diff(List(tripletLmVector))
+      .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))
   }
 
   object TripletGeneralTypeClassifier extends Learnable(triplets) {
@@ -115,7 +99,25 @@ object MultiModalSpRLTripletClassifiers {
     override lazy val classifier = new SparseNetworkLearner()
 
     override def feature = (tripletFeatures)
-      .diff(List(tripletLmVector))
+      .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))
+  }
+
+  object TripletGeneralDirectionClassifier extends Learnable(triplets) {
+    def label = tripletGeneralType is "direction"
+
+    override lazy val classifier = new SparsePerceptron()
+
+    override def feature = (tripletFeatures)
+      .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))
+  }
+
+  object TripletGeneralRegionClassifier extends Learnable(triplets) {
+    def label = tripletGeneralType is "region"
+
+    override lazy val classifier = new SparsePerceptron()
+
+    override def feature = (tripletFeatures)
+      .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))
   }
 
   object TripletSpecificTypeClassifier extends Learnable(triplets) {
@@ -132,7 +134,7 @@ object MultiModalSpRLTripletClassifiers {
     override lazy val classifier = new SparseNetworkLearner()
 
     override def feature = (tripletFeatures)
-      .diff(List())
+      .diff(List(tripletMatchingSegmentRelationFeatures))
   }
 
   object TripletDirectionBehindClassifier extends Learnable(triplets) {
@@ -141,7 +143,7 @@ object MultiModalSpRLTripletClassifiers {
     override lazy val classifier = new SparsePerceptron()
 
     override def feature = (tripletFeatures)
-      .diff(List())
+      .diff(List(tripletMatchingSegmentRelationFeatures))
   }
 
   object TripletDirectionBelowClassifier extends Learnable(triplets) {
@@ -150,7 +152,7 @@ object MultiModalSpRLTripletClassifiers {
     override lazy val classifier = new SparsePerceptron()
 
     override def feature = (tripletFeatures)
-      .diff(List())
+      .diff(List(tripletMatchingSegmentRelationFeatures))
   }
   object TripletDirectionLeftClassifier extends Learnable(triplets) {
     def label = tripletDirection is "left"
@@ -158,7 +160,7 @@ object MultiModalSpRLTripletClassifiers {
     override lazy val classifier = new SparsePerceptron()
 
     override def feature = (tripletFeatures)
-      .diff(List())
+      .diff(List(tripletMatchingSegmentRelationFeatures))
   }
   object TripletDirectionAboveClassifier extends Learnable(triplets) {
     def label = tripletDirection is "above"
@@ -166,14 +168,14 @@ object MultiModalSpRLTripletClassifiers {
     override lazy val classifier = new SparsePerceptron()
 
     override def feature = (tripletFeatures)
-      .diff(List())
+      .diff(List(tripletMatchingSegmentRelationFeatures))
   }
   object TripletDirectionRightClassifier extends Learnable(triplets) {
     def label = tripletDirection is "right"
 
     override lazy val classifier = new SparsePerceptron()
 
-    override def feature = (tripletFeatures) ++ (List(tripletMatchingSegmentRelationFeatures))
+    override def feature = (tripletFeatures)
       .diff(List())
   }
   object TripletDirectionFrontClassifier extends Learnable(triplets) {
@@ -182,7 +184,7 @@ object MultiModalSpRLTripletClassifiers {
     override lazy val classifier = new SparsePerceptron()
 
     override def feature = (tripletFeatures)
-      .diff(List())
+      .diff(List(tripletMatchingSegmentRelationFeatures))
   }
 
   object TripletRegionClassifier extends Learnable(triplets) {
@@ -191,7 +193,7 @@ object MultiModalSpRLTripletClassifiers {
     override lazy val classifier = new SparseNetworkLearner()
 
     override def feature =  (tripletFeatures)
-      .diff(List(tripletLmVector))
+      .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))
   }
 
   object TripletRegionTPPClassifier extends Learnable(triplets) {
@@ -199,7 +201,7 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparsePerceptron()
 
-    override def feature =  (tripletFeatures) ++ (List(tripletMatchingSegmentRelationFeatures))
+    override def feature =  (tripletFeatures)
       .diff(List(tripletLmVector))
   }
 
@@ -208,7 +210,7 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparsePerceptron()
 
-    override def feature =  (tripletFeatures) ++ (List(tripletMatchingSegmentRelationFeatures))
+    override def feature =  (tripletFeatures)
       .diff(List(tripletLmVector))
   }
 
@@ -217,7 +219,7 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparsePerceptron()
 
-    override def feature =  (tripletFeatures) ++ (List(tripletMatchingSegmentRelationFeatures))
+    override def feature =  (tripletFeatures)
       .diff(List(tripletLmVector))
   }
 
@@ -227,7 +229,7 @@ object MultiModalSpRLTripletClassifiers {
     override lazy val classifier = new SparsePerceptron()
 
     override def feature =  (tripletFeatures)
-      .diff(List(tripletLmVector))
+      .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))
   }
 
   object TripletRegionPOClassifier extends Learnable(triplets) {
@@ -235,8 +237,8 @@ object MultiModalSpRLTripletClassifiers {
 
     override lazy val classifier = new SparsePerceptron()
 
-    override def feature =  (tripletFeatures) ++ (List(tripletMatchingSegmentRelationFeatures))
-      .diff(List(tripletLmVector))
+    override def feature =  (tripletFeatures)
+      .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))
   }
 
   object TripletImageRegionClassifier extends Learnable(triplets) {

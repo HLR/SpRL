@@ -61,8 +61,7 @@ object MultiModalPopulateData extends Logging {
     if (populateImages) {
       images.populate(imageReader.getImageList, isTrain)
       segments.populate(imageReader.getSegmentList, isTrain)
-      segmentRelations.populate(imageReader.getImageRelationList, isTrain)
-      visualTripletsPairs.populate(imageReader.getVisualTripletList, isTrain)
+      //visualTripletsPairs.populate(imageReader.getVisualTripletList, isTrain)
 
       setBestAlignment()
     }

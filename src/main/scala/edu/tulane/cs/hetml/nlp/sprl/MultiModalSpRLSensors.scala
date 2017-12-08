@@ -88,6 +88,7 @@ object MultiModalSpRLSensors {
   val matchingCandidates = List("NN", "JJR", "JJ", "NNP", "NNS")
 
   lazy val alignmentHelper = new WordClassifierHelper()
+
   def segmentToSegmentPhrasePairs(s: Segment): List[Relation] = {
     val image = images().filter(i => i.getId == s.getAssociatedImageID)
     val phrases = (images(image) ~> -documentToImage ~> documentToSentence ~> sentenceToPhrase)
@@ -99,7 +100,7 @@ object MultiModalSpRLSensors {
         r.setId(p.getId + "__" + s.getSegmentId)
         r.setArgumentId(0, p.getId)
         r.setArgumentId(1, s.getSegmentId.toString)
-        mSpRLConfigurator.alignmentMethod match{
+        mSpRLConfigurator.alignmentMethod match {
           case "gold" =>
             if (p.getPropertyValues("goldAlignment").contains(s.getSegmentId.toString)) {
               r.setProperty("similarity", "1")
@@ -126,15 +127,7 @@ object MultiModalSpRLSensors {
     pair.getArgumentId(0) == phrase.getId
   }
 
-  def sentenceToVisualTripletMatching(s: Sentence): List[ImageTriplet] = {
-    var vT = sentences(s) ~> sentenceToTriplets ~> tripletToVisualTriplet
-    if (vT.nonEmpty) {
-      vT = vT.filter(t => t.getSp!="-")
-    }
-    vT.toList
-  }
-
-  def TripletToVisualTripletGenerating(r: Relation): List[ImageTriplet] = {
+  def TripletToVisualTripletMatching(r: Relation, vt: ImageTriplet): Boolean = {
     val (first, second, third) = getTripletArguments(r)
     val trSegId = first.getPropertyFirstValue("bestAlignment")
     val lmSegId = third.getPropertyFirstValue("bestAlignment")
@@ -147,60 +140,24 @@ object MultiModalSpRLSensors {
 
       if (trSeg.nonEmpty && lmSeg.nonEmpty) {
 
-        val imageRel = visualTripletsPairs().filter(x => x.getImageId == trSeg.get.getAssociatedImageID &&
-          x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
-
-        imageRel.foreach {
-          x =>
-            x.setTrajector(headWordFrom(first).toLowerCase())
-            x.setLandmark(headWordFrom(third).toLowerCase())
-            if (x.getSp == null)
-              x.setSp("-")
-            if(tripletIsRelation(r) == "Relation")
-              x.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
-
+        if (vt.getImageId == trSeg.get.getAssociatedImageID &&
+          vt.getFirstSegId.toString == trSegId && vt.getSecondSegId.toString == lmSegId) {
+          if (vt.getSp == null)
+            vt.setSp("-")
+          if (tripletIsRelation(r) == "Relation")
+            vt.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
+          true
         }
-        imageRel.toList
-      }
-      else if(trSeg.nonEmpty) { // NULL Landmark
-
-        val imageRel = visualTripletsPairs().filter(x => x.getImageId == trSeg.get.getAssociatedImageID &&
-          x.getFirstSegId.toString == trSegId)
-
-        imageRel.foreach {
-          x =>
-            x.setTrajector(headWordFrom(first).toLowerCase())
-            // update landmark features
-            x.setLandmark("none")
-            x.setAbove(0)
-            x.setBelow(0)
-            x.setEuclideanDistance(0)
-            x.setIntersectionArea(0)
-            x.setIou(0)
-            x.setLeft(0)
-            x.setLmAreaBbox(0)
-            x.setLmAreaImage(0)
-            x.setRight(0)
-            x.setLmAspectRatio(0)
-            x.setTrAreaBbox(0)
-            x.setTrAreawrtLM(0)
-            x.setTrVectorX(0)
-            x.setTrVectorY(0)
-            x.setUnionArea(0)
-
-            if (x.getSp == null)
-              x.setSp("-")
-            if(tripletIsRelation(r) == "Relation")
-              x.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
-
+        else {
+          false
         }
-        imageRel.toList
       }
-      else
-        List()
+      else {
+        false
+      }
     }
     else {
-      List()
+      false
     }
   }
 

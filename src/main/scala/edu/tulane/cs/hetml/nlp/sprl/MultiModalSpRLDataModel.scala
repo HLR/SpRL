@@ -35,10 +35,7 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val images = node[Image]
   val segments = node[Segment]
-  val segmentRelations = node[SegmentRelation]
   val segmentPhrasePairs = node[Relation]((r: Relation) => r.getId)
-  val visualTripletsPairs = node[ImageTriplet]
-  val alignedTriplets = node[ImageTriplet]
   val visualTriplets = node[ImageTriplet]
 
   /*
@@ -80,23 +77,14 @@ object MultiModalSpRLDataModel extends DataModel {
   val imageToSegment = edge(images, segments)
   imageToSegment.addSensor(imageToSegmentMatching _)
 
-  val segmentRelationsToFirstArg = edge(segmentRelations, segments)
-  segmentRelationsToFirstArg.addSensor(segmentRelationToFirstArgMatching _)
-
-  val segmentRelationsToSecondArg = edge(segmentRelations, segments)
-  segmentRelationsToSecondArg.addSensor(segmentRelationToSecondArgMatching _)
-
   val segmentToSegmentPhrasePair = edge(segments, segmentPhrasePairs)
   segmentToSegmentPhrasePair.addSensor(segmentToSegmentPhrasePairs _)
 
   val segmentPhrasePairToPhrase = edge(segmentPhrasePairs, phrases)
   segmentPhrasePairToPhrase.addSensor(SegmentPhrasePairToPhraseMatching _)
 
-  val tripletToVisualTriplet = edge(triplets, alignedTriplets)
-  tripletToVisualTriplet.addSensor(TripletToVisualTripletGenerating _)
-
-  val sentenceToVisualTriplet = edge(sentences, alignedTriplets)
-  sentenceToVisualTriplet.addSensor(sentenceToVisualTripletMatching _)
+  val tripletToVisualTriplet = edge(triplets, visualTriplets)
+  tripletToVisualTriplet.addSensor(TripletToVisualTripletMatching _)
 
   /*
   Properties
@@ -682,33 +670,6 @@ object MultiModalSpRLDataModel extends DataModel {
       matchingSegmentFeatures(third)
   }
 
-
-  val tripletMatchingSegmentRelations = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, _, third) = getTripletArguments(r)
-      val trSegId = first.getPropertyFirstValue("bestAlignment")
-      val lmSegId = third.getPropertyFirstValue("bestAlignment")
-      if (trSegId != null && lmSegId != null) {
-        val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
-          .find(_.getSegmentId.toString.equalsIgnoreCase(trSegId))
-        val lmSeg = (phrases(third) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
-          .find(_.getSegmentId.toString.equalsIgnoreCase(lmSegId))
-        if (trSeg.nonEmpty && lmSeg.nonEmpty) {
-          val rels = (segments(trSeg) ~> -segmentRelationsToFirstArg)
-            .filter(x => x.getSecondSegmentId == lmSeg.get.getSegmentId)
-            .toList
-            .map(_.getRelation)
-            .distinct
-          rels
-        }
-        else
-          List()
-      }
-      else {
-        List()
-      }
-  }
-
   val tripletMatchingSegmentRelationFeatures = property(triplets, cache = true, ordered = true) {
     r: Relation =>
       val aligned = triplets(r) ~> tripletToVisualTriplet
@@ -744,32 +705,6 @@ object MultiModalSpRLDataModel extends DataModel {
       }
       else
         "-"
-  }
-
-  val tripletMatchingSegmentFeatures = property(triplets, cache = true) {
-    r: Relation =>
-      val (first, _, third) = getTripletArguments(r)
-      val trSegId = first.getPropertyFirstValue("bestAlignment")
-      val lmSegId = third.getPropertyFirstValue("bestAlignment")
-      if (trSegId != null && lmSegId != null) {
-        val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
-          .find(_.getSegmentId.toString.equalsIgnoreCase(trSegId))
-        val lmSeg = (phrases(third) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
-          .find(_.getSegmentId.toString.equalsIgnoreCase(lmSegId))
-        if (trSeg.nonEmpty && lmSeg.nonEmpty) {
-          val rels = (segments(trSeg) ~> -segmentRelationsToFirstArg)
-            .filter(x => x.getSecondSegmentId == lmSeg.get.getSegmentId)
-            .toList
-            .map(_.getRelation)
-            .distinct
-          rels
-        }
-        else
-          List()
-      }
-      else {
-        List()
-      }
   }
 
   val tripletTrBeforeSp = property(triplets, cache = true) {

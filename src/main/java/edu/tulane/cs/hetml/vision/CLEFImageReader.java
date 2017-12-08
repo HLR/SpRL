@@ -38,9 +38,6 @@ public class CLEFImageReader {
 
     public List<Segment> allSegments;
 
-    public List<ImageTriplet> trainImageTriplets;
-    public List<ImageTriplet> testImageTriplets;
-
     private boolean useRedefinedRelations;
 
     private Hashtable<Integer, String> MapCode2Concept = new Hashtable<Integer, String>();
@@ -74,12 +71,10 @@ public class CLEFImageReader {
         trainingImages = new ArrayList<>();
         trainingSegments = new ArrayList<>();
         trainingRelations = new ArrayList<>();
-        trainImageTriplets = new ArrayList<>();
         // Test Data
         testImages = new ArrayList<>();
         testSegments = new ArrayList<>();
         testRelations = new ArrayList<>();
-        testImageTriplets = new ArrayList<>();
 
         // all Segment
         allSegments = new ArrayList<>();
@@ -91,18 +86,13 @@ public class CLEFImageReader {
         getRedefinedRelations(directory);
         // Load Concepts
         getConcepts(directory);
-        //Load Referit Data
-//        getReferitText(directory);
+
         // Load Training
         getTrainingImages();
         // Load Testing
         getTestImages();
         // Load all Images
         getallImages(directory);
-        // Generate Visual Triplet Pairs
-        generateVisualTripletSegmentPairs();
-        // Save to File
-//        printImageInformation();
 
         System.out.println("Total Train Data " + trainingData.size());
 
@@ -528,128 +518,4 @@ public class CLEFImageReader {
         }
     }
 
-    /*******************************************************/
-    // Loading Segments Ontology
-
-    /*******************************************************/
-    private void generateVisualTripletSegmentPairs() {
-        generateVisualTripletsSegmentPairs(trainingImages, trainingSegments, true);
-        generateVisualTripletsSegmentPairs(testImages, testSegments, false);
-    }
-
-    private void generateVisualTripletsSegmentPairs(List<Image> images, List<Segment> segments, boolean train) {
-        for (Image i : images) {
-            List<Segment> temp = new ArrayList<>();
-            for (Segment s : segments) {
-                if (i.getId().equals(s.getAssociatedImageID()))
-                    temp.add(s);
-            }
-
-            // Generate Pairs
-            for (int j = 0; j < temp.size(); j++)
-                for (int k = 0; k < temp.size(); k++) {
-                    Segment trSeg = temp.get(j);
-                    Segment lmSeg = temp.get(k);
-                    if (trSeg.getSegmentId() != lmSeg.getSegmentId()) { // Ignore same index
-                        if (train)
-                            trainImageTriplets.add(generateImageTriplet(i, trSeg, lmSeg));
-                        else
-                            testImageTriplets.add(generateImageTriplet(i, trSeg, lmSeg));
-                    }
-                }
-        }
-    }
-
-    private ImageTriplet generateImageTriplet(Image i, Segment trSeg, Segment lmSeg) {
-
-        Rectangle2D trBox = trSeg.getBoxDimensions();
-        Rectangle2D lmBox = lmSeg.getBoxDimensions();
-
-        double trArea = RectangleHelper.calculateArea(trBox);
-        double lmArea = RectangleHelper.calculateArea(lmBox);
-        double imageArea = i.getWidth() * i.getHeight();
-
-        Rectangle2D boundingBox = RectangleHelper.generateBoundingBox(trBox, lmBox);
-        double boundingBoxArea = RectangleHelper.calculateArea(boundingBox);
-
-        //Feature 1
-        double[] trVector = RectangleHelper.getCentroidVector(trBox, lmBox, boundingBox);
-
-        //Feature 2
-        double trAreawrtLM = trArea / lmArea;
-
-        // Feature 3
-        double trAspectRatio = RectangleHelper.calculateAspectRatio(trBox);
-        double lmAspectRatio = RectangleHelper.calculateAspectRatio(lmBox);
-
-        //Feature 4
-        double trAreaBbox = RectangleHelper.normalizeArea(trArea, boundingBoxArea);
-        double lmAreaBbox = RectangleHelper.normalizeArea(lmArea, boundingBoxArea);
-
-        //Feature 5
-        double iou = RectangleHelper.getIntersectionOverUnion(trBox, lmBox);
-
-        // Feature 6
-        double euclideanDistance = RectangleHelper
-                .normalizeArea(RectangleHelper.getEuclideanDistance(trBox, lmBox), imageArea);
-
-        // Feature 7
-        double trAreaImage = RectangleHelper.normalizeArea(trArea, imageArea);
-        double lmAreaImage = RectangleHelper.normalizeArea(lmArea, imageArea);
-
-        //Feature 8
-        double above = RectangleHelper.getAbove(trBox, lmBox, i.getHeight());
-
-        //Feature 9
-        double below = RectangleHelper.getBelow(trBox, lmBox, i.getHeight());
-
-        //Feature 10
-        double left = RectangleHelper.getLeft(trBox, lmBox, i.getWidth());
-
-        //Feature 11
-        double right = RectangleHelper.getRight(trBox, lmBox, i.getWidth());
-
-        // Feature 12
-        double intersection = RectangleHelper.getIntersectionArea(trBox, lmBox, imageArea);
-
-        // Feature 13
-        double union = RectangleHelper.getUnionArea(trBox, lmBox, imageArea);
-
-        return new ImageTriplet(i.getId(), trSeg.getSegmentId(), lmSeg.getSegmentId(), trBox, lmBox, i.getWidth(), i.getHeight(),
-                trVector[0], trVector[1], trAreawrtLM, trAspectRatio, lmAspectRatio, trAreaBbox, lmAreaBbox, iou,
-                euclideanDistance, trAreaImage, lmAreaImage, above, below, left, right, intersection, union);
-    }
-
-    private void printImageInformation() throws IOException {
-
-        String path = "data/mSpRL/results/matlabdata.txt";
-        printWriterTest = new PrintWriter(path);
-
-        for (Image i : testImages) {
-            int count = 0;
-            for (Segment s : testSegments) {
-                if (i.getId().equals(s.getAssociatedImageID()))
-                    count++;
-            }
-            printWriterTest.println(i.getId() + " " + count);
-        }
-
-        for (Image i : trainingImages) {
-            int count = 0;
-            for (Segment s : trainingSegments) {
-                if (i.getId().equals(s.getAssociatedImageID()))
-                    count++;
-            }
-            printWriterTest.println(i.getId() + " " + count);
-        }
-        printWriterTest.close();
-    }
-
-    public boolean isUseRedefinedRelations() {
-        return useRedefinedRelations;
-    }
-
-    public void setUseRedefinedRelations(boolean useRedefinedRelations) {
-        this.useRedefinedRelations = useRedefinedRelations;
-    }
 }
