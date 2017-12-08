@@ -142,8 +142,8 @@ object MultiModalSpRLSensors {
 
         if (vt.getImageId == trSeg.get.getAssociatedImageID &&
           vt.getFirstSegId.toString == trSegId && vt.getSecondSegId.toString == lmSegId) {
-          if (vt.getSp == null)
-            vt.setSp("-")
+          vt.setTrajector(first.getText.toLowerCase())
+          vt.setLandmark(third.getText.toLowerCase())
           if (tripletIsRelation(r) == "Relation")
             vt.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
           true
