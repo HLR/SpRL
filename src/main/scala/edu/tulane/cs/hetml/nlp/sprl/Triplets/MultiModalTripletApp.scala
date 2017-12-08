@@ -122,7 +122,7 @@ object MultiModalTripletApp extends App with Logging {
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTrain.exists(_.getId == x.getId),
-      x => IndicatorRoleClassifier(x) == "Indicator",
+      x => IndicatorRoleClassifier(x) == "true",
       x => lmCandidatesTrain.exists(_.getId == x.getId)
     )
 
@@ -307,16 +307,16 @@ object MultiModalTripletApp extends App with Logging {
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTest.exists(_.getId == x.getId),
-      x => IndicatorRoleClassifier(x) == "Indicator",
+      x => IndicatorRoleClassifier(x) == "true",
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
     if (!useConstraints) {
-      val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
-      val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
-      val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
+      val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "true").toList
+      val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "true").toList
+      val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "true").toList
 
       val tripletList = triplets.getTestingInstances
-        .filter(x => TripletRelationClassifier(x) == "Relation").toList
+        .filter(x => TripletRelationClassifier(x) == "true").toList
 
       val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
 
@@ -507,22 +507,22 @@ object MultiModalTripletApp extends App with Logging {
     }
   }
 
-  val all = triplets().map(x => (x.getArgument(1).getText, tripletMatchingSegmentRelationLabelScores(x), tripletIsRelation(x), x))
-    .filter(x => !x._2.equals("-")).toList
-  val rels = all.filter(_._3.equalsIgnoreCase("Relation"))
-  val noRels = all.filter(_._3.equalsIgnoreCase("None"))
-  val tp = rels.count(x => x._2.split(":").head == x._1)
-  val fn = rels.size - tp
-  val fp = noRels.count(x => x._2.split(":").head == x._1)
-  val tn = noRels.size - fp
-  val writer = new PrintStream(s"$resultsDir/preposition-prediction_${isTrain}.txt")
-  writer.println("Aligned ground truth: " + rels.size)
-  writer.println("tp: " + tp)
-  writer.println("tn: " + tn)
-  writer.println("fp: " + fp)
-  writer.println("fn: " + fn)
-  all.sortBy(_._3).foreach(x => writer.println(x._3 + "[" + x._4.getProperty("ActualId") + "](" + x._4.getArgument(0).getText + ", " + x._1 + ", " +
-    x._4.getArgument(2).getText + ") :: " + x._2 + " :: "))
-  writer.close()
+//  val all = triplets().map(x => (x.getArgument(1).getText, tripletMatchingSegmentRelationLabelScores(x), tripletIsRelation(x), x))
+//    .filter(x => !x._2.equals("-")).toList
+//  val rels = all.filter(_._3.equalsIgnoreCase("Relation"))
+//  val noRels = all.filter(_._3.equalsIgnoreCase("None"))
+//  val tp = rels.count(x => x._2.split(":").head == x._1)
+//  val fn = rels.size - tp
+//  val fp = noRels.count(x => x._2.split(":").head == x._1)
+//  val tn = noRels.size - fp
+//  val writer = new PrintStream(s"$resultsDir/preposition-prediction_${isTrain}.txt")
+//  writer.println("Aligned ground truth: " + rels.size)
+//  writer.println("tp: " + tp)
+//  writer.println("tn: " + tn)
+//  writer.println("fp: " + fp)
+//  writer.println("fn: " + fn)
+//  all.sortBy(_._3).foreach(x => writer.println(x._3 + "[" + x._4.getProperty("ActualId") + "](" + x._4.getArgument(0).getText + ", " + x._1 + ", " +
+//    x._4.getArgument(2).getText + ") :: " + x._2 + " :: "))
+//  writer.close()
 }
 

@@ -84,7 +84,7 @@ object MultiModalSpRLDataModel extends DataModel {
   segmentPhrasePairToPhrase.addSensor(SegmentPhrasePairToPhraseMatching _)
 
   val tripletToVisualTriplet = edge(triplets, visualTriplets)
-  tripletToVisualTriplet.addSensor(TripletToVisualTripletMatching _)
+  tripletToVisualTriplet.addSensor(TripletToVisualTripletGenerating _)
 
   /*
   Properties

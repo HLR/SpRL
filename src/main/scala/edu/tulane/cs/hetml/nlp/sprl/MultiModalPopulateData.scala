@@ -55,17 +55,7 @@ object MultiModalPopulateData extends Logging {
       images.populate(imageReader.getImageList, isTrain)
       val segs = getAdjustedSegments(imageReader.getSegmentList)
       segments.populate(segs, isTrain)
-      val vt = segs.flatMap {
-        seg1 =>
-          val img = images().find(_.getId == seg1.getAssociatedImageID).get
-          segs.filter(x => x != seg1 && x.getAssociatedImageID == seg1.getAssociatedImageID).map {
-            seg2 =>
-              new ImageTriplet(seg1.getAssociatedImageID, seg1.getSegmentId,
-                seg2.getSegmentId, seg1.getBoxDimensions, seg2.getBoxDimensions, img.getWidth, img.getHeight)
-          }
-      }
       setBestAlignment()
-      visualTriplets.populate(vt, isTrain)
     }
 
     logger.info("Role population finished.")
@@ -153,7 +143,7 @@ object MultiModalPopulateData extends Logging {
     val externalTrainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
 
     if (trainPrepositionClassifier && isTrain) {
-      println("Populating Visual Triplets...")
+      println("Populating Visual Triplets from External Dataset...")
       visualTriplets.populate(externalTrainTriplets, isTrain)
     }
   }
@@ -189,6 +179,8 @@ object MultiModalPopulateData extends Logging {
         sId += 1
         p.removeProperty("segId")
         p.addPropertyValue("segId", sId.toString)
+        p.removeProperty("goldAlignment")
+        p.addPropertyValue("goldAlignment", sId.toString)
         new Segment(imId, sId, -1, "", headWordFrom(p), new Rectangle2D.Double(x, y, w, h))
     }
 
@@ -218,6 +210,7 @@ object MultiModalPopulateData extends Logging {
               val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
               if (pair.getProperty("similarity").toDouble > 0.30 || alignmentMethod == "classifier") {
                 p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
+                p.addPropertyValue("imageId", pair.getArgument(1).asInstanceOf[Segment].getAssociatedImageID)
                 p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
               }
             }
