@@ -8,7 +8,7 @@ class AlignmentReader(annotationDir: String, isTrain: Boolean) {
   def setAlignments(phrases: List[Phrase]) = {
     val name = if (isTrain) "train.txt" else "test.txt"
     val annotationLines = scala.io.Source.fromFile(annotationDir + name).getLines()
-    annotationLines.foreach {
+    annotationLines.filter(_.trim != "").foreach {
       l =>
         val part = l.split("\t\t")
         val imFolder = part(0)
@@ -19,10 +19,10 @@ class AlignmentReader(annotationDir: String, isTrain: Boolean) {
         val end = part(5).toInt
         val text = part(6)
         val segId =part(7).toInt
-        val segX = part(8).toInt
-        val segY = part(9).toInt
-        val segWidth = part(10).toInt
-        val segHeight = part(11).toInt
+        val segX = part(8).toDouble.toInt
+        val segY = part(9).toDouble.toInt
+        val segWidth = part(10).toDouble.toInt
+        val segHeight = part(11).toDouble.toInt
         val phrase = phrases.find(x=> x.getSentence.getId == sentId && x.getStart == start && x.getEnd == end).get
         phrase.addPropertyValue("goldAlignment", segId.toString)
         phrase.addPropertyValue("imageId", imId.toString)
