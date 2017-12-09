@@ -77,21 +77,21 @@ object MultiModalTripletApp extends App with Logging {
   if (isTrain && trainPrepositionClassifier) {
     populateVisualTripletsFromExternalData()
     PrepositionClassifier.learn(iterations)
-    PrepositionAroundClassifier.learn(iterations)
-    PrepositionAtClassifier.learn(iterations)
-    PrepositionBehindClassifier.learn(iterations)
-    PrepositionBetweenClassifier.learn(iterations)
-    PrepositionInBetweenClassifier.learn(iterations)
-    PrepositionInClassifier.learn(iterations)
-    PrepositionInTheMiddleOfClassifier.learn(iterations)
-    PrepositionLeaningOnClassifier.learn(iterations)
-    PrepositionNearClassifier.learn(iterations)
-    PrepositionNextToClassifier.learn(iterations)
-    PrepositionOnClassifier.learn(iterations)
-    PrepositionOnEachSideClassifier.learn(iterations)
-    PrepositionOverClassifier.learn(iterations)
-    PrepositionSittingAroundClassifier.learn(iterations)
-    PrepositionWithClassifier.learn(iterations)
+//    PrepositionAroundClassifier.learn(iterations)
+//    PrepositionAtClassifier.learn(iterations)
+//    PrepositionBehindClassifier.learn(iterations)
+//    PrepositionBetweenClassifier.learn(iterations)
+//    PrepositionInBetweenClassifier.learn(iterations)
+//    PrepositionInClassifier.learn(iterations)
+//    PrepositionInTheMiddleOfClassifier.learn(iterations)
+//    PrepositionLeaningOnClassifier.learn(iterations)
+//    PrepositionNearClassifier.learn(iterations)
+//    PrepositionNextToClassifier.learn(iterations)
+//    PrepositionOnClassifier.learn(iterations)
+//    PrepositionOnEachSideClassifier.learn(iterations)
+//    PrepositionOverClassifier.learn(iterations)
+//    PrepositionSittingAroundClassifier.learn(iterations)
+//    PrepositionWithClassifier.learn(iterations)
     visualTriplets.clear()
   }
 
@@ -166,24 +166,24 @@ object MultiModalTripletApp extends App with Logging {
 
       //fine tune with clef examples
       PrepositionClassifier.learn(10, visualTripletsFiltered)
-      PrepositionAroundClassifier.learn(10, visualTripletsFiltered)
-      PrepositionAtClassifier.learn(10, visualTripletsFiltered)
-      PrepositionBehindClassifier.learn(10, visualTripletsFiltered)
-      PrepositionBetweenClassifier.learn(10, visualTripletsFiltered)
-      PrepositionInBetweenClassifier.learn(10, visualTripletsFiltered)
-      PrepositionInClassifier.learn(10, visualTripletsFiltered)
-      PrepositionInTheMiddleOfClassifier.learn(10, visualTripletsFiltered)
-      PrepositionLeaningOnClassifier.learn(10, visualTripletsFiltered)
-      PrepositionNearClassifier.learn(10, visualTripletsFiltered)
-      PrepositionNextToClassifier.learn(10, visualTripletsFiltered)
-      PrepositionOnClassifier.learn(10, visualTripletsFiltered)
-      PrepositionOnEachSideClassifier.learn(10, visualTripletsFiltered)
-      PrepositionOverClassifier.learn(10, visualTripletsFiltered)
-      PrepositionSittingAroundClassifier.learn(10, visualTripletsFiltered)
-      PrepositionWithClassifier.learn(10, visualTripletsFiltered)
-      // Train on clef only
-      PrepositionInFrontOfClassifier.learn(iterations, visualTripletsFiltered)
-      PrepositionAboveClassifier.learn(iterations, visualTripletsFiltered)
+//      PrepositionAroundClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionAtClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionBehindClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionBetweenClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionInBetweenClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionInClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionInTheMiddleOfClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionLeaningOnClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionNearClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionNextToClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionOnClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionOnEachSideClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionOverClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionSittingAroundClassifier.learn(10, visualTripletsFiltered)
+//      PrepositionWithClassifier.learn(10, visualTripletsFiltered)
+//      // Train on clef only
+//      PrepositionInFrontOfClassifier.learn(iterations, visualTripletsFiltered)
+//      PrepositionAboveClassifier.learn(iterations, visualTripletsFiltered)
 
       PrepositionClassifier.test(visualTripletsFiltered)
 
@@ -424,20 +424,20 @@ object MultiModalTripletApp extends App with Logging {
       val relation = TripletRelationConstraintClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Relation(within data model)", relation)
 
-      val general = TripletGeneralTypeConstraintClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "General(within data model)", general)
-
-      val direction = TripletDirectionConstraintClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Direction(within data model)", direction)
-
-      val region = TripletRegionConstraintClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
-
-      val imRegion = TripletImageRegionClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Image Region(within data model)", imRegion)
-
-      val visual = PrepositionClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Preposition(within data model)", visual)
+//      val general = TripletGeneralTypeConstraintClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "General(within data model)", general)
+//
+//      val direction = TripletDirectionConstraintClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Direction(within data model)", direction)
+//
+//      val region = TripletRegionConstraintClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
+//
+//      val imRegion = TripletImageRegionClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Image Region(within data model)", imRegion)
+//
+//      val visual = PrepositionClassifier.test()
+//      ReportHelper.saveEvalResults(outStream, "Preposition(within data model)", visual)
 
       report(x => TripletRelationConstraintClassifier(x),
         x => TRConstraintClassifier(x),
