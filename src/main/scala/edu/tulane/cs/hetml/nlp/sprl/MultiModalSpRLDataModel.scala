@@ -62,14 +62,14 @@ object MultiModalSpRLDataModel extends DataModel {
   var sentenceToTriplets = edge(sentences, triplets)
   sentenceToTriplets.addSensor(sentenceToRelationMatching _)
 
-  val tripletToFirstArg = edge(triplets, phrases)
-  tripletToFirstArg.addSensor(relationToFirstArgumentMatching _)
+  val tripletToTr = edge(triplets, phrases)
+  tripletToTr.addSensor(relationToFirstArgumentMatching _)
 
-  val tripletToSecondArg = edge(triplets, phrases)
-  tripletToSecondArg.addSensor(relationToSecondArgumentMatching _)
+  val tripletToSp = edge(triplets, phrases)
+  tripletToSp.addSensor(relationToSecondArgumentMatching _)
 
-  val tripletToThirdArg = edge(triplets, phrases)
-  tripletToThirdArg.addSensor(relationToThirdArgumentMatching _)
+  val tripletToLm = edge(triplets, phrases)
+  tripletToLm.addSensor(relationToThirdArgumentMatching _)
 
   val documentToImage = edge(documents, images)
   documentToImage.addSensor(documentToImageMatching _)
@@ -1030,7 +1030,7 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
   def getTripletArguments(r: Relation): (Phrase, Phrase, Phrase) = {
-    ((triplets(r) ~> tripletToFirstArg).head, (triplets(r) ~> tripletToSecondArg).head, (triplets(r) ~> tripletToThirdArg).head)
+    ((triplets(r) ~> tripletToTr).head, (triplets(r) ~> tripletToSp).head, (triplets(r) ~> tripletToLm).head)
   }
 
   def getImageSpScores(r: ImageTriplet) = {

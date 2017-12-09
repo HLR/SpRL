@@ -35,8 +35,8 @@ object MultiModalSpRLTripletClassifiers {
       tripletDistanceTrSp, tripletDistanceLmSp
     ) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(tripletLmMatchingSegmentSimilarity,
-          tripletTrMatchingSegmentSimilarity, tripletMatchingSegmentRelationFeatures)
+        case FeatureSets.BaseLineWithImage => List(tripletTrMatchingSegmentSimilarity,
+          tripletMatchingSegmentRelationFeatures)
         case FeatureSets.WordEmbedding => List(tripletTrVector, tripletLmVector)
         case FeatureSets.WordEmbeddingPlusImage => List(tripletTrVector, tripletLmVector,
           tripletLmMatchingSegmentSimilarity, tripletTrMatchingSegmentSimilarity)
