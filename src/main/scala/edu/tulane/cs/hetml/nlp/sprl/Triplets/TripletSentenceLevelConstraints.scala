@@ -16,7 +16,7 @@ object TripletSentenceLevelConstraints {
     "in front of" -> PrepositionInFrontOfClassifier,
     "in" -> PrepositionInClassifier,
     "on" -> PrepositionOnClassifier,
-    "above" -> PrepositionAboveClassifier,
+    "above" -> PrepositionAboveClassifier
     //"at" -> PrepositionAtClassifier,
     //"around" -> PrepositionAroundClassifier,
 //    "behind" -> PrepositionBehindClassifier,
