@@ -210,7 +210,6 @@ object MultiModalPopulateData extends Logging {
               val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
               if (pair.getProperty("similarity").toDouble > 0.30 || alignmentMethod == "classifier") {
                 p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
-                p.addPropertyValue("imageId", pair.getArgument(1).asInstanceOf[Segment].getAssociatedImageID)
                 p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
               }
             }
