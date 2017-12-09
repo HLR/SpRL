@@ -13,6 +13,8 @@ import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClass
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import org.apache.commons.io.FileUtils
 
+import scala.util.Random
+
 object MultiModalTripletApp extends App with Logging {
 
   val expName = "triplet_" + ((model, useConstraints) match {
@@ -31,23 +33,25 @@ object MultiModalTripletApp extends App with Logging {
   MultiModalSpRLTripletClassifiers.featureSet = model
 
   val constrainedPrepClassifiers = List()
-  val prepClassifiers = List(
-    PrepositionClassifier,
-    PrepositionAroundClassifier,
-    PrepositionAtClassifier,
-    PrepositionBehindClassifier,
-    PrepositionBetweenClassifier,
-    PrepositionInBetweenClassifier,
-    PrepositionInClassifier,
-    PrepositionInTheMiddleOfClassifier,
-    PrepositionLeaningOnClassifier,
-    PrepositionNearClassifier,
-    PrepositionNextToClassifier,
-    PrepositionOnClassifier,
-    PrepositionOnEachSideClassifier,
-    PrepositionOverClassifier,
-    PrepositionSittingAroundClassifier,
-    PrepositionWithClassifier
+  val prepClassifiers = Map(
+    //PrepositionClassifier,
+    "above" -> PrepositionAboveClassifier,
+    "in_front_of" -> PrepositionInFrontOfClassifier,
+    "on" -> PrepositionOnClassifier,
+    "behind" -> PrepositionBehindClassifier,
+    "in" -> PrepositionInClassifier,
+    //"around" -> PrepositionAroundClassifier,
+    //"at" -> PrepositionAtClassifier,
+    //"between" -> PrepositionBetweenClassifier,
+    //"in between" -> PrepositionInBetweenClassifier,
+    //"in the middile of" -> PrepositionInTheMiddleOfClassifier,
+    //"leaning on" -> PrepositionLeaningOnClassifier,
+    //"near" -> PrepositionNearClassifier,
+    //"next to" -> PrepositionNextToClassifier,
+    //"on each side" -> PrepositionOnEachSideClassifier,
+    //"over " -> PrepositionOverClassifier,
+    //"sitting around" -> PrepositionSittingAroundClassifier,
+    //"with" -> PrepositionWithClassifier,
   )
 
   val constraintRoleClassifiers = List(
@@ -84,7 +88,7 @@ object MultiModalTripletApp extends App with Logging {
     TripletDirectionRightClassifier
   )
 
-  val classifiers = prepClassifiers ++ roleClassifiers ++ tripletClassifiers
+  val classifiers = prepClassifiers.values ++ roleClassifiers ++ tripletClassifiers
   classifiers.foreach(x => {
     x.modelDir = s"models/mSpRL/triplet/$featureSet/"
     x.modelSuffix = suffix
@@ -95,8 +99,11 @@ object MultiModalTripletApp extends App with Logging {
     populateVisualTripletsFromExternalData()
     prepClassifiers.foreach {
       x =>
-        if (x != PrepositionInFrontOfClassifier && x != PrepositionAboveClassifier)
-          x.learn(iterations)
+        val positive = visualTriplets().filter(y=> x._1.equalsIgnoreCase(y.getSp)).toList
+        val negative = visualTriplets().filter(y=> y.getSp != null && !x._1.equalsIgnoreCase(y.getSp)).toList
+        val examples = Random.shuffle(Random.shuffle(negative).take(positive.size) ++ positive)
+        if (x._2 != PrepositionInFrontOfClassifier && x._2 != PrepositionAboveClassifier)
+          x._2.learn(iterations, examples)
     }
     visualTriplets.clear()
   }
@@ -139,14 +146,18 @@ object MultiModalTripletApp extends App with Logging {
 
       prepClassifiers.foreach {
         x =>
-          if (x == PrepositionInFrontOfClassifier || x == PrepositionAboveClassifier) {
-            x.learn(iterations, visualTripletsFiltered)
+          val positive = visualTripletsFiltered.filter(y=> x._1.equalsIgnoreCase(y.getSp))
+          val negative = visualTripletsFiltered.filter(y=> !x._1.equalsIgnoreCase(y.getSp))
+          val examples = Random.shuffle(Random.shuffle(negative).take(positive.size) ++ positive)
+
+          if (x._2 == PrepositionInFrontOfClassifier || x._2 == PrepositionAboveClassifier) {
+            x._2.learn(iterations, examples)
           }
           else {
-            x.learn(10, visualTripletsFiltered)
+            x._2.learn(10, examples)
           }
-          x.test(visualTripletsFiltered)
-          x.save()
+          x._2.test(examples)
+          x._2.save()
       }
 
     }
@@ -171,6 +182,7 @@ object MultiModalTripletApp extends App with Logging {
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
     if (!useConstraints) {
+      val visualTripletsFiltered = visualTriplets().toList.filter(x => x.getSp != null)
       val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "true").toList
       val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "true").toList
       val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "true").toList
@@ -193,12 +205,13 @@ object MultiModalTripletApp extends App with Logging {
       }
       prepClassifiers.foreach {
         x =>
-          val res = x.test()
+          val res = x._2.test(visualTripletsFiltered)
           ReportHelper.saveEvalResults(outStream, s"${x.toString}(within data model)", res)
       }
     }
     else {
 
+      val visualTripletsFiltered = visualTriplets().toList.filter(x => x.getSp != null)
       val trajectors = phrases.getTestingInstances.filter(x => TRConstraintClassifier(x) == "Trajector").toList
       val landmarks = phrases.getTestingInstances.filter(x => LMConstraintClassifier(x) == "Landmark").toList
       val indicators = phrases.getTestingInstances.filter(x => IndicatorConstraintClassifier(x) == "Indicator").toList
@@ -220,11 +233,11 @@ object MultiModalTripletApp extends App with Logging {
           val res = x.test()
           ReportHelper.saveEvalResults(outStream, s"${x.toString}(within data model)", res)
       }
-      //      constrainedPrepClassifiers.foreach{
-      //        x=>
-      //          val res = x.test()
-      //          ReportHelper.saveEvalResults(outStream, s"${x.toString}(within data model)", res)
-      //      }
+      prepClassifiers.foreach {
+        x =>
+          val res = x._2.test(visualTripletsFiltered)
+          ReportHelper.saveEvalResults(outStream, s"${x.toString}(within data model)", res)
+      }
 
       //      report(x => TripletRelationConstraintClassifier(x),
       //        x => TRConstraintClassifier(x),
