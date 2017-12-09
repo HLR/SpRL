@@ -108,7 +108,7 @@ object TripletSentenceLevelConstraints {
         x =>
           a = a and (
             (
-              (TripletGeneralTypeClassifier on x) isNot "false"
+              (TripletGeneralTypeClassifier on x) isNot "None"
               ) <==>
               (TripletRelationClassifier on x is "true")
             )
@@ -368,10 +368,10 @@ object TripletSentenceLevelConstraints {
           boostLandmark(x) and
           boostTripletByGeneralType(x) and
           boostGeneralByDirection(x) and
-          boostGeneralByRegion(x) and
-          regionShouldHaveLandmark(x) and
-          discardRelationByImage(x) and
-          approveRelationByImage(x) //and
+            boostGeneralByRegion(x) and
+            regionShouldHaveLandmark(x) //and
+//          discardRelationByImage(x) and
+//          approveRelationByImage(x) //and
           //prepositionsConsistency(x) and
 //          approveRelationByMultiPreposition(x) and
 //          agreePrepositionClassifer(x)
