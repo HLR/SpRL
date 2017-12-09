@@ -21,8 +21,8 @@ object mSpRLConfigurator {
   val skipIndividualClassifiersTraining = false  /* When using joint train, it will ignore individual classifiers
                                                   * training and loads them from the disk*/
   val iterations = 50
-  val useConstraints = false
-  val trainPrepositionClassifier = false
+  val useConstraints = true
+  val trainPrepositionClassifier = true
   val alignmentMethod = "gold" // possible values: "classifier" "gold", "w2v"
   val imageConstraints = model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val populateImages = true //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage

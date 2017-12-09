@@ -58,14 +58,15 @@ object MultiModalSpRLTripletClassifiers {
     override def feature = phraseFeatures
   }
 
-  val p = new SparsePerceptron.Parameters()
-  p.learningRate = .1
-  p.thickness = 2
-
   object TrajectorRoleClassifier extends Learnable(phrases) {
     def label = trajectorRole is "Trajector"
 
-    override lazy val classifier = new SparsePerceptron(p)
+    override lazy val classifier = new SparseNetworkLearner {
+      val p = new SparseAveragedPerceptron.Parameters()
+      p.learningRate = .1
+      p.thickness = 2
+      baseLTU = new SparseAveragedPerceptron(p)
+    }
 
     override def feature = phraseFeatures
   }
@@ -73,7 +74,12 @@ object MultiModalSpRLTripletClassifiers {
   object LandmarkRoleClassifier extends Learnable(phrases) {
     def label = landmarkRole is "Landmark"
 
-    override lazy val classifier = new SparsePerceptron(p)
+    override lazy val classifier = new SparseNetworkLearner {
+      val p = new SparseAveragedPerceptron.Parameters()
+      p.learningRate = .1
+      p.thickness = 2
+      baseLTU = new SparseAveragedPerceptron(p)
+    }
 
     override def feature = (phraseFeatures ++ List(lemma, headWordLemma))
       .diff(List())
@@ -82,7 +88,12 @@ object MultiModalSpRLTripletClassifiers {
   object IndicatorRoleClassifier extends Learnable(phrases) {
     def label = indicatorRole is "Indicator"
 
-    override lazy val classifier = new SparsePerceptron(p)
+    override lazy val classifier = new SparseNetworkLearner {
+      val p = new SparseAveragedPerceptron.Parameters()
+      p.learningRate = .1
+      p.thickness = 2
+      baseLTU = new SparseAveragedPerceptron(p)
+    }
 
     override def feature = (phraseFeatures(FeatureSets.BaseLine) ++ List(headSubCategorization))
       .diff(List(headWordPos, headWordFrom, headDependencyRelation))
@@ -91,12 +102,7 @@ object MultiModalSpRLTripletClassifiers {
   object TripletRelationClassifier extends Learnable(triplets) {
     def label = tripletIsRelation is "Relation"
 
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.thickness = 2
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
+    override lazy val classifier = new SparsePerceptron()
 
     override def feature =  (tripletFeatures)
       .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))

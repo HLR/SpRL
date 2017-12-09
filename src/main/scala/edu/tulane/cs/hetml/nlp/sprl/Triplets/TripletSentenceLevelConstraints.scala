@@ -23,13 +23,13 @@ object TripletSentenceLevelConstraints {
       sentTriplets.foreach {
         x =>
           val trRel = sentTriplets.filter(r => r.getArgumentId(0) == x.getArgumentId(0))
-            ._exists(x => (TripletRelationClassifier on x) is "Relation")
+            ._exists(x => (TripletRelationClassifier on x) is "true")
 
           val lmRel = sentTriplets.filter(r => r.getArgumentId(2) == x.getArgumentId(2))
-            ._exists(x => (TripletRelationClassifier on x) is "Relation")
+            ._exists(x => (TripletRelationClassifier on x) is "true")
 
-          val tr = TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector"
-          val lm = LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "Landmark"
+          val tr = TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "true"
+          val lm = LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "true"
 
           a = a and (tr ==> trRel) and (lm ==> lmRel)
       }
@@ -44,11 +44,11 @@ object TripletSentenceLevelConstraints {
         x =>
           a = a and (
             (
-              (TripletRelationClassifier on x) is "Relation") ==>
+              (TripletRelationClassifier on x) is "true") ==>
               (
-                (TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "Trajector") and
-                  (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "Indicator") and
-                  (LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "Landmark")
+                (TrajectorRoleClassifier on (triplets(x) ~> tripletToFirstArg).head is "true") and
+                  (IndicatorRoleClassifier on (triplets(x) ~> tripletToSecondArg).head is "true") and
+                  (LandmarkRoleClassifier on (triplets(x) ~> tripletToThirdArg).head is "true")
                 )
             )
       }
@@ -62,7 +62,7 @@ object TripletSentenceLevelConstraints {
       val spGroups = (sentences(s) ~> sentenceToTriplets).groupBy(x => x.getArgumentId(1)).filter(_._2.size > 1)
       spGroups.foreach {
         sp =>
-          a = a and sp._2.toList._atmost(1)(t => TripletRelationClassifier on t is "Relation")
+          a = a and sp._2.toList._atmost(1)(t => TripletRelationClassifier on t is "true")
       }
       a
   }
@@ -70,9 +70,9 @@ object TripletSentenceLevelConstraints {
   val boostTrajector = ConstrainedClassifier.constraint[Sentence] {
     s: Sentence =>
       (
-        (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => IndicatorRoleClassifier on x is "Indicator" }
+        (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => IndicatorRoleClassifier on x is "true" }
           ==>
-          (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => TrajectorRoleClassifier on x is "Trajector" }
+          (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => TrajectorRoleClassifier on x is "true" }
         )
   }
   //  val boostTrajectorByImage = ConstrainedClassifier.constraint[Sentence] {
@@ -94,9 +94,9 @@ object TripletSentenceLevelConstraints {
   val boostLandmark = ConstrainedClassifier.constraint[Sentence] {
     s: Sentence =>
       (
-        (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => IndicatorRoleClassifier on x is "Indicator" }
+        (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => IndicatorRoleClassifier on x is "true" }
           ==>
-          (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => LandmarkRoleClassifier on x is "Landmark" }
+          (sentences(s) ~> sentenceToPhrase).toList._exists { x: Phrase => LandmarkRoleClassifier on x is "true" }
         )
   }
 
@@ -108,9 +108,9 @@ object TripletSentenceLevelConstraints {
         x =>
           a = a and (
             (
-              (TripletGeneralTypeClassifier on x) isNot "None"
+              (TripletGeneralTypeClassifier on x) isNot "false"
               ) <==>
-              (TripletRelationClassifier on x is "Relation")
+              (TripletRelationClassifier on x is "true")
             )
       }
       a
@@ -127,7 +127,7 @@ object TripletSentenceLevelConstraints {
 
           a = a and (
             tr._exists(t => (sim on t) is "true") and lm._exists(t => (sim on t) is "true") ==>
-              (TripletRelationClassifier on x is "Relation")
+              (TripletRelationClassifier on x is "true")
             )
       }
       a
@@ -181,7 +181,7 @@ object TripletSentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and ((imageSupportsSp on x is "true") ==>
-            (TripletRelationClassifier on x is "Relation"))
+            (TripletRelationClassifier on x is "true"))
       }
       a
   }
@@ -193,7 +193,7 @@ object TripletSentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and ((imageSupportsSp on x is "false") ==>
-            (TripletRelationClassifier on x is "None"))
+            (TripletRelationClassifier on x is "false"))
       }
       a
   }
@@ -369,9 +369,9 @@ object TripletSentenceLevelConstraints {
           boostTripletByGeneralType(x) and
           boostGeneralByDirection(x) and
           boostGeneralByRegion(x) and
-          regionShouldHaveLandmark(x) //and
-          //discardRelationByImage(x) and
-          //approveRelationByImage(x) //and
+          regionShouldHaveLandmark(x) and
+          discardRelationByImage(x) and
+          approveRelationByImage(x) //and
           //prepositionsConsistency(x) and
 //          approveRelationByMultiPreposition(x) and
 //          agreePrepositionClassifer(x)
