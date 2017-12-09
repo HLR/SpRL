@@ -39,7 +39,7 @@ object MultiModalTripletApp extends App with Logging {
     "in_front_of" -> PrepositionInFrontOfClassifier,
     "on" -> PrepositionOnClassifier,
     "behind" -> PrepositionBehindClassifier,
-    "in" -> PrepositionInClassifier,
+    "in" -> PrepositionInClassifier
     //"around" -> PrepositionAroundClassifier,
     //"at" -> PrepositionAtClassifier,
     //"between" -> PrepositionBetweenClassifier,
