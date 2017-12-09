@@ -50,14 +50,6 @@ object MultiModalSpRLTripletClassifiers {
     visualTripletBelow, visualTripletAbove, visualTripletLeft, visualTripletRight, visualTripletUnion, visualTripletIntersection,
     visualTripletTrajectorW2V, visualTripletlandmarkW2V)
 
-  object SpatialRoleClassifier extends Learnable(phrases) {
-    def label = spatialRole
-
-    override lazy val classifier = new SparseNetworkLearner()
-
-    override def feature = phraseFeatures
-  }
-
   object TrajectorRoleClassifier extends Learnable(phrases) {
     def label = trajectorRole is "Trajector"
 
@@ -133,14 +125,6 @@ object MultiModalSpRLTripletClassifiers {
 
     override def feature = (tripletFeatures)
       .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))
-  }
-
-  object TripletSpecificTypeClassifier extends Learnable(triplets) {
-    def label = tripletSpecificType
-
-    override lazy val classifier = new SparseNetworkLearner()
-
-    override def feature = tripletFeatures
   }
 
   object TripletDirectionClassifier extends Learnable(triplets) {

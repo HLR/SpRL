@@ -361,23 +361,23 @@ object MultiModalTripletApp extends App with Logging {
       val front = TripletDirectionFrontClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Direction front(within data model)", front)
 
-      //      val region = TripletRegionClassifier.test()
-      //      ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
-      //
-      //      val TPP = TripletRegionTPPClassifier.test()
-      //      ReportHelper.saveEvalResults(outStream, "Region TPP(within data model)", TPP)
-      //
-      //      val EC = TripletRegionECClassifier.test()
-      //      ReportHelper.saveEvalResults(outStream, "Region EC(within data model)", EC)
-      //
-      //      val EQ = TripletRegionEQClassifier.test()
-      //      ReportHelper.saveEvalResults(outStream, "Region EQ(within data model)", EQ)
-      //
-      //      val DC = TripletRegionDCClassifier.test()
-      //      ReportHelper.saveEvalResults(outStream, "Region DC(within data model)", DC)
-      //
-      //      val PO = TripletRegionPOClassifier.test()
-      //      ReportHelper.saveEvalResults(outStream, "Region PO(within data model)", PO)
+      val region = TripletRegionClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
+
+      val TPP = TripletRegionTPPClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Region TPP(within data model)", TPP)
+
+      val EC = TripletRegionECClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Region EC(within data model)", EC)
+
+      val EQ = TripletRegionEQClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Region EQ(within data model)", EQ)
+
+      val DC = TripletRegionDCClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Region DC(within data model)", DC)
+
+      val PO = TripletRegionPOClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Region PO(within data model)", PO)
       //
       //      val visual = PrepositionClassifier.test()
       //      ReportHelper.saveEvalResults(outStream, "Visual triplet(within data model)", visual)
@@ -415,15 +415,15 @@ object MultiModalTripletApp extends App with Logging {
       val relation = TripletRelationConstraintClassifier.test()
       ReportHelper.saveEvalResults(outStream, "Relation(within data model)", relation)
 
-      //      val general = TripletGeneralTypeConstraintClassifier.test()
-      //      ReportHelper.saveEvalResults(outStream, "General(within data model)", general)
-      //
-      //      val direction = TripletDirectionConstraintClassifier.test()
-      //      ReportHelper.saveEvalResults(outStream, "Direction(within data model)", direction)
-      //
-      //      val region = TripletRegionConstraintClassifier.test()
-      //      ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
-      //
+      val general = TripletGeneralTypeConstraintClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "General(within data model)", general)
+
+      val direction = TripletDirectionConstraintClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Direction(within data model)", direction)
+
+      val region = TripletRegionConstraintClassifier.test()
+      ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
+
       //      val imRegion = TripletImageRegionClassifier.test()
       //      ReportHelper.saveEvalResults(outStream, "Image Region(within data model)", imRegion)
       //
