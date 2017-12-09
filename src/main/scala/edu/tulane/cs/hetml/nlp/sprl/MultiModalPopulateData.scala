@@ -55,8 +55,8 @@ object MultiModalPopulateData extends Logging {
       images.populate(imageReader.getImageList, isTrain)
       val segs = getAdjustedSegments(imageReader.getSegmentList)
       segments.populate(segs, isTrain)
-      setBestAlignment()
     }
+    setBestAlignment()
 
     logger.info("Role population finished.")
   }

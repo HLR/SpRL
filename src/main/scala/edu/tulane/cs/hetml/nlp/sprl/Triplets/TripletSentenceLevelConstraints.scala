@@ -376,8 +376,7 @@ object TripletSentenceLevelConstraints {
           boostLandmark(x) and
           boostTripletByGeneralType(x) and
           boostGeneralByDirection(x) and
-          boostGeneralByRegion(x) and
-          regionShouldHaveLandmark(x) //and
+          boostGeneralByRegion(x)
       //          discardRelationByImage(x) and
       //          approveRelationByImage(x) //and
       //prepositionsConsistency(x) and
