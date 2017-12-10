@@ -14,11 +14,11 @@ object mSpRLConfigurator {
   val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"
   val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//"data/TrainSet.xml"
   val suffix = ""
-  val model = FeatureSets.BaseLine
-  var isTrain = false
-  val trainTestTogether = false
+  val model = FeatureSets.BaseLineWithImage
+  var isTrain = true
+  val trainTestTogether = true
   val useAnntotatedClef = true
-  val jointTrain = false
+  val jointTrain = true
   val skipIndividualClassifiersTraining = false  /* When using joint train, it will ignore individual classifiers
                                                   * training and loads them from the disk*/
   val iterations = 50

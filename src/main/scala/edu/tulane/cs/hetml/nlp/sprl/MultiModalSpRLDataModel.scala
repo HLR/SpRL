@@ -22,6 +22,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val undefined = "[undefined]"
 
   var useVectorAverages = false
+  var imageSegmentsDic: Map[String, Iterable[ImageTriplet]] = Map()
 
   /*
   Nodes
@@ -1072,5 +1073,16 @@ object MultiModalSpRLDataModel extends DataModel {
     else
       undefined
   }
-
+  def getImageSegmentsDic(): Map[String, Iterable[ImageTriplet]] = segments().groupBy(_.getAssociatedImageID).map{
+    i =>
+      val t = i._2.flatMap { seg1 =>
+        val img = images().find(_.getId == seg1.getAssociatedImageID).get
+        i._2.filter(x => x != seg1).map {
+          seg2 =>
+            new ImageTriplet(seg1.getAssociatedImageID, seg1.getSegmentId,
+              seg2.getSegmentId, seg1.getBoxDimensions, seg2.getBoxDimensions, img.getWidth, img.getHeight)
+        }
+      }
+      (i._1, t)
+  }
 }

@@ -163,19 +163,6 @@ object MultiModalSpRLSensors {
     false
   }
 
-  def imageSegments = segments().groupBy(_.getAssociatedImageID).map{
-    i =>
-      val t = i._2.flatMap { seg1 =>
-        val img = images().find(_.getId == seg1.getAssociatedImageID).get
-        i._2.filter(x => x != seg1).map {
-          seg2 =>
-            new ImageTriplet(seg1.getAssociatedImageID, seg1.getSegmentId,
-              seg2.getSegmentId, seg1.getBoxDimensions, seg2.getBoxDimensions, img.getWidth, img.getHeight)
-        }
-      }
-      (i._1, t)
-  }
-
   def TripletToVisualTripletGenerating(r: Relation): List[ImageTriplet] = {
     val (first, second, third) = getTripletArguments(r)
     val trSegId = first.getPropertyFirstValue("bestAlignment")
@@ -190,7 +177,7 @@ object MultiModalSpRLSensors {
       if (trSeg.nonEmpty && lmSeg.nonEmpty) {
 
         val imId = trSeg.get.getAssociatedImageID
-        val imageRel = imageSegments(imId).filter(x =>
+        val imageRel = imageSegmentsDic(imId).filter(x =>
           x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
 
         imageRel.foreach {
