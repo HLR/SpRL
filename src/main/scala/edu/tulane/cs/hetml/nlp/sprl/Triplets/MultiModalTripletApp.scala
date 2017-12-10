@@ -99,8 +99,8 @@ object MultiModalTripletApp extends App with Logging {
     populateVisualTripletsFromExternalData()
     prepClassifiers.foreach {
       x =>
-        val positive = visualTriplets().filter(y=> x._1.equalsIgnoreCase(y.getSp)).toList
-        val negative = visualTriplets().filter(y=> y.getSp != null && !x._1.equalsIgnoreCase(y.getSp)).toList
+        val positive = visualTriplets().filter(y => x._1.equalsIgnoreCase(y.getSp)).toList
+        val negative = visualTriplets().filter(y => y.getSp != null && !x._1.equalsIgnoreCase(y.getSp)).toList
         val examples = Random.shuffle(Random.shuffle(negative).take(positive.size) ++ positive)
         if (x._2 != PrepositionInFrontOfClassifier && x._2 != PrepositionAboveClassifier)
           x._2.learn(iterations, examples)
@@ -108,7 +108,7 @@ object MultiModalTripletApp extends App with Logging {
     visualTriplets.clear()
   }
 
-  populateRoleDataFromAnnotatedCorpus()
+  populateRoleDataFromAnnotatedCorpus(isTraining = isTrain)
 
   if (isTrain) {
     println("training started ...")
@@ -117,7 +117,7 @@ object MultiModalTripletApp extends App with Logging {
       x =>
         x.learn(iterations)
         x.test(phrases())
-        x.save()
+      //  x.save()
     }
 
     val spCandidatesTrain = CandidateGenerator.getIndicatorCandidates(phrases().toList)
@@ -130,14 +130,14 @@ object MultiModalTripletApp extends App with Logging {
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTrain.exists(_.getId == x.getId),
       x => IndicatorRoleClassifier(x) == "true",
-      x => lmCandidatesTrain.exists(_.getId == x.getId)
+      x => lmCandidatesTrain.exists(_.getId == x.getId), isTrain
     )
 
     tripletClassifiers.foreach {
       x =>
         x.learn(iterations)
         x.test(triplets())
-        x.save()
+      //   x.save()
     }
 
     if (trainPrepositionClassifier) {
@@ -146,8 +146,8 @@ object MultiModalTripletApp extends App with Logging {
 
       prepClassifiers.foreach {
         x =>
-          val positive = visualTripletsFiltered.filter(y=> x._1.equalsIgnoreCase(y.getSp))
-          val negative = visualTripletsFiltered.filter(y=> !x._1.equalsIgnoreCase(y.getSp))
+          val positive = visualTripletsFiltered.filter(y => x._1.equalsIgnoreCase(y.getSp))
+          val negative = visualTripletsFiltered.filter(y => !x._1.equalsIgnoreCase(y.getSp))
           val examples = Random.shuffle(Random.shuffle(negative).take(positive.size) ++ positive)
 
           if (x._2 == PrepositionInFrontOfClassifier || x._2 == PrepositionAboveClassifier) {
@@ -157,18 +157,19 @@ object MultiModalTripletApp extends App with Logging {
             x._2.learn(10, examples)
           }
           x._2.test(examples)
-          x._2.save()
+        //   x._2.save()
       }
 
     }
 
   }
 
-  if (!isTrain) {
+
+  if (isTest) {
 
     println("testing started ...")
 
-    classifiers.foreach(x => x.load())
+    //    classifiers.foreach(x => x.load())
 
     val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases().toList)
     val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)
@@ -179,7 +180,7 @@ object MultiModalTripletApp extends App with Logging {
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTest.exists(_.getId == x.getId),
       x => IndicatorRoleClassifier(x) == "true",
-      x => lmCandidatesTest.exists(_.getId == x.getId))
+      x => lmCandidatesTest.exists(_.getId == x.getId), isTraining= !isTrain)
 
     if (!useConstraints) {
       val visualTripletsFiltered = visualTriplets().toList.filter(x => x.getSp != null)
