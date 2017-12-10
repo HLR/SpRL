@@ -23,19 +23,20 @@ object MultiModalPopulateData extends Logging {
   lazy val imageReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, isTrain)
   lazy val alignmentReader = new AlignmentReader(alignmentAnnotationPath, isTrain)
 
-  def populateRoleDataFromAnnotatedCorpus(populateNullPairs: Boolean = true): Unit = {
+  def populateRoleDataFromAnnotatedCorpus(isTraining: Boolean = true, populateNullPairs: Boolean = true): Unit = {
     logger.info("Role population started ...")
-    if (isTrain && onTheFlyLexicon) {
+    lazy val xmlReader = new SpRLXmlReader(if (isTraining) trainFile else testFile, globalSpans)
+    if (isTraining && onTheFlyLexicon) {
       LexiconHelper.createSpatialIndicatorLexicon(xmlReader)
     }
-    documents.populate(xmlReader.getDocuments, isTrain)
-    sentences.populate(xmlReader.getSentences, isTrain)
+    documents.populate(xmlReader.getDocuments, isTraining)
+    sentences.populate(xmlReader.getSentences, isTraining)
 
     if (populateNullPairs) {
-      phrases.populate(List(dummyPhrase), isTrain)
+      phrases.populate(List(dummyPhrase), isTraining)
     }
 
-    val phraseInstances = (if (isTrain) phrases.getTrainingInstances.toList else phrases.getTestingInstances.toList)
+    val phraseInstances = (if (isTraining) phrases.getTrainingInstances.toList else phrases.getTestingInstances.toList)
       .filter(_.getId != dummyPhrase.getId)
 
     if (globalSpans) {
@@ -52,11 +53,11 @@ object MultiModalPopulateData extends Logging {
     alignmentReader.setAlignments(phraseInstances)
 
     if (populateImages) {
-      images.populate(imageReader.getImageList, isTrain)
+      images.populate(imageReader.getImageList, isTraining)
       val segs = getAdjustedSegments(imageReader.getSegmentList)
-      segments.populate(segs, isTrain)
-      setBestAlignment()
+      segments.populate(segs, isTraining)
     }
+    setBestAlignment()
 
     logger.info("Role population finished.")
   }
@@ -101,7 +102,7 @@ object MultiModalPopulateData extends Logging {
   def populateTripletDataFromAnnotatedCorpus(
                                               trFilter: (Phrase) => Boolean,
                                               spFilter: (Phrase) => Boolean,
-                                              lmFilter: (Phrase) => Boolean
+                                              lmFilter: (Phrase) => Boolean, isTraining: Boolean
                                             ): Unit = {
 
     logger.info("Triplet population started ...")
@@ -109,11 +110,12 @@ object MultiModalPopulateData extends Logging {
       trFilter,
       spFilter,
       lmFilter,
-      isTrain
+      isTraining
     )
+    lazy val xmlReader = new SpRLXmlReader(if (isTraining) trainFile else testFile, globalSpans)
     xmlReader.setTripletRelationTypes(candidateRelations)
 
-    triplets.populate(candidateRelations, isTrain)
+    triplets.populate(candidateRelations, isTraining)
 
     logger.info("Triplet population finished.")
   }
@@ -210,7 +212,6 @@ object MultiModalPopulateData extends Logging {
               val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
               if (pair.getProperty("similarity").toDouble > 0.30 || alignmentMethod == "classifier") {
                 p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
-                p.addPropertyValue("imageId", pair.getArgument(1).asInstanceOf[Segment].getAssociatedImageID)
                 p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
               }
             }
