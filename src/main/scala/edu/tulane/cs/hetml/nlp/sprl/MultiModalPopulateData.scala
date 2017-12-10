@@ -19,9 +19,11 @@ import scala.collection.mutable.ListBuffer
 
 object MultiModalPopulateData extends Logging {
 
-  lazy val xmlReader = new SpRLXmlReader(if (isTrain) trainFile else testFile, globalSpans)
-  lazy val imageReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, isTrain)
-  lazy val alignmentReader = new AlignmentReader(alignmentAnnotationPath, isTrain)
+  lazy val xmlTestReader = new SpRLXmlReader(testFile, globalSpans)
+  lazy val xmlTrainReader = new SpRLXmlReader(trainFile, globalSpans)
+  def xmlReader = if (isTrain) xmlTrainReader else xmlTestReader
+  def imageReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, isTrain)
+  def alignmentReader = new AlignmentReader(alignmentAnnotationPath, isTrain)
 
   def populateRoleDataFromAnnotatedCorpus(populateNullPairs: Boolean = true): Unit = {
     logger.info("Role population started ...")
