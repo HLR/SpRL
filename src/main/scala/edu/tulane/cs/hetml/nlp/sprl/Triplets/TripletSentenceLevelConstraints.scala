@@ -19,14 +19,14 @@ object TripletSentenceLevelConstraints {
     "above" -> PrepositionAboveClassifier
     //"at" -> PrepositionAtClassifier,
     //"around" -> PrepositionAroundClassifier,
-//    "behind" -> PrepositionBehindClassifier,
-//    "between" -> PrepositionBetweenClassifier,
-//    "in between" -> PrepositionInBetweenClassifier,
-//    "leaning on" -> PrepositionLeaningOnClassifier,
-//    "next to" -> PrepositionNextToClassifier,
-//    "on each side" -> PrepositionOnEachSideClassifier,
-//    "over" -> PrepositionOverClassifier,
-//    "sitting around" -> PrepositionSittingAroundClassifier
+    //    "behind" -> PrepositionBehindClassifier,
+    //    "between" -> PrepositionBetweenClassifier,
+    //    "in between" -> PrepositionInBetweenClassifier,
+    //    "leaning on" -> PrepositionLeaningOnClassifier,
+    //    "next to" -> PrepositionNextToClassifier,
+    //    "on each side" -> PrepositionOnEachSideClassifier,
+    //    "over" -> PrepositionOverClassifier,
+    //    "sitting around" -> PrepositionSittingAroundClassifier
   )
 
   val roleShouldHaveRel = ConstrainedClassifier.constraint[Sentence] {
@@ -129,9 +129,25 @@ object TripletSentenceLevelConstraints {
       a = new FirstOrderConstant(true)
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
-          a = a and (
-            (TripletDirectionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "direction")
-            )
+          a = a and
+            ((TripletDirectionAboveClassifier on x is "true") ==> (TripletGeneralTypeClassifier on x is "direction")) and
+            ((TripletDirectionBelowClassifier on x is "true") ==> (TripletGeneralTypeClassifier on x is "direction")) and
+            ((TripletDirectionBehindClassifier on x is "true") ==> (TripletGeneralTypeClassifier on x is "direction")) and
+            ((TripletDirectionFrontClassifier on x is "true") ==> (TripletGeneralTypeClassifier on x is "direction")) and
+            ((TripletDirectionLeftClassifier on x is "true") ==> (TripletGeneralTypeClassifier on x is "direction")) and
+            ((TripletDirectionRightClassifier on x is "true") ==> (TripletGeneralTypeClassifier on x is "direction"))
+      }
+      a
+  }
+
+  val boostGeneralByDirectionMulti = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          a = a and
+            ((TripletDirectionClassifier on x isNot "None") ==> (TripletGeneralTypeClassifier on x is "direction"))
       }
       a
   }
@@ -142,9 +158,24 @@ object TripletSentenceLevelConstraints {
       a = new FirstOrderConstant(true)
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
-          a = a and (
-            (TripletRegionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "region")
-            )
+          a = a and
+            ((TripletRegionTPPClassifier on x is "true") ==> (TripletGeneralTypeClassifier on x is "region")) and
+            ((TripletRegionECClassifier on x is "true") ==> (TripletGeneralTypeClassifier on x is "region")) and
+            ((TripletRegionEQClassifier on x is "true") ==> (TripletGeneralTypeClassifier on x is "region")) and
+            ((TripletRegionPOClassifier on x is "true") ==> (TripletGeneralTypeClassifier on x is "region")) and
+            ((TripletRegionDCClassifier on x is "true") ==> (TripletGeneralTypeClassifier on x is "region"))
+      }
+      a
+  }
+
+  val boostGeneralByRegionMulti = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          a = a and
+            ((TripletRegionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "region"))
       }
       a
   }
@@ -196,7 +227,7 @@ object TripletSentenceLevelConstraints {
           if (vt.nonEmpty) {
             var othersFalse: FirstOrderConstraint = new FirstOrderConstant(true)
             val sp = (triplets(x) ~> tripletToSp).head.getText.toLowerCase().trim
-            if(preps.contains(sp)) {
+            if (preps.contains(sp)) {
               val others = preps.filter(p => p != sp)
               if (others.nonEmpty) {
                 others.foreach(prep => othersFalse = othersFalse and ((prepClassifiers(prep) on vt.get) is "false"))
@@ -214,13 +245,14 @@ object TripletSentenceLevelConstraints {
     x: Sentence =>
       var a =
       //roleIntegrity(x) and
-      //        roleShouldHaveRel(x) and
-      //          boostTrajector(x) and
-      //          boostLandmark(x) and
-      //          boostTripletByGeneralType(x) and
-      //          boostGeneralByDirection(x) and
-      //          boostGeneralByRegion(x) and
-        prepositionConsistency(x) and matchVisualAndTextRels(x)
+        //roleShouldHaveRel(x) and
+          //boostTrajector(x) and
+         // boostLandmark(x) and
+          boostTripletByGeneralType(x) and
+          boostGeneralByDirection(x) and
+          boostGeneralByRegion(x) and
+          prepositionConsistency(x) and
+          matchVisualAndTextRels(x)
       //          discardRelationByImage(x) and
       //          approveRelationByImage(x) //and
       //prepositionsConsistency(x) and
