@@ -245,14 +245,14 @@ object TripletSentenceLevelConstraints {
     x: Sentence =>
       var a =
       //roleIntegrity(x) and
-        //roleShouldHaveRel(x) and
-          //boostTrajector(x) and
-         // boostLandmark(x) and
+          roleShouldHaveRel(x) and
+          boostTrajector(x) and
+          boostLandmark(x) and
           boostTripletByGeneralType(x) and
-          boostGeneralByDirection(x) and
-          boostGeneralByRegion(x) and
-          prepositionConsistency(x) and
-          matchVisualAndTextRels(x)
+          boostGeneralByDirectionMulti(x) and
+          boostGeneralByRegionMulti(x) //and
+          //prepositionConsistency(x) and
+          //matchVisualAndTextRels(x)
       //          discardRelationByImage(x) and
       //          approveRelationByImage(x) //and
       //prepositionsConsistency(x) and
