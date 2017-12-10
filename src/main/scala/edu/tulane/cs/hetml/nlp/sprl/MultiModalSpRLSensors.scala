@@ -155,7 +155,7 @@ object MultiModalSpRLSensors {
     false
   }
 
-  lazy val imageSegments = segments().groupBy(_.getAssociatedImageID).map{
+  def imageSegments = segments().groupBy(_.getAssociatedImageID).map{
     i =>
       val t = i._2.flatMap { seg1 =>
         val img = images().find(_.getId == seg1.getAssociatedImageID).get

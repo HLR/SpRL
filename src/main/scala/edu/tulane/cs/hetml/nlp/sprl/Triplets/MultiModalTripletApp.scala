@@ -164,16 +164,31 @@ object MultiModalTripletApp extends App with Logging {
 
   }
 
+  if(trainTestTogether) {
+
+    documents.clear()
+    sentences.clear()
+    images.clear()
+    segments.clear()
+    phrases.clear()
+    tokens.clear()
+    triplets.clear()
+    visualTriplets.clear()
+    segmentPhrasePairs.clear()
+
+    isTrain = false
+    populateRoleDataFromAnnotatedCorpus()
+  }
   if (!isTrain) {
 
     println("testing started ...")
 
     classifiers.foreach(x => x.load())
 
-    val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases().toList)
-    val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+    val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases.getTestingInstances.toList)
+    val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases.getTestingInstances.toList)
       .filterNot(x => spCandidatesTest.contains(x))
-    val lmCandidatesTest = CandidateGenerator.getLandmarkCandidates(phrases().toList)
+    val lmCandidatesTest = CandidateGenerator.getLandmarkCandidates(phrases.getTestingInstances.toList)
       .filterNot(x => spCandidatesTest.contains(x))
 
     populateTripletDataFromAnnotatedCorpus(
