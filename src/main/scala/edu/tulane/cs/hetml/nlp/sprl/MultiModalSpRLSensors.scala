@@ -127,7 +127,15 @@ object MultiModalSpRLSensors {
     pair.getArgumentId(0) == phrase.getId
   }
 
-  def TripletToVisualTripletMatching(r: Relation, vt: ImageTriplet): Boolean = {
+  def SentenceToVisualTripletMatching(s: Sentence, vt: ImageTriplet): Boolean = {
+    val vtSentence = (visualTriplets(vt) ~> -tripletToVisualTriplet ~> -sentenceToTriplets).headOption
+    if(vtSentence.nonEmpty)
+      vtSentence.get.getId == s.getId
+    else
+      false
+  }
+
+    def TripletToVisualTripletMatching(r: Relation, vt: ImageTriplet): Boolean = {
     val (first, second, third) = getTripletArguments(r)
     if(first.getPropertyFirstValue("imageId") != vt.getImageId)
       return false

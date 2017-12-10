@@ -2,11 +2,12 @@ package edu.tulane.cs.hetml.nlp.sprl.Triplets
 
 import java.io.{File, FileOutputStream, PrintStream}
 
-import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
+import edu.illinois.cs.cogcomp.saul.classifier.{ConstrainedClassifier, JointTrainSparsePerceptron}
 import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation}
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.{CandidateGenerator, FeatureSets, ReportHelper}
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
@@ -32,14 +33,19 @@ object MultiModalTripletApp extends App with Logging {
   })
   MultiModalSpRLTripletClassifiers.featureSet = model
 
-  val constrainedPrepClassifiers = List()
+  val constrainedPrepClassifiers = List(
+    PrepositionAboveConstraintClassifier,
+    PrepositionInFrontOfConstraintClassifier,
+    PrepositionOnConstraintClassifier,
+    PrepositionInConstraintClassifier
+  )
   val prepClassifiers = Map(
     //PrepositionClassifier,
     "above" -> PrepositionAboveClassifier,
     "in_front_of" -> PrepositionInFrontOfClassifier,
     "on" -> PrepositionOnClassifier,
-    "behind" -> PrepositionBehindClassifier,
     "in" -> PrepositionInClassifier
+    //"behind" -> PrepositionBehindClassifier,
     //"around" -> PrepositionAroundClassifier,
     //"at" -> PrepositionAtClassifier,
     //"between" -> PrepositionBetweenClassifier,
@@ -66,7 +72,18 @@ object MultiModalTripletApp extends App with Logging {
   )
 
   val constraintTripletClassifiers = List(
-    TripletRelationConstraintClassifier
+    TripletRelationConstraintClassifier,
+    TripletRegionTPPConstraintClassifier,
+    TripletRegionECConstraintClassifier,
+    TripletRegionEQConstraintClassifier,
+    TripletRegionDCConstraintClassifier,
+    TripletRegionPOConstraintClassifier,
+    TripletDirectionRightConstraintClassifier,
+    TripletDirectionLeftConstraintClassifier,
+    TripletDirectionAboveConstraintClassifier,
+    TripletDirectionBelowConstraintClassifier,
+    TripletDirectionBehindConstraintClassifier,
+    TripletDirectionFrontConstraintClassifier
   )
   val tripletClassifiers = List(
     TripletRelationClassifier,
@@ -161,6 +178,10 @@ object MultiModalTripletApp extends App with Logging {
       }
 
     }
+    if(jointTrain){
+      JointTrainSparsePerceptron.train(MultiModalSpRLDataModel.sentences,
+        constrainedPrepClassifiers ++ List(TripletRelationConstraintClassifier), 10)
+    }
 
   }
 
@@ -170,10 +191,10 @@ object MultiModalTripletApp extends App with Logging {
 
     classifiers.foreach(x => x.load())
 
-    val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases().toList)
-    val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+    val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases.getTestingInstances.toList)
+    val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases.getTestingInstances.toList)
       .filterNot(x => spCandidatesTest.contains(x))
-    val lmCandidatesTest = CandidateGenerator.getLandmarkCandidates(phrases().toList)
+    val lmCandidatesTest = CandidateGenerator.getLandmarkCandidates(phrases.getTestingInstances.toList)
       .filterNot(x => spCandidatesTest.contains(x))
 
     populateTripletDataFromAnnotatedCorpus(
@@ -233,9 +254,9 @@ object MultiModalTripletApp extends App with Logging {
           val res = x.test()
           ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
       }
-      prepClassifiers.foreach {
+      constrainedPrepClassifiers.foreach {
         x =>
-          val res = x._2.test(visualTripletsFiltered)
+          val res = x.test(visualTripletsFiltered)
           ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
       }
 
