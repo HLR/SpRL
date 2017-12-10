@@ -185,6 +185,21 @@ object MultiModalTripletApp extends App with Logging {
 
   }
 
+  if(trainTestTogether) {
+
+    documents.clear()
+    sentences.clear()
+    images.clear()
+    segments.clear()
+    phrases.clear()
+    tokens.clear()
+    triplets.clear()
+    visualTriplets.clear()
+    segmentPhrasePairs.clear()
+
+    isTrain = false
+    populateRoleDataFromAnnotatedCorpus()
+  }
   if (!isTrain) {
 
     println("testing started ...")
