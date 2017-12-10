@@ -101,7 +101,7 @@ object MultiModalTripletApp extends App with Logging {
       x =>
         val positive = visualTriplets().filter(y=> x._1.equalsIgnoreCase(y.getSp)).toList
         val negative = visualTriplets().filter(y=> y.getSp != null && !x._1.equalsIgnoreCase(y.getSp)).toList
-        val examples = Random.shuffle(Random.shuffle(negative).take(positive.size) ++ positive)
+        val examples = Random.shuffle(Random.shuffle(negative).take(positive.size * 2) ++ positive)
         if (x._2 != PrepositionInFrontOfClassifier && x._2 != PrepositionAboveClassifier)
           x._2.learn(iterations, examples)
     }
@@ -148,7 +148,7 @@ object MultiModalTripletApp extends App with Logging {
         x =>
           val positive = visualTripletsFiltered.filter(y=> x._1.equalsIgnoreCase(y.getSp))
           val negative = visualTripletsFiltered.filter(y=> !x._1.equalsIgnoreCase(y.getSp))
-          val examples = Random.shuffle(Random.shuffle(negative).take(positive.size) ++ positive)
+          val examples = Random.shuffle(Random.shuffle(negative).take(positive.size * 2) ++ positive)
 
           if (x._2 == PrepositionInFrontOfClassifier || x._2 == PrepositionAboveClassifier) {
             x._2.learn(iterations, examples)
@@ -195,18 +195,18 @@ object MultiModalTripletApp extends App with Logging {
       roleClassifiers.foreach {
         x =>
           val res = x.test()
-          ReportHelper.saveEvalResults(outStream, s"${x.toString}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
       }
 
       tripletClassifiers.foreach {
         x =>
           val res = x.test()
-          ReportHelper.saveEvalResults(outStream, s"${x.toString}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
       }
       prepClassifiers.foreach {
         x =>
           val res = x._2.test(visualTripletsFiltered)
-          ReportHelper.saveEvalResults(outStream, s"${x.toString}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
       }
     }
     else {
@@ -225,18 +225,18 @@ object MultiModalTripletApp extends App with Logging {
       constraintRoleClassifiers.foreach {
         x =>
           val res = x.test()
-          ReportHelper.saveEvalResults(outStream, s"${x.toString}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
       }
 
       constraintTripletClassifiers.foreach {
         x =>
           val res = x.test()
-          ReportHelper.saveEvalResults(outStream, s"${x.toString}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
       }
       prepClassifiers.foreach {
         x =>
           val res = x._2.test(visualTripletsFiltered)
-          ReportHelper.saveEvalResults(outStream, s"${x.toString}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
       }
 
       //      report(x => TripletRelationConstraintClassifier(x),
