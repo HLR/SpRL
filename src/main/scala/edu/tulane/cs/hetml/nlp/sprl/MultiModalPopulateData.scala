@@ -57,6 +57,7 @@ object MultiModalPopulateData extends Logging {
       images.populate(imageReader.getImageList, isTrain)
       val segs = getAdjustedSegments(imageReader.getSegmentList)
       segments.populate(segs, isTrain)
+      imageSegmentsDic = getImageSegmentsDic()
     }
     setBestAlignment()
 

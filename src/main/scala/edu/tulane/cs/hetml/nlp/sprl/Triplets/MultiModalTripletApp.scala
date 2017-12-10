@@ -116,8 +116,8 @@ object MultiModalTripletApp extends App with Logging {
     populateVisualTripletsFromExternalData()
     prepClassifiers.foreach {
       x =>
-        val positive = visualTriplets().filter(y=> x._1.equalsIgnoreCase(y.getSp)).toList
-        val negative = visualTriplets().filter(y=> y.getSp != null && !x._1.equalsIgnoreCase(y.getSp)).toList
+        val positive = visualTriplets().filter(y => x._1.equalsIgnoreCase(y.getSp)).toList
+        val negative = visualTriplets().filter(y => y.getSp != null && !x._1.equalsIgnoreCase(y.getSp)).toList
         val examples = Random.shuffle(Random.shuffle(negative).take(positive.size * 2) ++ positive)
         if (x._2 != PrepositionInFrontOfClassifier && x._2 != PrepositionAboveClassifier)
           x._2.learn(iterations, examples)
@@ -163,8 +163,8 @@ object MultiModalTripletApp extends App with Logging {
 
       prepClassifiers.foreach {
         x =>
-          val positive = visualTripletsFiltered.filter(y=> x._1.equalsIgnoreCase(y.getSp))
-          val negative = visualTripletsFiltered.filter(y=> !x._1.equalsIgnoreCase(y.getSp))
+          val positive = visualTripletsFiltered.filter(y => x._1.equalsIgnoreCase(y.getSp))
+          val negative = visualTripletsFiltered.filter(y => !x._1.equalsIgnoreCase(y.getSp))
           val examples = Random.shuffle(Random.shuffle(negative).take(positive.size * 2) ++ positive)
 
           if (x._2 == PrepositionInFrontOfClassifier || x._2 == PrepositionAboveClassifier) {
@@ -178,14 +178,16 @@ object MultiModalTripletApp extends App with Logging {
       }
 
     }
-    if(jointTrain){
+    if (jointTrain) {
+      logger.info("====================================")
+      logger.info("Joint Train started")
       JointTrainSparsePerceptron.train(MultiModalSpRLDataModel.sentences,
         constrainedPrepClassifiers ++ List(TripletRelationConstraintClassifier), 10)
     }
 
   }
 
-  if(trainTestTogether) {
+  if (trainTestTogether) {
 
     documents.clear()
     sentences.clear()
