@@ -206,7 +206,8 @@ object MultiModalTripletApp extends App with Logging {
 
     println("testing started ...")
 
-    classifiers.foreach(x => x.load())
+    if (!trainTestTogether)
+      classifiers.foreach(x => x.load())
 
     val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases.getTestingInstances.toList)
     val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases.getTestingInstances.toList)
@@ -220,7 +221,7 @@ object MultiModalTripletApp extends App with Logging {
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
     if (!useConstraints) {
-      val visualTripletsFiltered = visualTriplets().toList.filter(x => x.getSp != null)
+      val visualTripletsFiltered = visualTriplets.getTestingInstances.toList.filter(x => x.getSp != null)
       val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "true").toList
       val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "true").toList
       val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "true").toList
@@ -233,29 +234,29 @@ object MultiModalTripletApp extends App with Logging {
       roleClassifiers.foreach {
         x =>
           val res = x.test()
-          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
 
       tripletClassifiers.foreach {
         x =>
           val res = x.test()
-          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
       prepClassifiers.foreach {
         x =>
           val res = x._2.test(visualTripletsFiltered)
-          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x._1}(within data model)", res)
       }
     }
     else {
 
-      val visualTripletsFiltered = visualTriplets().toList.filter(x => x.getSp != null)
-      val trajectors = phrases.getTestingInstances.filter(x => TRConstraintClassifier(x) == "Trajector").toList
-      val landmarks = phrases.getTestingInstances.filter(x => LMConstraintClassifier(x) == "Landmark").toList
-      val indicators = phrases.getTestingInstances.filter(x => IndicatorConstraintClassifier(x) == "Indicator").toList
+      val visualTripletsFiltered = visualTriplets.getTestingInstances.toList.filter(x => x.getSp != null)
+      val trajectors = phrases.getTestingInstances.filter(x => TRConstraintClassifier(x) == "true").toList
+      val landmarks = phrases.getTestingInstances.filter(x => LMConstraintClassifier(x) == "true").toList
+      val indicators = phrases.getTestingInstances.filter(x => IndicatorConstraintClassifier(x) == "true").toList
 
       val tripletList = triplets.getTestingInstances
-        .filter(x => TripletRelationConstraintClassifier(x) == "Relation").toList
+        .filter(x => TripletRelationConstraintClassifier(x) == "true").toList
 
 
       val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
@@ -263,18 +264,18 @@ object MultiModalTripletApp extends App with Logging {
       constraintRoleClassifiers.foreach {
         x =>
           val res = x.test()
-          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
 
       constraintTripletClassifiers.foreach {
         x =>
           val res = x.test()
-          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
       constrainedPrepClassifiers.foreach {
         x =>
           val res = x.test(visualTripletsFiltered)
-          ReportHelper.saveEvalResults(outStream, s"${x.getClass.getName}(within data model)", res)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
 
       //      report(x => TripletRelationConstraintClassifier(x),

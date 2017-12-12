@@ -128,39 +128,11 @@ object MultiModalSpRLSensors {
   }
 
   def SentenceToVisualTripletMatching(s: Sentence, vt: ImageTriplet): Boolean = {
-    val vtSentence = (visualTriplets(vt) ~> -tripletToVisualTriplet ~> -sentenceToTriplets).headOption
-    if(vtSentence.nonEmpty)
-      vtSentence.get.getId == s.getId
+    val triplet = (visualTriplets(vt) ~> -tripletToVisualTriplet).headOption
+    if(triplet.nonEmpty)
+      triplet.get.getParent.getId == s.getId
     else
       false
-  }
-
-    def TripletToVisualTripletMatching(r: Relation, vt: ImageTriplet): Boolean = {
-    val (first, second, third) = getTripletArguments(r)
-    if(first.getPropertyFirstValue("imageId") != vt.getImageId)
-      return false
-    val trSegId = first.getPropertyFirstValue("bestAlignment")
-    val lmSegId = third.getPropertyFirstValue("bestAlignment")
-    if (trSegId != null && lmSegId != null) {
-
-      val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
-        .find(_.getSegmentId.toString.equalsIgnoreCase(trSegId))
-      val lmSeg = (phrases(third) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
-        .find(_.getSegmentId.toString.equalsIgnoreCase(lmSegId))
-
-      if (trSeg.nonEmpty && lmSeg.nonEmpty) {
-
-        if (vt.getImageId == trSeg.get.getAssociatedImageID &&
-          vt.getFirstSegId.toString == trSegId && vt.getSecondSegId.toString == lmSegId) {
-          vt.setTrajector(first.getText.toLowerCase())
-          vt.setLandmark(third.getText.toLowerCase())
-          if (tripletIsRelation(r) == "Relation")
-            vt.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
-          return true
-        }
-      }
-    }
-    false
   }
 
   def TripletToVisualTripletGenerating(r: Relation): List[ImageTriplet] = {

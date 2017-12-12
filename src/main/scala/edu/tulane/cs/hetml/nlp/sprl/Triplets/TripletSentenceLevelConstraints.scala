@@ -204,7 +204,7 @@ object TripletSentenceLevelConstraints {
           if (vT.nonEmpty) {
             val sp = (triplets(x) ~> tripletToSp).head.getText.toLowerCase()
             if (prepClassifiers.contains(sp)) {
-              a = a and ((prepClassifiers(sp) on vT.get is "true") <==> (TripletRelationClassifier on x is "Relation"))
+              a = a and ((prepClassifiers(sp) on vT.get is "true") <==> (TripletRelationClassifier on x is "true"))
             }
           }
       }
