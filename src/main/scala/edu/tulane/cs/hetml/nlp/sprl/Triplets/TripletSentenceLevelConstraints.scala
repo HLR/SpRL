@@ -6,12 +6,13 @@ import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraints.imageSupportsSp
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator
 
 import scala.collection.JavaConversions._
 
 object TripletSentenceLevelConstraints {
-
+  val imageSupportsSp = new ImageSupportsSpClassifier()
   val prepClassifiers = Map(
     //"in front of" -> PrepositionInFrontOfClassifier,
     "in" -> PrepositionInClassifier
@@ -240,21 +241,45 @@ object TripletSentenceLevelConstraints {
       a
   }
 
+  val approveRelationByImage = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          a = a and ((imageSupportsSp on x is "true") ==>
+            (TripletRelationClassifier on x is "true"))
+      }
+      a
+  }
+
+  val discardRelationByImage = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          a = a and ((imageSupportsSp on x is "false") ==>
+            (TripletRelationClassifier on x is "false"))
+      }
+      a
+  }
+
   val tripletConstraints = ConstrainedClassifier.constraint[Sentence] {
 
     x: Sentence =>
       var a =
       //roleIntegrity(x) and
-          roleShouldHaveRel(x) and
+        roleShouldHaveRel(x) and
           boostTrajector(x) and
           boostLandmark(x) and
           boostTripletByGeneralType(x) and
           boostGeneralByDirectionMulti(x) and
-          boostGeneralByRegionMulti(x) //and
+          boostGeneralByRegionMulti(x) and
           //prepositionConsistency(x) and
           //matchVisualAndTextRels(x)
-      //          discardRelationByImage(x) and
-      //          approveRelationByImage(x) //and
+          discardRelationByImage(x) and
+          approveRelationByImage(x) //and
       //prepositionsConsistency(x) and
       //          approveRelationByMultiPreposition(x) and
       //          agreePrepositionClassifer(x)
