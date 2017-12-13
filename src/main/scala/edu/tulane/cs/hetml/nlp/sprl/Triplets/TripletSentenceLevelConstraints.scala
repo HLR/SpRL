@@ -13,10 +13,10 @@ import scala.collection.JavaConversions._
 object TripletSentenceLevelConstraints {
 
   val prepClassifiers = Map(
-    "in front of" -> PrepositionInFrontOfClassifier,
-    "in" -> PrepositionInClassifier,
-    "on" -> PrepositionOnClassifier,
-    "above" -> PrepositionAboveClassifier
+    //"in front of" -> PrepositionInFrontOfClassifier,
+    "in" -> PrepositionInClassifier
+    //"on" -> PrepositionOnClassifier,
+    //"above" -> PrepositionAboveClassifier
     //"at" -> PrepositionAtClassifier,
     //"around" -> PrepositionAroundClassifier,
     //    "behind" -> PrepositionBehindClassifier,
@@ -204,7 +204,7 @@ object TripletSentenceLevelConstraints {
           if (vT.nonEmpty) {
             val sp = (triplets(x) ~> tripletToSp).head.getText.toLowerCase()
             if (prepClassifiers.contains(sp)) {
-              a = a and ((prepClassifiers(sp) on vT.get is "true") <==> (TripletRelationClassifier on x is "true"))
+              a = a and ((prepClassifiers(sp) on vT.get is "true") ==> (TripletRelationClassifier on x is "true"))
             }
           }
       }
@@ -250,9 +250,9 @@ object TripletSentenceLevelConstraints {
           boostLandmark(x) and
           boostTripletByGeneralType(x) and
           boostGeneralByDirectionMulti(x) and
-          boostGeneralByRegionMulti(x) and
-          prepositionConsistency(x) and
-          matchVisualAndTextRels(x)
+          boostGeneralByRegionMulti(x) //and
+          //prepositionConsistency(x) and
+          //matchVisualAndTextRels(x)
       //          discardRelationByImage(x) and
       //          approveRelationByImage(x) //and
       //prepositionsConsistency(x) and

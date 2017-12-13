@@ -74,7 +74,7 @@ object MultiModalSpRLTripletClassifiers {
     }
 
     override def feature = (phraseFeatures ++ List(lemma, headWordLemma))
-      .diff(List())
+      .diff(List(similarityToMatchingSegment))
   }
 
   object IndicatorRoleClassifier extends Learnable(phrases) {
