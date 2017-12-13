@@ -24,13 +24,15 @@ class AlignmentReader(annotationDir: String, isTrain: Boolean) {
         val segWidth = part(10).toDouble.toInt
         val segHeight = part(11).toDouble.toInt
         val phrase = phrases.find(x=> x.getSentence.getId == sentId && x.getStart == start && x.getEnd == end).get
-        phrase.addPropertyValue("goldAlignment", segId.toString)
-        phrase.addPropertyValue("imageId", imId.toString)
-        phrase.addPropertyValue("segId", segId.toString)
-        phrase.addPropertyValue("segX", segX.toString)
-        phrase.addPropertyValue("segY", segY.toString)
-        phrase.addPropertyValue("segWidth", segWidth.toString)
-        phrase.addPropertyValue("segHeight", segHeight.toString)
+        if(segHeight > 0 && segWidth > 0) {
+          phrase.addPropertyValue("goldAlignment", segId.toString)
+          phrase.addPropertyValue("imageId", imId.toString)
+          phrase.addPropertyValue("segId", segId.toString)
+          phrase.addPropertyValue("segX", segX.toString)
+          phrase.addPropertyValue("segY", segY.toString)
+          phrase.addPropertyValue("segWidth", segWidth.toString)
+          phrase.addPropertyValue("segHeight", segHeight.toString)
+        }
     }
   }
 
