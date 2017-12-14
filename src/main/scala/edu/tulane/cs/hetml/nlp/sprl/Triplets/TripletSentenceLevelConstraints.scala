@@ -148,7 +148,7 @@ object TripletSentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           a = a and
-            ((TripletDirectionClassifier on x isNot "None") ==> (TripletGeneralTypeClassifier on x is "direction"))
+            ((TripletDirectionClassifier on x isNot "None") <==> (TripletGeneralTypeClassifier on x is "direction"))
       }
       a
   }
@@ -276,10 +276,10 @@ object TripletSentenceLevelConstraints {
           boostTripletByGeneralType(x) and
           boostGeneralByDirectionMulti(x) and
           boostGeneralByRegionMulti(x) and
-          //prepositionConsistency(x) and
-          //matchVisualAndTextRels(x)
           discardRelationByImage(x) and
           approveRelationByImage(x) //and
+      //prepositionConsistency(x) and
+      //matchVisualAndTextRels(x)
       //prepositionsConsistency(x) and
       //          approveRelationByMultiPreposition(x) and
       //          agreePrepositionClassifer(x)
