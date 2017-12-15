@@ -22,6 +22,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val undefined = "[undefined]"
 
   var useVectorAverages = false
+  var imageSegmentsDic: Map[String, Iterable[ImageTriplet]] = Map()
 
   /*
   Nodes
@@ -85,6 +86,9 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val tripletToVisualTriplet = edge(triplets, visualTriplets)
   tripletToVisualTriplet.addSensor(TripletToVisualTripletGenerating _)
+
+  val sentenceToVisualTriplet = edge(sentences, visualTriplets)
+  sentenceToVisualTriplet.addSensor(SentenceToVisualTripletMatching _)
 
   /*
   Properties
@@ -866,7 +870,10 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val visualTripletLabel = property(visualTriplets, cache = true) {
     t: ImageTriplet =>
-      t.getSp.toLowerCase
+      if (t.getSp == null)
+        "None"
+      else
+        t.getSp.toLowerCase
   }
 
   val visualTripletTrajector = property(visualTriplets, cache = true) {
@@ -896,7 +903,7 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val visualTripletTrajectorAreaWRTLanmark = property(visualTriplets, cache = true) {
     t: ImageTriplet =>
-      if(t.getTrAreawrtLM.isNaN)
+      if (t.getTrAreawrtLM.isNaN)
         logger.warn(s"Nan TrAreawrtLM in ${t.getTrajector}, ${t.getSp}, ${t.getLandmark} ")
       t.getTrAreawrtLM
   }
@@ -992,7 +999,6 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
 
-
   ////////////////////////////////////////////////////////////////////
   /// Helper methods
   ////////////////////////////////////////////////////////////////////
@@ -1070,4 +1076,16 @@ object MultiModalSpRLDataModel extends DataModel {
       undefined
   }
 
+  def getImageSegmentsDic(): Map[String, Iterable[ImageTriplet]] = segments().groupBy(_.getAssociatedImageID).map {
+    i =>
+      val t = i._2.flatMap { seg1 =>
+        val img = images().find(_.getId == seg1.getAssociatedImageID).get
+        i._2.filter(x => x != seg1).map {
+          seg2 =>
+            new ImageTriplet(seg1.getAssociatedImageID, seg1.getSegmentId,
+              seg2.getSegmentId, seg1.getBoxDimensions, seg2.getBoxDimensions, img.getWidth, img.getHeight)
+        }
+      }
+      (i._1, t)
+  }
 }

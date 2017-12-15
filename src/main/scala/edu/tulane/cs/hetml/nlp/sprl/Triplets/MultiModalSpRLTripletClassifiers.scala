@@ -64,7 +64,7 @@ object MultiModalSpRLTripletClassifiers {
     override lazy val classifier = new SparsePerceptron(0.1,3.5)
 
     override def feature = (phraseFeatures ++ List(lemma, headWordLemma))
-      .diff(List())
+      .diff(List(similarityToMatchingSegment))
   }
 
   object IndicatorRoleClassifier extends Learnable(phrases) {

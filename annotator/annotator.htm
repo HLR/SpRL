@@ -195,7 +195,7 @@
                 var lines = text.split("\n");
                 var data = []
                 for (var l = 0; l < lines.length; l++) {
-                    if (lines[l] === "")
+                    if (lines[l].trim() === "")
                         continue;
                     if (isRelation)
                         data.push(new Relation(lines[l], l));

@@ -19,24 +19,34 @@ import scala.collection.mutable.ListBuffer
 
 object MultiModalPopulateData extends Logging {
 
-  lazy val xmlReader = new SpRLXmlReader(if (isTrain) trainFile else testFile, globalSpans)
-  lazy val imageReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, isTrain)
-  lazy val alignmentReader = new AlignmentReader(alignmentAnnotationPath, isTrain)
+  lazy val xmlTestReader = new SpRLXmlReader(testFile, globalSpans)
+  lazy val xmlTrainReader = new SpRLXmlReader(trainFile, globalSpans)
 
-  def populateRoleDataFromAnnotatedCorpus(isTraining: Boolean = true, populateNullPairs: Boolean = true): Unit = {
+  def xmlReader = if (isTrain) xmlTrainReader else xmlTestReader
+
+  lazy val imageTrainReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, true)
+  lazy val imageTestReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, false)
+
+  def imageReader = if (isTrain) imageTrainReader else imageTestReader
+
+  lazy val alignmentTrainReader = new AlignmentReader(alignmentAnnotationPath, true)
+  lazy val alignmentTestReader = new AlignmentReader(alignmentAnnotationPath, false)
+
+  def alignmentReader = if (isTrain) alignmentTrainReader else alignmentTestReader
+
+  def populateRoleDataFromAnnotatedCorpus(populateNullPairs: Boolean = true): Unit = {
     logger.info("Role population started ...")
-    lazy val xmlReader = new SpRLXmlReader(if (isTraining) trainFile else testFile, globalSpans)
-    if (isTraining && onTheFlyLexicon) {
+    if (isTrain && onTheFlyLexicon) {
       LexiconHelper.createSpatialIndicatorLexicon(xmlReader)
     }
-    documents.populate(xmlReader.getDocuments, isTraining)
-    sentences.populate(xmlReader.getSentences, isTraining)
+    documents.populate(xmlReader.getDocuments, isTrain)
+    sentences.populate(xmlReader.getSentences, isTrain)
 
     if (populateNullPairs) {
-      phrases.populate(List(dummyPhrase), isTraining)
+      phrases.populate(List(dummyPhrase), isTrain)
     }
 
-    val phraseInstances = (if (isTraining) phrases.getTrainingInstances.toList else phrases.getTestingInstances.toList)
+    val phraseInstances = (if (isTrain) phrases.getTrainingInstances.toList else phrases.getTestingInstances.toList)
       .filter(_.getId != dummyPhrase.getId)
 
     if (globalSpans) {
@@ -53,9 +63,10 @@ object MultiModalPopulateData extends Logging {
     alignmentReader.setAlignments(phraseInstances)
 
     if (populateImages) {
-      images.populate(imageReader.getImageList, isTraining)
+      images.populate(imageReader.getImageList, isTrain)
       val segs = getAdjustedSegments(imageReader.getSegmentList)
-      segments.populate(segs, isTraining)
+      segments.populate(segs, isTrain)
+      imageSegmentsDic = getImageSegmentsDic()
     }
     setBestAlignment()
 
@@ -102,7 +113,7 @@ object MultiModalPopulateData extends Logging {
   def populateTripletDataFromAnnotatedCorpus(
                                               trFilter: (Phrase) => Boolean,
                                               spFilter: (Phrase) => Boolean,
-                                              lmFilter: (Phrase) => Boolean, isTraining: Boolean
+                                              lmFilter: (Phrase) => Boolean
                                             ): Unit = {
 
     logger.info("Triplet population started ...")
@@ -110,12 +121,11 @@ object MultiModalPopulateData extends Logging {
       trFilter,
       spFilter,
       lmFilter,
-      isTraining
+      isTrain
     )
-    lazy val xmlReader = new SpRLXmlReader(if (isTraining) trainFile else testFile, globalSpans)
     xmlReader.setTripletRelationTypes(candidateRelations)
 
-    triplets.populate(candidateRelations, isTraining)
+    triplets.populate(candidateRelations, isTrain)
 
     logger.info("Triplet population finished.")
   }
@@ -152,8 +162,10 @@ object MultiModalPopulateData extends Logging {
 
   private def getAdjustedSegments(segments: List[Segment]): List[Segment] = {
     val alignedPhrases = phrases().filter(_.containsProperty("goldAlignment"))
-    val update = alignedPhrases.filter(_.getPropertyFirstValue("goldAlignment") != "-1")
-    val addNew = alignedPhrases.filter(_.getPropertyFirstValue("goldAlignment") == "-1")
+    val update = alignedPhrases
+      .filter(p => segments.exists(s => s.getAssociatedImageID == p.getPropertyFirstValue("imageId") &&
+        s.getSegmentId == p.getPropertyFirstValue("segId").toInt))
+    val addNew = alignedPhrases.filter(p => !update.contains(p))
 
     update.foreach {
       p =>
@@ -169,7 +181,6 @@ object MultiModalPopulateData extends Logging {
 
         seg.getBoxDimensions.setRect(x, y, w, h)
     }
-    var sId = 1000
     val newSegs = addNew.map {
       p =>
         val imId = p.getPropertyFirstValue("imageId")
@@ -178,12 +189,7 @@ object MultiModalPopulateData extends Logging {
         val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
         val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
         val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
-        sId += 1
-        p.removeProperty("segId")
-        p.addPropertyValue("segId", sId.toString)
-        p.removeProperty("goldAlignment")
-        p.addPropertyValue("goldAlignment", sId.toString)
-        new Segment(imId, sId, -1, "", headWordFrom(p), new Rectangle2D.Double(x, y, w, h))
+        new Segment(imId, p.getPropertyFirstValue("segId").toInt, -1, "", headWordFrom(p), new Rectangle2D.Double(x, y, w, h))
     }
 
     segments ++ newSegs

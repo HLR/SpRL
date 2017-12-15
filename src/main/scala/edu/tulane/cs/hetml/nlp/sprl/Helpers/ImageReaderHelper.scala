@@ -36,4 +36,8 @@ class ImageReaderHelper(dataDir: String, trainFileName: String, testFileName: St
       reader.testImages.toList
     }
   }
+
+  def getSegmentConcepts: List[String] = {
+    reader.getMapCode2Concept.values().toList
+  }
 }
