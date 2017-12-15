@@ -1,13 +1,14 @@
 package edu.tulane.cs.hetml.nlp.sprl
 
+import java.awt.geom.Rectangle2D
 import java.io.PrintStream
 
 import edu.illinois.cs.cogcomp.saul.util.Logging
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel.{triplets, _}
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.documentToSentenceGenerating
 import edu.tulane.cs.hetml.nlp.sprl.Helpers._
-import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel
+import edu.tulane.cs.hetml.vision.{ImageTriplet, ImageTripletReader, Segment}
 import mSpRLConfigurator._
 
 import scala.collection.JavaConversions._
@@ -18,9 +19,20 @@ import scala.collection.mutable.ListBuffer
 
 object MultiModalPopulateData extends Logging {
 
-  lazy val xmlReader = new SpRLXmlReader(if (isTrain) trainFile else testFile, globalSpans)
-  lazy val imageReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, isTrain)
-  lazy val alignmentReader = new AlignmentReader(alignmentAnnotationPath, alignmentTextPath)
+  lazy val xmlTestReader = new SpRLXmlReader(testFile, globalSpans)
+  lazy val xmlTrainReader = new SpRLXmlReader(trainFile, globalSpans)
+
+  def xmlReader = if (isTrain) xmlTrainReader else xmlTestReader
+
+  lazy val imageTrainReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, true)
+  lazy val imageTestReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, false)
+
+  def imageReader = if (isTrain) imageTrainReader else imageTestReader
+
+  lazy val alignmentTrainReader = new AlignmentReader(alignmentAnnotationPath, true)
+  lazy val alignmentTestReader = new AlignmentReader(alignmentAnnotationPath, false)
+
+  def alignmentReader = if (isTrain) alignmentTrainReader else alignmentTestReader
 
   def populateRoleDataFromAnnotatedCorpus(populateNullPairs: Boolean = true): Unit = {
     logger.info("Role population started ...")
@@ -48,24 +60,15 @@ object MultiModalPopulateData extends Logging {
 
     xmlReader.setRoles(phraseInstances)
 
-    //    if (globalSpans) {
-    //      phraseInstances.foreach {
-    //        p =>
-    //          p.setStart(p.getStart - p.getSentence.getStart)
-    //          p.setEnd(p.getEnd - p.getSentence.getStart)
-    //      }
-    //    }
-
     alignmentReader.setAlignments(phraseInstances)
 
     if (populateImages) {
       images.populate(imageReader.getImageList, isTrain)
-      segments.populate(imageReader.getSegmentList, isTrain)
-      segmentRelations.populate(imageReader.getImageRelationList, isTrain)
-      visualTriplets.populate(imageReader.getVisualTripletList, isTrain)
-
-      setBestAlignment()
+      val segs = getAdjustedSegments(imageReader.getSegmentList)
+      segments.populate(segs, isTrain)
+      imageSegmentsDic = getImageSegmentsDic()
     }
+    setBestAlignment()
 
     logger.info("Role population finished.")
   }
@@ -123,74 +126,7 @@ object MultiModalPopulateData extends Logging {
     xmlReader.setTripletRelationTypes(candidateRelations)
 
     triplets.populate(candidateRelations, isTrain)
-    val visualTriplets =
-      (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-        .sortBy(x => x.getImageId + "_" + x.getFirstSegId + "_" + x.getSecondSegId)
 
-    VisualTripletsDataModel.visualTriplets.populate(visualTriplets, isTrain)
-
-    val suffix = if (isTrain) "train" else "gold"
-
-    var writer = new PrintStream(s"$resultsDir/phrases_${suffix}_0.txt")
-    var relWriter = new PrintStream(s"$resultsDir/flat_relation_roles_${suffix}_0.txt")
-    val split = documents().size / 5 + 1
-    var c = 0
-    var total = 0
-    var totalP = 0
-    val ts = (documents() ~> documentToSentence).toList
-    val tt = (documents() ~> documentToSentence ~> sentenceToTriplets).toList
-    val ts1 = sentences()
-    val tt1 = triplets()
-    val tp = phrases()
-    val tp1 = (documents() ~> documentToSentence ~> sentenceToPhrase).toList
-    documents().foreach {
-      doc =>
-        if (c % split == 0) {
-          writer = new PrintStream(s"$resultsDir/phrases_${suffix}_${c / split}.txt")
-          relWriter = new PrintStream(s"$resultsDir/flat_relation_roles_${suffix}_${c / split}.txt")
-        }
-        c = c + 1
-        val imageId = (documents(doc) ~> documentToImage).head.getId
-        val imFolder = doc.getId.split(Array('.', '/'))(1)
-        val phraseList = (documents(doc) ~> documentToSentence ~> sentenceToPhrase).toList
-        totalP += phraseList.size
-        phraseList.foreach {
-          p =>
-            val seg = (phrases(p) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
-              .filter(x => x.getSegmentId.toString == p.getPropertyFirstValue("bestAlignment")).headOption
-            var segStr = "-1\t\t-1\t\t-1\t\t-1\t\t-1"
-            if (seg.nonEmpty) {
-              segStr = s"${seg.get.getSegmentId}\t\t" +
-                s"${seg.get.getBoxDimensions.getX}\t\t${seg.get.getBoxDimensions.getY}\t\t" +
-                s"${seg.get.getBoxDimensions.getWidth}\t\t${seg.get.getBoxDimensions.getHeight}\t\t"
-            }
-            writer.println(s"$imFolder\t\t$imageId\t\t${p.getSentence.getId}\t\t${p.getSentence.getText}\t\t" +
-              s"${p.getStart}\t\t${p.getEnd}\t\t${p.getText}\t\t$segStr")
-        }
-        val docRels = (documents(doc) ~> documentToSentence ~> sentenceToTriplets)
-            .filter(x=> tripletIsRelation(x) == "Relation").toList
-        total += docRels.size
-        docRels.foreach {
-          r =>
-            val sent = r.getParent.asInstanceOf[Sentence]
-            val tr = r.getArgument(0)
-            val sp = r.getArgument(1)
-            val lm = if (r.getArgument(2) != null) r.getArgument(2) else dummyPhrase
-            val imId = sent.getDocument.getId.split(Array('.', '/'))(2)
-            val imFolder = sent.getDocument.getId.split(Array('.', '/'))(1)
-
-            relWriter.println(s"$imFolder\t\t$imId\t\t${sent.getId}\t\t${sent.getText}" +
-              s"\t\t${tr.getStart}\t\t${tr.getEnd}\t\t${tr.getText}" +
-              s"\t\t${sp.getStart}\t\t${sp.getEnd}\t\t${sp.getText}" +
-              s"\t\t${lm.getStart}\t\t${lm.getEnd}\t\t${lm.getText}")
-
-        }
-    }
-    println(totalP)
-    println(total)
-
-    writer.close()
-    relWriter.close()
     logger.info("Triplet population finished.")
   }
 
@@ -210,6 +146,53 @@ object MultiModalPopulateData extends Logging {
     pairs.populate(candidateRelations, isTrain)
 
     logger.info("Data population finished.")
+  }
+
+  def populateVisualTripletsFromExternalData(): Unit = {
+    val flickerTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "Flickr30k.majorityhead")
+    val msCocoTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "MSCOCO.originalterm")
+
+    val externalTrainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
+
+    if (trainPrepositionClassifier && isTrain) {
+      println("Populating Visual Triplets from External Dataset...")
+      visualTriplets.populate(externalTrainTriplets, isTrain)
+    }
+  }
+
+  private def getAdjustedSegments(segments: List[Segment]): List[Segment] = {
+    val alignedPhrases = phrases().filter(_.containsProperty("goldAlignment"))
+    val update = alignedPhrases
+      .filter(p => segments.exists(s => s.getAssociatedImageID == p.getPropertyFirstValue("imageId") &&
+        s.getSegmentId == p.getPropertyFirstValue("segId").toInt))
+    val addNew = alignedPhrases.filter(p => !update.contains(p))
+
+    update.foreach {
+      p =>
+        val seg = segments.find(x =>
+          x.getAssociatedImageID == p.getPropertyFirstValue("imageId") &&
+            x.getSegmentId == p.getPropertyFirstValue("segId").toInt
+        ).get
+        val im = images().find(_.getId == seg.getAssociatedImageID).get
+        val x = Math.min(im.getWidth, Math.max(0, p.getPropertyFirstValue("segX").toDouble))
+        val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
+        val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
+        val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
+
+        seg.getBoxDimensions.setRect(x, y, w, h)
+    }
+    val newSegs = addNew.map {
+      p =>
+        val imId = p.getPropertyFirstValue("imageId")
+        val im = images().find(_.getId == imId).get
+        val x = Math.min(im.getWidth, Math.max(0, p.getPropertyFirstValue("segX").toDouble))
+        val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
+        val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
+        val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
+        new Segment(imId, p.getPropertyFirstValue("segId").toInt, -1, "", headWordFrom(p), new Rectangle2D.Double(x, y, w, h))
+    }
+
+    segments ++ newSegs
   }
 
   private def setBestAlignment() = {
@@ -233,7 +216,7 @@ object MultiModalPopulateData extends Logging {
               usedPhrases.add(pair.getArgumentId(0))
               usedSegments.add(pair.getArgumentId(1))
               val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
-              if (pair.getProperty("similarity").toDouble > 0.30) {
+              if (pair.getProperty("similarity").toDouble > 0.30 || alignmentMethod == "classifier") {
                 p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
                 p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
               }
@@ -243,6 +226,5 @@ object MultiModalPopulateData extends Logging {
         })
     }
   }
-
 }
 

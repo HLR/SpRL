@@ -88,6 +88,7 @@ object MultiModalSpRLSensors {
   val matchingCandidates = List("NN", "JJR", "JJ", "NNP", "NNS")
 
   lazy val alignmentHelper = new WordClassifierHelper()
+
   def segmentToSegmentPhrasePairs(s: Segment): List[Relation] = {
     val image = images().filter(i => i.getId == s.getAssociatedImageID)
     val phrases = (images(image) ~> -documentToImage ~> documentToSentence ~> sentenceToPhrase)
@@ -99,7 +100,7 @@ object MultiModalSpRLSensors {
         r.setId(p.getId + "__" + s.getSegmentId)
         r.setArgumentId(0, p.getId)
         r.setArgumentId(1, s.getSegmentId.toString)
-        mSpRLConfigurator.alignmentMethod match{
+        mSpRLConfigurator.alignmentMethod match {
           case "gold" =>
             if (p.getPropertyValues("goldAlignment").contains(s.getSegmentId.toString)) {
               r.setProperty("similarity", "1")
@@ -126,6 +127,14 @@ object MultiModalSpRLSensors {
     pair.getArgumentId(0) == phrase.getId
   }
 
+  def SentenceToVisualTripletMatching(s: Sentence, vt: ImageTriplet): Boolean = {
+    val triplet = (visualTriplets(vt) ~> -tripletToVisualTriplet).headOption
+    if(triplet.nonEmpty)
+      triplet.get.getParent.getId == s.getId
+    else
+      false
+  }
+
   def TripletToVisualTripletGenerating(r: Relation): List[ImageTriplet] = {
     val (first, second, third) = getTripletArguments(r)
     val trSegId = first.getPropertyFirstValue("bestAlignment")
@@ -139,15 +148,14 @@ object MultiModalSpRLSensors {
 
       if (trSeg.nonEmpty && lmSeg.nonEmpty) {
 
-        val imageRel = visualTriplets().filter(x => x.getImageId == trSeg.get.getAssociatedImageID &&
+        val imId = trSeg.get.getAssociatedImageID
+        val imageRel = imageSegmentsDic(imId).filter(x =>
           x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
 
         imageRel.foreach {
           x =>
-            x.setTrajector(headWordFrom(first).toLowerCase())
-            x.setLandmark(headWordFrom(third).toLowerCase())
-            if (x.getSp == null)
-              x.setSp("-")
+            x.setTrajector(first.getText.toLowerCase())
+            x.setLandmark(third.getText.toLowerCase())
             if(tripletIsRelation(r) == "Relation")
               x.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
 

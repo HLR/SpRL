@@ -13,46 +13,25 @@ public class ImageTriplet {
     private Rectangle2D lmBox;
     private double imageWidth;
     private double imageHeight;
-    private double trVectorX; // F1
-    private double trVectorY; // F1
-    private double trAreawrtLM; // F2
-    private double trAspectRatio; // F3
-    private double lmAspectRatio; // F3
-    private double trAreaBbox; // F4
-    private double lmAreaBbox; //F4
-    private double iou; // F5
-    private double euclideanDistance; // F6
-    private double trAreaImage; // F7
-    private double lmAreaImage; // F7
-    private double above;
-    private double below;
-    private double left;
-    private double right;
-    private double intersectionArea;
 
-    public double getIntersectionArea() {
-        return intersectionArea;
+    public void setTrBox(Rectangle2D trBox) {
+        this.trBox = trBox;
     }
 
-    public void setIntersectionArea(double intersectionArea) {
-        this.intersectionArea = intersectionArea;
+    public void setLmBox(Rectangle2D lmBox) {
+        this.lmBox = lmBox;
     }
 
-    public double getUnionArea() {
-        return unionArea;
+    public void setImageWidth(double imageWidth) {
+        this.imageWidth = imageWidth;
     }
 
-    public void setUnionArea(double unionArea) {
-        this.unionArea = unionArea;
+    public void setImageHeight(double imageHeight) {
+        this.imageHeight = imageHeight;
     }
-
-    private double unionArea;
 
     public ImageTriplet(String sp, String trajector, String landmark, Rectangle2D trBox, Rectangle2D lmBox, double imageWidth,
-                        double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
-                        double lmAspectRatio, double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance,
-                        double trAreaImage, double lmAreaImage, double above, double below, double left, double right,
-                        double intersectionArea, double unionArea) {
+                        double imageHeight) {
         this.setSp(sp);
         this.setTrajector(trajector);
         this.setLandmark(landmark);
@@ -60,30 +39,10 @@ public class ImageTriplet {
         this.lmBox = lmBox;
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
-        this.trVectorX = trVectorX;
-        this.trVectorY = trVectorY;
-        this.trAreawrtLM = trAreawrtLM;
-        this.trAspectRatio = trAspectRatio;
-        this.lmAspectRatio = lmAspectRatio;
-        this.trAreaBbox = trAreaBbox;
-        this.lmAreaBbox = lmAreaBbox;
-        this.iou = iou;
-        this.euclideanDistance = euclideanDistance;
-        this.trAreaImage = trAreaImage;
-        this.lmAreaImage = lmAreaImage;
-        this.above = above;
-        this.below = below;
-        this.left = left;
-        this.right = right;
-        this.intersectionArea = intersectionArea;
-        this.unionArea = unionArea;
     }
 
     public ImageTriplet(String imageId, int firstSegId, int secondSegId, Rectangle2D trBox, Rectangle2D lmBox,
-                        double imageWidth, double imageHeight, double trVectorX, double trVectorY, double trAreawrtLM, double trAspectRatio,
-                        double lmAspectRatio, double trAreaBbox, double lmAreaBbox, double iou, double euclideanDistance,
-                        double trAreaImage, double lmAreaImage, double above, double below, double left, double right,
-                        double intersectionArea, double unionArea) {
+                        double imageWidth, double imageHeight) {
         this.setImageId(imageId);
         this.setFirstSegId(firstSegId);
         this.setSecondSegId(secondSegId);
@@ -91,23 +50,6 @@ public class ImageTriplet {
         this.lmBox = lmBox;
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
-        this.trVectorX = trVectorX;
-        this.trVectorY = trVectorY;
-        this.trAreawrtLM = trAreawrtLM;
-        this.trAspectRatio = trAspectRatio;
-        this.lmAspectRatio = lmAspectRatio;
-        this.trAreaBbox = trAreaBbox;
-        this.lmAreaBbox = lmAreaBbox;
-        this.iou = iou;
-        this.euclideanDistance = euclideanDistance;
-        this.trAreaImage = trAreaImage;
-        this.lmAreaImage = lmAreaImage;
-        this.above = above;
-        this.below = below;
-        this.left = left;
-        this.right = right;
-        this.intersectionArea = intersectionArea;
-        this.unionArea = unionArea;
     }
 
     public String getSp() {
@@ -126,39 +68,51 @@ public class ImageTriplet {
     }
 
     public double getEuclideanDistance() {
-        return euclideanDistance;
+        return RectangleHelper.getEuclideanDistance(trBox, lmBox);
     }
 
     public double getIou() {
-        return iou;
+        return RectangleHelper.getIntersectionOverUnion(trBox, lmBox);
     }
 
     public double getLmAreaBbox() {
-        return lmAreaBbox;
+        Rectangle2D b = RectangleHelper.generateBoundingBox(trBox, lmBox);
+        double a = RectangleHelper.calculateArea(lmBox);
+        double bArea = RectangleHelper.calculateArea(b);
+        return RectangleHelper.normalizeArea(a, bArea);
     }
 
     public double getLmAreaImage() {
-        return lmAreaImage;
+        double a = RectangleHelper.calculateArea(lmBox);
+        double iArea = imageHeight * imageWidth;
+        return RectangleHelper.normalizeArea(a, iArea);
     }
 
     public double getLmAspectRatio() {
-        return lmAspectRatio;
+        return RectangleHelper.calculateAspectRatio(lmBox);
     }
 
     public double getTrAreaBbox() {
-        return trAreaBbox;
+        Rectangle2D b = RectangleHelper.generateBoundingBox(trBox, lmBox);
+        double a = RectangleHelper.calculateArea(trBox);
+        double bArea = RectangleHelper.calculateArea(b);
+        return RectangleHelper.normalizeArea(a, bArea);
     }
 
     public double getTrAreaImage() {
-        return trAreaImage;
+        double a = RectangleHelper.calculateArea(trBox);
+        double iArea = imageHeight * imageWidth;
+        return RectangleHelper.normalizeArea(a, iArea);
     }
 
     public double getTrAreawrtLM() {
-        return trAreawrtLM;
+        double tr = RectangleHelper.calculateArea(trBox);
+        double lm = RectangleHelper.calculateArea(lmBox);
+        return  tr / lm;
     }
 
     public double getTrAspectRatio() {
-        return trAspectRatio;
+        return RectangleHelper.calculateAspectRatio(trBox);
     }
 
     public Rectangle2D getLmBox() {
@@ -174,11 +128,13 @@ public class ImageTriplet {
     }
 
     public double getTrVectorX() {
-        return trVectorX;
+        Rectangle2D b = RectangleHelper.generateBoundingBox(trBox, lmBox);
+        return RectangleHelper.getCentroidVector(trBox, lmBox, b)[0];
     }
 
     public double getTrVectorY() {
-        return trVectorY;
+        Rectangle2D b = RectangleHelper.generateBoundingBox(trBox, lmBox);
+        return RectangleHelper.getCentroidVector(trBox, lmBox, b)[1];
     }
 
     public String getImageId() {
@@ -218,34 +174,28 @@ public class ImageTriplet {
     }
 
     public double getAbove() {
-        return above;
-    }
-
-    public void setAbove(double above) {
-        this.above = above;
+        return RectangleHelper.getAbove(trBox, lmBox, imageHeight);
     }
 
     public double getBelow() {
-        return below;
-    }
-
-    public void setBelow(double below) {
-        this.below = below;
+        return RectangleHelper.getBelow(trBox, lmBox, imageHeight);
     }
 
     public double getLeft() {
-        return left;
-    }
-
-    public void setLeft(double left) {
-        this.left = left;
+        return RectangleHelper.getLeft(trBox, lmBox, imageWidth);
     }
 
     public double getRight() {
-        return right;
+        return RectangleHelper.getRight(trBox, lmBox, imageWidth);
     }
 
-    public void setRight(double right) {
-        this.right = right;
+    public double getIntersectionArea() {
+        return RectangleHelper
+                .getIntersectionArea(trBox, lmBox, imageHeight * imageWidth);
+    }
+
+    public double getUnionArea() {
+        return RectangleHelper
+                .getUnionArea(trBox, lmBox, imageHeight * imageWidth);
     }
 }

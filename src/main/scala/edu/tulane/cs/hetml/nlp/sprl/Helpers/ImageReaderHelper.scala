@@ -19,15 +19,6 @@ class ImageReaderHelper(dataDir: String, trainFileName: String, testFileName: St
     }
   }
 
-  def getVisualTripletList: List[ImageTriplet] = {
-
-    if (isTrain) {
-      reader.trainImageTriplets.toList
-    } else {
-      reader.testImageTriplets.toList
-    }
-  }
-
   def getSegmentList: List[Segment] = {
 
     if (isTrain) {
@@ -44,5 +35,9 @@ class ImageReaderHelper(dataDir: String, trainFileName: String, testFileName: St
     } else {
       reader.testImages.toList
     }
+  }
+
+  def getSegmentConcepts: List[String] = {
+    reader.getMapCode2Concept.values().toList
   }
 }

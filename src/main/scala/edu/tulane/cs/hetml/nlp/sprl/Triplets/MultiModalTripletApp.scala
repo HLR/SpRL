@@ -2,18 +2,19 @@ package edu.tulane.cs.hetml.nlp.sprl.Triplets
 
 import java.io.{File, FileOutputStream, PrintStream}
 
+import edu.illinois.cs.cogcomp.saul.classifier.{ConstrainedClassifier, JointTrainSparsePerceptron}
 import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation}
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.{CandidateGenerator, FeatureSets, ReportHelper}
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
-import edu.tulane.cs.hetml.vision.CLEFAlignmentReader
 import org.apache.commons.io.FileUtils
+
+import scala.util.Random
 
 object MultiModalTripletApp extends App with Logging {
 
@@ -32,40 +33,112 @@ object MultiModalTripletApp extends App with Logging {
   })
   MultiModalSpRLTripletClassifiers.featureSet = model
 
-  val classifiers = List(
+  val constrainedPrepClassifiers = List(
+    PrepositionAboveConstraintClassifier,
+    PrepositionInFrontOfConstraintClassifier,
+    PrepositionOnConstraintClassifier,
+    PrepositionInConstraintClassifier
+  )
+  val prepClassifiers = Map(
+    "above" -> PrepositionAboveClassifier,
+    "in_front_of" -> PrepositionInFrontOfClassifier,
+    "on" -> PrepositionOnClassifier,
+    "in" -> PrepositionInClassifier
+    //"behind" -> PrepositionBehindClassifier,
+    //"around" -> PrepositionAroundClassifier,
+    //"at" -> PrepositionAtClassifier,
+    //"between" -> PrepositionBetweenClassifier,
+    //"in between" -> PrepositionInBetweenClassifier,
+    //"in the middile of" -> PrepositionInTheMiddleOfClassifier,
+    //"leaning on" -> PrepositionLeaningOnClassifier,
+    //"near" -> PrepositionNearClassifier,
+    //"next to" -> PrepositionNextToClassifier,
+    //"on each side" -> PrepositionOnEachSideClassifier,
+    //"over " -> PrepositionOverClassifier,
+    //"sitting around" -> PrepositionSittingAroundClassifier,
+    //"with" -> PrepositionWithClassifier,
+  )
+
+  val constraintRoleClassifiers = List(
+    TRConstraintClassifier,
+    LMConstraintClassifier
+  )
+
+  val roleClassifiers = List(
     TrajectorRoleClassifier,
     LandmarkRoleClassifier,
-    IndicatorRoleClassifier,
+    IndicatorRoleClassifier
+  )
+
+  val constraintTripletClassifiers = List(
+    TripletRelationConstraintClassifier,
+    TripletGeneralTypeConstraintClassifier,
+    TripletRegionConstraintClassifier,
+    TripletDirectionConstraintClassifier
+    //    TripletRegionTPPConstraintClassifier,
+    //    TripletRegionECConstraintClassifier,
+    //    TripletRegionEQConstraintClassifier,
+    //    TripletRegionDCConstraintClassifier,
+    //    TripletRegionPOConstraintClassifier,
+    //    TripletDirectionRightConstraintClassifier,
+    //    TripletDirectionLeftConstraintClassifier,
+    //    TripletDirectionAboveConstraintClassifier,
+    //    TripletDirectionBelowConstraintClassifier,
+    //    TripletDirectionBehindConstraintClassifier,
+    //    TripletDirectionFrontConstraintClassifier
+  )
+  val tripletClassifiers = List(
     TripletRelationClassifier,
     TripletGeneralTypeClassifier,
-    TripletSpecificTypeClassifier,
     TripletRegionClassifier,
-    TripletDirectionClassifier,
-    TripletImageRegionClassifier
+    TripletDirectionClassifier //,
+    //    TripletRegionClassifier,
+    //    TripletDirectionClassifier,
+    //    TripletRegionTPPClassifier,
+    //    TripletRegionEQClassifier,
+    //    TripletRegionDCClassifier,
+    //    TripletRegionECClassifier,
+    //    TripletRegionPOClassifier,
+    //    TripletDirectionAboveClassifier,
+    //    TripletDirectionBehindClassifier,
+    //    TripletDirectionBelowClassifier,
+    //    TripletDirectionFrontClassifier,
+    //    TripletDirectionLeftClassifier,
+    //    TripletDirectionRightClassifier
   )
+
+  val classifiers = prepClassifiers.values ++ roleClassifiers ++ tripletClassifiers
   classifiers.foreach(x => {
     x.modelDir = s"models/mSpRL/triplet/$featureSet/"
     x.modelSuffix = suffix
   })
   FileUtils.forceMkdir(new File(resultsDir))
 
+  if (isTrain && trainPrepositionClassifier) {
+    populateVisualTripletsFromExternalData()
+    PrepositionClassifier.learn(iterations)
+    prepClassifiers.foreach {
+      x =>
+        val positive = visualTriplets().filter(y => x._1.equalsIgnoreCase(y.getSp)).toList
+        val negative = visualTriplets().filter(y => y.getSp != null && !x._1.equalsIgnoreCase(y.getSp)).toList
+        val examples = Random.shuffle(Random.shuffle(negative).take(positive.size * 2) ++ positive)
+        if (x._2 != PrepositionInFrontOfClassifier && x._2 != PrepositionAboveClassifier)
+          x._2.learn(iterations, examples)
+    }
+    visualTriplets.clear()
+  }
+
   populateRoleDataFromAnnotatedCorpus()
-  val visualClassifier = new VisualTripletClassifier()
+
   if (isTrain) {
     println("training started ...")
 
-    TrajectorRoleClassifier.learn(iterations)
-    TrajectorRoleClassifier.test(phrases())
-
-    IndicatorRoleClassifier.learn(iterations)
-    IndicatorRoleClassifier.test(phrases())
-
-    LandmarkRoleClassifier.learn(iterations)
-    LandmarkRoleClassifier.test(phrases())
-
-    TrajectorRoleClassifier.save()
-    IndicatorRoleClassifier.save()
-    LandmarkRoleClassifier.save()
+    roleClassifiers.foreach {
+      x =>
+        x.learn(iterations)
+        x.test(phrases())
+        x.save()
+    }
 
     val spCandidatesTrain = CandidateGenerator.getIndicatorCandidates(phrases().toList)
     val trCandidatesTrain = CandidateGenerator.getTrajectorCandidates(phrases().toList)
@@ -76,200 +149,157 @@ object MultiModalTripletApp extends App with Logging {
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTrain.exists(_.getId == x.getId),
-      x => IndicatorRoleClassifier(x) == "Indicator",
+      x => IndicatorRoleClassifier(x) == "true",
       x => lmCandidatesTrain.exists(_.getId == x.getId)
     )
 
-    TripletRelationClassifier.learn(iterations)
-    TripletRelationClassifier.test(triplets())
 
-    TripletGeneralTypeClassifier.learn(iterations)
-    TripletGeneralTypeClassifier.test(triplets())
-
-    TripletSpecificTypeClassifier.learn(iterations)
-    //TripletSpecificTypeClassifier.test(triplets())
-
-    TripletRegionClassifier.learn(iterations)
-    TripletRegionClassifier.test(triplets())
-
-    TripletDirectionClassifier.learn(iterations)
-    TripletDirectionClassifier.test(triplets())
-
-    TripletImageRegionClassifier.learn(iterations)
-    TripletImageRegionClassifier.test(triplets())
-
-
-    TripletRelationClassifier.save()
-    TripletGeneralTypeClassifier.save()
-    TripletSpecificTypeClassifier.save()
-    TripletRegionClassifier.save()
-    TripletDirectionClassifier.save()
-    TripletImageRegionClassifier.save()
-
-    if (fineTunePrepositionClassifier) {
-      val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-      val classifierSuffix = "combined_perceptron"
-      visualClassifier.modelSuffix = classifierSuffix
-      visualClassifier.modelDir = classifierDirectory
-      //visualClassifier.load()
-      val visualTriplets = (triplets() ~> tripletToVisualTriplet).toList.filter(x => x.getSp != "-")
-      //visualClassifier.test(visualTriplets)
-      visualClassifier.learn(50)
-      visualClassifier.test(visualTriplets)
-      visualClassifier.modelSuffix += "_tuned"
-      visualClassifier.save()
+    tripletClassifiers.foreach {
+      x =>
+        x.learn(iterations)
+        x.test(triplets())
+        x.save()
     }
+
+    if (trainPrepositionClassifier) {
+
+      val visualTripletsFiltered = visualTriplets().toList.filter(x => x.getSp != null)
+      logger.info("Aligned visual triplets in train:" + visualTripletsFiltered.size)
+
+      PrepositionClassifier.learn(10, visualTripletsFiltered)
+      PrepositionClassifier.test(visualTripletsFiltered)
+      PrepositionClassifier.save()
+      prepClassifiers.foreach {
+        x =>
+          val positive = visualTripletsFiltered.filter(y => x._1.equalsIgnoreCase(y.getSp))
+          val negative = visualTripletsFiltered.filter(y => !x._1.equalsIgnoreCase(y.getSp))
+          val examples = Random.shuffle(Random.shuffle(negative).take(positive.size * 2) ++ positive)
+
+          if (x._2 == PrepositionInFrontOfClassifier || x._2 == PrepositionAboveClassifier) {
+            x._2.learn(iterations, examples)
+          }
+          else {
+            x._2.learn(10, examples)
+          }
+          x._2.test(examples)
+          x._2.save()
+      }
+
+    }
+    if (jointTrain) {
+      logger.info("====================================")
+      logger.info("Joint Train started")
+      JointTrainSparsePerceptron.train(MultiModalSpRLDataModel.sentences,
+        constrainedPrepClassifiers ++ List(TripletRelationConstraintClassifier), 10)
+    }
+
   }
 
+  if (trainTestTogether) {
+
+    documents.clear()
+    sentences.clear()
+    images.clear()
+    segments.clear()
+    phrases.clear()
+    tokens.clear()
+    triplets.clear()
+    visualTriplets.clear()
+    segmentPhrasePairs.clear()
+
+    isTrain = false
+    populateRoleDataFromAnnotatedCorpus()
+  }
   if (!isTrain) {
 
     println("testing started ...")
 
-    TrajectorRoleClassifier.load()
-    LandmarkRoleClassifier.load()
-    IndicatorRoleClassifier.load()
-    TripletRelationClassifier.load()
-    TripletGeneralTypeClassifier.load()
-    TripletSpecificTypeClassifier.load()
-    TripletRegionClassifier.load()
-    TripletDirectionClassifier.load()
-    TripletImageRegionClassifier.load()
+    if (!trainTestTogether) {
+      PrepositionClassifier.load()
+      classifiers.foreach(x => x.load())
+    }
 
-    val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-    val classifierSuffix = "combined_perceptron_tuned"
-    val classifierOnSuffix = "combined_on_perceptron"
-    val classifierInFrontOfSuffix = "combined_InFrontOf_perceptron"
-
-    visualClassifier.modelSuffix = classifierSuffix
-    visualClassifier.modelDir = classifierDirectory
-    VisualTripletOnClassifier.modelSuffix = classifierOnSuffix
-    VisualTripletOnClassifier.modelDir = classifierDirectory
-    VisualTripletInFrontOfClassifier.modelSuffix = classifierInFrontOfSuffix
-    VisualTripletInFrontOfClassifier.modelDir = classifierDirectory
-
-    visualClassifier.load()
-    VisualTripletOnClassifier.load()
-    VisualTripletInFrontOfClassifier.load()
-
-    val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases().toList)
-    val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+    val spCandidatesTest = CandidateGenerator.getIndicatorCandidates(phrases.getTestingInstances.toList)
+    val trCandidatesTest = CandidateGenerator.getTrajectorCandidates(phrases.getTestingInstances.toList)
       .filterNot(x => spCandidatesTest.contains(x))
-    val lmCandidatesTest = CandidateGenerator.getLandmarkCandidates(phrases().toList)
+    val lmCandidatesTest = CandidateGenerator.getLandmarkCandidates(phrases.getTestingInstances.toList)
       .filterNot(x => spCandidatesTest.contains(x))
 
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTest.exists(_.getId == x.getId),
-      x => IndicatorRoleClassifier(x) == "Indicator",
+      x => IndicatorRoleClassifier(x) == "true",
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
     if (!useConstraints) {
-      val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "Trajector").toList
-      val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "Landmark").toList
-      val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "Indicator").toList
+      val visualTripletsFiltered = visualTriplets.getTestingInstances.toList.filter(x => x.getSp != null)
+      val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "true").toList
+      val landmarks = phrases.getTestingInstances.filter(x => LandmarkRoleClassifier(x) == "true").toList
+      val indicators = phrases.getTestingInstances.filter(x => IndicatorRoleClassifier(x) == "true").toList
 
       val tripletList = triplets.getTestingInstances
-        .filter(x => TripletRelationClassifier(x) == "Relation").toList
-
-      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
-        x => TripletGeneralTypeClassifier(x),
-        x => TripletSpecificTypeClassifier(x),
-        x => TripletRegionClassifier(x),
-        x => TripletDirectionClassifier(x),
-        s"$resultsDir/${expName}${suffix}.xml")
-
-      //ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
+        .filter(x => TripletRelationClassifier(x) == "true").toList
 
       val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
 
-      val tr = TrajectorRoleClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Trajector(within data model)", tr)
+      roleClassifiers.foreach {
+        x =>
+          val res = x.test()
+          ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
+      }
 
-      val sp = IndicatorRoleClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Spatial Indicator(within data model)", sp)
-
-      val lm = LandmarkRoleClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Landmark(within data model)", lm)
-
-      val relation = TripletRelationClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Relation(within data model)", relation)
-
-      val general = TripletGeneralTypeClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "General(within data model)", general)
-
-      val direction = TripletDirectionClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Direction(within data model)", direction)
-
-      val region = TripletRegionClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
-
-      val imRegion = TripletImageRegionClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Image Region(within data model)", imRegion)
-
-      val visual = visualClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Visual triplet(within data model)", visual)
-
-      report(x => TripletRelationClassifier(x),
-        x => TrajectorRoleClassifier(x),
-        x => LandmarkRoleClassifier(x),
-        x => IndicatorRoleClassifier(x),
-        x => TripletGeneralTypeClassifier(x),
-        x => TripletDirectionClassifier(x),
-        x => TripletRegionClassifier(x)
-      )
+      tripletClassifiers.foreach {
+        x =>
+          val res = x.test()
+          ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
+      }
+      val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
+      ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
+      prepClassifiers.foreach {
+        x =>
+          val res = x._2.test(visualTripletsFiltered)
+          ReportHelper.saveEvalResults(outStream, s"${x._1}(within data model)", res)
+      }
     }
     else {
 
-      val trajectors = phrases.getTestingInstances.filter(x => TRConstraintClassifier(x) == "Trajector").toList
-      val landmarks = phrases.getTestingInstances.filter(x => LMConstraintClassifier(x) == "Landmark").toList
-      val indicators = phrases.getTestingInstances.filter(x => IndicatorConstraintClassifier(x) == "Indicator").toList
+      val visualTripletsFiltered = visualTriplets.getTestingInstances.toList.filter(x => x.getSp != null)
+      val trajectors = phrases.getTestingInstances.filter(x => TRConstraintClassifier(x) == "true").toList
+      val landmarks = phrases.getTestingInstances.filter(x => LMConstraintClassifier(x) == "true").toList
+      val indicators = phrases.getTestingInstances.filter(x => IndicatorConstraintClassifier(x) == "true").toList
 
       val tripletList = triplets.getTestingInstances
-        .filter(x => TripletRelationConstraintClassifier(x) == "Relation").toList
+        .filter(x => TripletRelationConstraintClassifier(x) == "true").toList
 
-
-      ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
-        x => TripletGeneralTypeConstraintClassifier(x),
-        x => TripletSpecificTypeClassifier(x),
-        x => TripletRegionConstraintClassifier(x),
-        x => TripletDirectionConstraintClassifier(x),
-        s"$resultsDir/${expName}${suffix}.xml")
-
-      //ReportHelper.saveEvalResultsFromXmlFile(testFile, s"$resultsDir/${expName}${suffix}.xml", s"$resultsDir/$expName$suffix.txt")
 
       val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
 
-      val tr = TRConstraintClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Trajector(within data model)", tr)
+      constraintRoleClassifiers.foreach {
+        x =>
+          val res = x.test()
+          ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
+      }
 
-      val sp = IndicatorRoleClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Spatial Indicator(within data model)", sp)
+      constraintTripletClassifiers.foreach {
+        x =>
+          val res = x.test()
+          ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
+      }
+      val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
+      ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
+      constrainedPrepClassifiers.foreach {
+        x =>
+          val res = x.test(visualTripletsFiltered)
+          ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
+      }
 
-      val lm = LMConstraintClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Landmark(within data model)", lm)
-
-      val relation = TripletRelationConstraintClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Relation(within data model)", relation)
-
-      val general = TripletGeneralTypeConstraintClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "General(within data model)", general)
-
-      val direction = TripletDirectionConstraintClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Direction(within data model)", direction)
-
-      val region = TripletRegionConstraintClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Region(within data model)", region)
-
-      val visual = visualClassifier.test()
-      ReportHelper.saveEvalResults(outStream, "Visual triplet(within data model)", visual)
-
-      report(x => TripletRelationConstraintClassifier(x),
-        x => TRConstraintClassifier(x),
-        x => LMConstraintClassifier(x),
-        x => IndicatorRoleClassifier(x),
-        x => TripletGeneralTypeConstraintClassifier(x),
-        x => TripletDirectionConstraintClassifier(x),
-        x => TripletRegionConstraintClassifier(x)
-      )
+      //      report(x => TripletRelationConstraintClassifier(x),
+      //        x => TRConstraintClassifier(x),
+      //        x => LMConstraintClassifier(x),
+      //        x => IndicatorRoleClassifier(x),
+      //        x => TripletGeneralTypeConstraintClassifier(x),
+      //        x => TripletDirectionConstraintClassifier(x),
+      //        x => TripletRegionConstraintClassifier(x)
+      //      )
     }
 
   }
@@ -287,9 +317,9 @@ object MultiModalTripletApp extends App with Logging {
       val predictedGen = general(r)
       val predictedReg = region(r)
       val predictedDir = direction(r)
-      val t = triplets(r) ~> tripletToFirstArg head
-      val s = triplets(r) ~> tripletToSecondArg head
-      val l = triplets(r) ~> tripletToThirdArg head
+      val t = triplets(r) ~> tripletToTr head
+      val s = triplets(r) ~> tripletToSp head
+      val l = triplets(r) ~> tripletToLm head
       val tDis = tripletDistanceTrSp(r)
       val lDis = tripletDistanceLmSp(r)
 
@@ -314,7 +344,7 @@ object MultiModalTripletApp extends App with Logging {
         .map(p => p.getText + "-> " + matchingSegment(p) + ": " + similarityToMatchingSegment(p))
         .mkString(",")
 
-      val imageRels = tripletMatchingSegmentRelations(r).mkString(",")
+      val imageRels = ""
 
       val docId = (triplets(r) ~> -sentenceToTriplets ~> -documentToSentence).head.getId
 
@@ -329,22 +359,22 @@ object MultiModalTripletApp extends App with Logging {
     }
   }
 
-  val all = triplets().map(x => (x.getArgument(1).getText, tripletMatchingSegmentRelationLabelScores(x), tripletIsRelation(x), x))
-    .filter(x => !x._2.equals("-")).toList
-  val rels = all.filter(_._3.equalsIgnoreCase("Relation"))
-  val noRels = all.filter(_._3.equalsIgnoreCase("None"))
-  val tp = rels.count(x => x._2.split(":").head == x._1)
-  val fn = rels.size - tp
-  val fp = noRels.count(x => x._2.split(":").head == x._1)
-  val tn = noRels.size - fp
-  val writer = new PrintStream(s"$resultsDir/preposition-prediction_${isTrain}.txt")
-  writer.println("Aligned ground truth: " + rels.size)
-  writer.println("tp: " + tp)
-  writer.println("tn: " + tn)
-  writer.println("fp: " + fp)
-  writer.println("fn: " + fn)
-  all.sortBy(_._3).foreach(x => writer.println(x._3 + "[" + x._4.getProperty("ActualId") + "](" + x._4.getArgument(0).getText + ", " + x._1 + ", " +
-    x._4.getArgument(2).getText + ") :: " + x._2 + " :: "))
-  writer.close()
-}
+  //  val all = triplets().map(x => (x.getArgument(1).getText, tripletMatchingSegmentRelationLabelScores(x), tripletIsRelation(x), x))
+  //    .filter(x => !x._2.equals("-")).toList
+  //  val rels = all.filter(_._3.equalsIgnoreCase("Relation"))
+  //  val noRels = all.filter(_._3.equalsIgnoreCase("None"))
+  //  val tp = rels.count(x => x._2.split(":").head == x._1)
+  //  val fn = rels.size - tp
+  //  val fp = noRels.count(x => x._2.split(":").head == x._1)
+  //  val tn = noRels.size - fp
+  //  val writer = new PrintStream(s"$resultsDir/preposition-prediction_${isTrain}.txt")
+  //  writer.println("Aligned ground truth: " + rels.size)
+  //  writer.println("tp: " + tp)
+  //  writer.println("tn: " + tn)
+  //  writer.println("fp: " + fp)
+  //  writer.println("fn: " + fn)
+  //  all.sortBy(_._3).foreach(x => writer.println(x._3 + "[" + x._4.getProperty("ActualId") + "](" + x._4.getArgument(0).getText + ", " + x._1 + ", " +
+  //    x._4.getArgument(2).getText + ") :: " + x._2 + " :: "))
+  //  writer.close()
 
+}

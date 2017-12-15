@@ -46,60 +46,7 @@ public class ImageTripletReader {
                 double imageWidth = Double.parseDouble(tuple[11].split("-")[0]);
                 double imageHeight = Double.parseDouble(tuple[11].split("-")[1]);
 
-                double trArea = RectangleHelper.calculateArea(trBox);
-                double lmArea = RectangleHelper.calculateArea(lmBox);
-                double imageArea = imageHeight * imageWidth;
-
-                Rectangle2D boundingBox = RectangleHelper.generateBoundingBox(trBox, lmBox);
-                double boundingBoxArea = RectangleHelper.calculateArea(boundingBox);
-
-                //Feature 1
-                double[] trVector = RectangleHelper.getCentroidVector(trBox, lmBox, boundingBox);
-
-                //Feature 2
-                double trAreawrtLM = trArea / lmArea;
-
-                // Feature 3
-                double trAspectRatio = RectangleHelper.calculateAspectRatio(trBox);
-                double lmAspectRatio = RectangleHelper.calculateAspectRatio(lmBox);
-
-                //Feature 4
-                double trAreaBbox = RectangleHelper.normalizeArea(trArea, boundingBoxArea);
-                double lmAreaBbox = RectangleHelper.normalizeArea(lmArea, boundingBoxArea);
-
-                //Feature 5
-                double iou = RectangleHelper.getIntersectionOverUnion(trBox, lmBox);
-
-                // Feature 6
-                double euclideanDistance = RectangleHelper
-                        .normalizeArea(RectangleHelper.getEuclideanDistance(trBox, lmBox), imageArea);
-
-                // Feature 7
-                double trAreaImage = RectangleHelper.normalizeArea(trArea, imageArea);
-                double lmAreaImage = RectangleHelper.normalizeArea(lmArea, imageArea);
-
-                //Feature 8
-                double above = RectangleHelper.getAbove(trBox, lmBox, imageHeight);
-
-                //Feature 9
-                double below = RectangleHelper.getBelow(trBox, lmBox, imageHeight);
-
-                //Feature 10
-                double left = RectangleHelper.getLeft(trBox, lmBox, imageWidth);
-
-                //Feature 11
-                double right = RectangleHelper.getRight(trBox, lmBox, imageWidth);
-
-                //Feature 12
-                double intersection = RectangleHelper.getIntersectionArea(trBox, lmBox, imageArea);
-
-                //Feature 13
-                double union = RectangleHelper.getUnionArea(trBox, lmBox, imageArea);
-
-
-                ImageTriplet it = new ImageTriplet(sp, tr, lm, trBox, lmBox, imageWidth, imageHeight, trVector[0],
-                        trVector[1], trAreawrtLM, trAspectRatio, lmAspectRatio, trAreaBbox, lmAreaBbox, iou,
-                        euclideanDistance, trAreaImage, lmAreaImage, above, below, left, right, intersection, union);
+                ImageTriplet it = new ImageTriplet(sp, tr, lm, trBox, lmBox, imageWidth, imageHeight);
 
                 if(isTrain)
                     trainImageTriplets.add(it);
