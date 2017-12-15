@@ -6,7 +6,6 @@ import edu.tulane.cs.hetml.nlp.BaseTypes.Document;
 import edu.tulane.cs.hetml.nlp.Xml.NlpXmlReader;
 import sun.awt.image.ToolkitImage;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.io.*;
@@ -118,7 +117,7 @@ public class CLEFImageReader {
 
     /*****************************************/
     private String MappingCode2Concept(int code) {
-        return MapCode2Concept.get(code);
+        return getMapCode2Concept().get(code);
     }
 
     /*******************************************************/
@@ -133,9 +132,9 @@ public class CLEFImageReader {
         while ((line = reader.readLine()) != null) {
             String[] CodesInfo = line.split("\\t");
             if (CodesInfo.length > 1) {
-                MapCode2Concept.put(Integer.parseInt(CodesInfo[0]), CodesInfo[1]);
+                getMapCode2Concept().put(Integer.parseInt(CodesInfo[0]), CodesInfo[1]);
             } else {
-                MapCode2Concept.put(Integer.parseInt(CodesInfo[0]), " ");
+                getMapCode2Concept().put(Integer.parseInt(CodesInfo[0]), " ");
             }
         }
     }
@@ -518,4 +517,7 @@ public class CLEFImageReader {
         }
     }
 
+    public Hashtable<Integer, String> getMapCode2Concept() {
+        return MapCode2Concept;
+    }
 }
