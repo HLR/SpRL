@@ -130,6 +130,15 @@ object MultiModalTripletApp extends App with Logging {
 
   populateRoleDataFromAnnotatedCorpus()
 
+  val stream = new FileOutputStream(s"$resultsDir/segmentInfo.txt", false)
+  val writer = new PrintStream(stream, true)
+  segments().foreach(s => {
+    writer.println(s.getAssociatedImageID + "~" + s.getSegmentId + "~" + s.getBoxDimensions.getX + "~"
+      + s.getBoxDimensions.getY + "~" + s.getBoxDimensions.getWidth + "~" + s.getBoxDimensions.getHeight)
+  })
+  writer.close()
+  stream.close()
+
   if (isTrain) {
     println("training started ...")
 
@@ -153,6 +162,7 @@ object MultiModalTripletApp extends App with Logging {
       x => lmCandidatesTrain.exists(_.getId == x.getId)
     )
 
+
     tripletClassifiers.foreach {
       x =>
         x.learn(iterations)
@@ -164,6 +174,7 @@ object MultiModalTripletApp extends App with Logging {
 
       val visualTripletsFiltered = visualTriplets().toList.filter(x => x.getSp != null)
       logger.info("Aligned visual triplets in train:" + visualTripletsFiltered.size)
+
       PrepositionClassifier.learn(10, visualTripletsFiltered)
       PrepositionClassifier.test(visualTripletsFiltered)
       PrepositionClassifier.save()
