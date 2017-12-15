@@ -67,58 +67,58 @@ object WordasClassifierApp extends App {
       CLEFGoogleNETReaderHelper.allSegments.toList
     }
 
-  val allRefExp = CLEFGoogleNETReaderHelper.segRefExp
-
-  val pb = new ProgressBar("Processing Data", allsegments.size)
-  pb.start()
-
-  allsegments.foreach(s => {
-    if (s.referItExpression != null) {
-
-      var refExp = s.referItExpression.toLowerCase.replaceAll("[^a-z]", " ").replaceAll("( )+", " ").trim
-
-      refExp = filterRefExpression(refExp)
-      // Saving filtered tokens for later use
-      s.filteredTokens = refExp
-
-      if (refExp != "" && refExp.length > 1) {
-        val d = new Document(s.getAssociatedImageID)
-        val senID = s.getAssociatedImageID + "_" + s.getSegmentId.toString
-        val sen = new Sentence(d, senID, 0, refExp.length, refExp)
-        val toks = LanguageBaseTypeSensors.sentenceToTokenGenerating(sen)
-        //Applying postag
-        val pos = LanguageBaseTypeSensors.getPos(sen)
-        //Generating token-postag Pair
-        val pairs = toks.zip(pos)
-
-        //Storing pos pairs in segment
-        pairs.foreach(p => {
-          val tokenPair = p._1.getText + "," + p._2
-          s.tagged.add(tokenPair)
-          if(isTrain) {
-            // Calculate Word Frequency
-            if (wordFrequency.contains(p._1.getText)) {
-              var value = wordFrequency.get(p._1.getText)
-              wordFrequency.update(p._1.getText, wordFrequency(p._1.getText) + 1)
-            } else {
-              wordFrequency.put(p._1.getText, 1)
-            }
-          }
-        })
-      }
-    }
-    pb.step()
-  })
-  pb.stop()
+//  val allRefExp = CLEFGoogleNETReaderHelper.segRefExp
+//
+//  val pb = new ProgressBar("Processing Data", allsegments.size)
+//  pb.start()
+//
+//  allsegments.foreach(s => {
+//    if (s.referItExpression != null) {
+//
+//      var refExp = s.referItExpression.toLowerCase.replaceAll("[^a-z]", " ").replaceAll("( )+", " ").trim
+//
+//      refExp = filterRefExpression(refExp)
+//      // Saving filtered tokens for later use
+//      s.filteredTokens = refExp
+//
+//      if (refExp != "" && refExp.length > 1) {
+//        val d = new Document(s.getAssociatedImageID)
+//        val senID = s.getAssociatedImageID + "_" + s.getSegmentId.toString
+//        val sen = new Sentence(d, senID, 0, refExp.length, refExp)
+//        val toks = LanguageBaseTypeSensors.sentenceToTokenGenerating(sen)
+//        //Applying postag
+//        val pos = LanguageBaseTypeSensors.getPos(sen)
+//        //Generating token-postag Pair
+//        val pairs = toks.zip(pos)
+//
+//        //Storing pos pairs in segment
+//        pairs.foreach(p => {
+//          val tokenPair = p._1.getText + "," + p._2
+//          s.tagged.add(tokenPair)
+//          if(isTrain) {
+//            // Calculate Word Frequency
+//            if (wordFrequency.contains(p._1.getText)) {
+//              var value = wordFrequency.get(p._1.getText)
+//              wordFrequency.update(p._1.getText, wordFrequency(p._1.getText) + 1)
+//            } else {
+//              wordFrequency.put(p._1.getText, 1)
+//            }
+//          }
+//        })
+//      }
+//    }
+//    pb.step()
+//  })
+//  pb.stop()
 
   // Populate in Data Model
   //images.populate(CLEFGoogleNETReaderHelper.allImages)
   //segments.populate(allsegments)
 
-  // word-segment pair instances
-  val trainInstances = new ListBuffer[WordSegment]()
-
   if(isTrain) {
+    // word-segment pair instances
+    val trainInstances = new ListBuffer[WordSegment]()
+
     println("Training...")
     // Generate Training Instances for words
     val words = wordFrequency.filter(w => w._2 >= 40).keys
@@ -164,7 +164,7 @@ object WordasClassifierApp extends App {
 
     val testSegments =
       if (useAnntotatedClef) {
-        val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
+        val ClefAnnReader = new CLEFAnnotationReader(imageDataPath, true)
         ClefAnnReader.clefSegments.toList
       }
       else
@@ -172,11 +172,18 @@ object WordasClassifierApp extends App {
 
     // Generate Test Instances for each word
     val tokenPhraseMap = mutable.HashMap[String, List[WordSegment]]()
-    testSegments.foreach(s => {
-      val segWithFeatures = allsegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
+    val TS = testSegments.filter(t => t.referItExpression.trim != "")
+    TS.foreach(s => {
+      val segWithFeatures =  TS.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
+//        allsegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
       if(s.referItExpression!=null) {
 
-        val filterRefExp = if(useAnntotatedClef) filterRefExpression(s.referItExpression.trim) else s.filteredTokens.trim
+        val filterRefExp =
+          if(useAnntotatedClef)
+            s.getExpression
+            //filterRefExpression(s.referItExpression.trim)
+          else
+            s.filteredTokens.trim
 
         val d = new Document(s.getAssociatedImageID)
         val senID = s.getAssociatedImageID + "_" + s.getSegmentId.toString
@@ -238,12 +245,21 @@ object WordasClassifierApp extends App {
 //    outStreamCombined.close()
     //wordsegments.populate(testInstances)
 
+    //fine tune
+    trainedWordClassifier.keys.foreach(h => {
+      val fineTuneExamples = testInstances.filter(t=> t.getWord==h)
+      wordsegments.populate(fineTuneExamples)
+      trainedWordClassifier(h).learn(10)
+      wordsegments.clear()
+    })
+
 
     var count = 0
     var wrong = 0
     tokenPhraseMap.foreach{
       case (uniqueId, wordSegList) =>
         val row = uniqueId.split("_")
+
         println(uniqueId)
         val predictedSegId = computeMatrix(wordSegList)
         writer.println(predictedSegId)

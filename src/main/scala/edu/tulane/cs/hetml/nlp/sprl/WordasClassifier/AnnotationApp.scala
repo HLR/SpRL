@@ -16,7 +16,7 @@ import scala.collection.JavaConversions._
 
 object AnnotationApp extends App {
 
-  val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
+  val ClefAnnReader = new CLEFAnnotationReader(imageDataPath, false)
   val testImages = ClefAnnReader.clefImages.toList
   val testSegments = ClefAnnReader.clefSegments.toList
 
