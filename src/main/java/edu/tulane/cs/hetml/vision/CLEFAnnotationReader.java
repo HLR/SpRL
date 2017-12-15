@@ -25,7 +25,7 @@ public class CLEFAnnotationReader {
     PrintWriter printToFile;
     PrintWriter printToFileNames;
 
-    public CLEFAnnotationReader(String directory) throws IOException {
+    public CLEFAnnotationReader(String directory, Boolean useNewData) throws IOException {
 
         File d = new File(directory);
 
@@ -43,20 +43,27 @@ public class CLEFAnnotationReader {
         clefSentences = new ArrayList<>();
         clefDocuments = new ArrayList<>();
 
-        //Load Referit Text
-        loadReferit(directory);
+        if(!useNewData) {
+            //Load Referit Text
+            //loadReferit(directory);
 
-        //Annotated File Conversion
-        String annDir = directory + "/annotatedFiles";
-        annotatedFilesConversion(annDir);
+            //Annotated File Conversion
+            String annDir = directory + "/annotatedFiles";
+            annotatedFilesConversion(annDir);
 
-        //Load Test Images
-        loadTestImage(annDir);
+            //Load Test Images
+            loadTestImage(annDir);
 
-        //Load Test Segments
-        loadTestSegment(annDir);
+            //Load Test Segments
+            loadTestSegment(annDir);
 
-        generateNLPBaseClasses();
+            generateNLPBaseClasses();
+        }
+        else {
+            loadPhraseText(directory);
+            loadClefNewSegments(directory);
+        }
+
     }
 
     private void annotatedFilesConversion(String directory) throws IOException {
@@ -108,14 +115,14 @@ public class CLEFAnnotationReader {
                             // Referit Key
                             String referitKey = fileName + "_" + segCodeText[0] + ".jpg";
                             String newData;
-                            if (referit.get(referitKey) != null) {
-                                String[] oldData = referit.get(referitKey).split("~");
-                                // Our Text in Referit
-                                newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~" + oldData[1] + "~" + oldData[2];
-                            } else {
+//                            if (referit.get(referitKey) != null) {
+//                                String[] oldData = referit.get(referitKey).split("~");
+//                                // Our Text in Referit
+//                                newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~" + oldData[1] + "~" + oldData[2];
+//                            } else {
                                 //Segment Description doesn't exist in ReferIt Dataset
                                 newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~0.0~0.0";
-                            }
+//                            }
                             //Save the new generated data to file
                             printToFile.println(newData);
                         }
@@ -169,6 +176,20 @@ public class CLEFAnnotationReader {
         }
     }
 
+    private void loadClefNewSegments(String directory) throws IOException {
+        String file = directory + "/ImageSegmentsNewFeatures.txt";
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] segInfo = line.split(",");
+            String key = segInfo[0] + "-" + segInfo[1];
+            if(referit.get(key)!=null) {
+                Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]), segInfo[2], referit.get(key), false);
+                clefSegments.add(s);
+            }
+        }
+    }
+
     private void loadTestSegment(String directory) throws IOException {
         String file = directory + "/Output/ClefSegment.txt";
         BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -189,6 +210,19 @@ public class CLEFAnnotationReader {
         while ((line = reader.readLine()) != null) {
             String[] segInfo = line.split("\\~");
             referit.put(segInfo[0], segInfo[1] + "~" + segInfo[2] + "~" + segInfo[3]);
+        }
+    }
+
+    private void loadPhraseText(String directory) throws IOException {
+        String file = directory + "/SegmentsPhraseText.txt";
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] segInfo = line.split("~");
+            if (segInfo.length==3)
+                referit.put(segInfo[0] + "-" + segInfo[1], segInfo[2]);
+            else
+                referit.put(segInfo[0] + "-" + segInfo[1], "");
         }
     }
 

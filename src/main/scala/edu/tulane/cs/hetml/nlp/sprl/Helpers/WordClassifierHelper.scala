@@ -1,11 +1,14 @@
 package edu.tulane.cs.hetml.nlp.sprl.Helpers
 
 import edu.tulane.cs.hetml.vision._
+
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
+
+import scala.io.Source
 
 class WordClassifierHelper {
 
@@ -15,15 +18,24 @@ class WordClassifierHelper {
   val CLEFGoogleNETReaderHelper = new CLEFGoogleNETReader(imageDataPath)
   val refexpTrainedWords = new RefExpTrainedWordReader(imageDataPath).filteredWords
 
-  val allsegments = CLEFGoogleNETReaderHelper.allSegments.toList
+  val allsegments = getSegmentFeatures()
 
   //load Trained classifiers
   loadAllTrainedClassifiers()
 
+  def getSegmentFeatures() : List[Segment] = {
+    val filename = imageDataPath + "/ImageSegmentsNewFeatures.txt"
+    Source.fromFile(filename).getLines.map{
+      l =>
+        val f = l.split(",").toList
+        new Segment(f(0), f(1).toInt,  f.takeRight(2).mkString(" "), "", false)
+    }.toList
+  }
+
   def getScore(phrase: String, segment: Segment) : Double = {
 
     val testInstances = new ListBuffer[WordSegment]()
-    val imgSegs = allsegments.filter(s=> s.getAssociatedImageID==segment.getAssociatedImageID)
+    val imgSegs = allsegments.filter(s=> s.getAssociatedImageID == segment.getAssociatedImageID)
 
     //Create all possible combinations M x N
     val segPairs = phrase.split(" ").distinct.flatMap(tok => {

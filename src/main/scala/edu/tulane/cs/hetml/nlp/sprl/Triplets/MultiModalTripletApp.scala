@@ -107,7 +107,7 @@ object MultiModalTripletApp extends App with Logging {
     //    TripletDirectionRightClassifier
   )
 
-  val classifiers = prepClassifiers.values ++ roleClassifiers ++ tripletClassifiers
+  val classifiers = prepClassifiers.values ++ roleClassifiers ++ tripletClassifiers ++ List(TripletImageRegionClassifier)
   classifiers.foreach(x => {
     x.modelDir = s"models/mSpRL/triplet/$featureSet/"
     x.modelSuffix = suffix
@@ -153,6 +153,11 @@ object MultiModalTripletApp extends App with Logging {
       x => lmCandidatesTrain.exists(_.getId == x.getId)
     )
 
+    val gtRels = triplets().filter(x=>tripletIsRelation(x) == "Relation"
+      && x.getArgument(0).containsProperty("goldAlignment") && x.getArgument(2).containsProperty("goldAlignment"))
+    TripletImageRegionClassifier.learn(iterations, gtRels)
+    TripletImageRegionClassifier.test(gtRels)
+    TripletImageRegionClassifier.save()
 
     tripletClassifiers.foreach {
       x =>
@@ -229,6 +234,12 @@ object MultiModalTripletApp extends App with Logging {
       x => trCandidatesTest.exists(_.getId == x.getId),
       x => IndicatorRoleClassifier(x) == "true",
       x => lmCandidatesTest.exists(_.getId == x.getId))
+
+
+    val gtRels = triplets().filter(x=>tripletIsRelation(x) == "Relation"
+      && x.getArgument(0).containsProperty("goldAlignment") && x.getArgument(2).containsProperty("goldAlignment"))
+    TripletImageRegionClassifier.load()
+    TripletImageRegionClassifier.test(gtRels)
 
     if (!useConstraints) {
       val visualTripletsFiltered = visualTriplets.getTestingInstances.toList.filter(x => x.getSp != null)
