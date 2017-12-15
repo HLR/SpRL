@@ -75,36 +75,36 @@ object MultiModalTripletApp extends App with Logging {
     TripletGeneralTypeConstraintClassifier,
     TripletRegionConstraintClassifier,
     TripletDirectionConstraintClassifier
-//    TripletRegionTPPConstraintClassifier,
-//    TripletRegionECConstraintClassifier,
-//    TripletRegionEQConstraintClassifier,
-//    TripletRegionDCConstraintClassifier,
-//    TripletRegionPOConstraintClassifier,
-//    TripletDirectionRightConstraintClassifier,
-//    TripletDirectionLeftConstraintClassifier,
-//    TripletDirectionAboveConstraintClassifier,
-//    TripletDirectionBelowConstraintClassifier,
-//    TripletDirectionBehindConstraintClassifier,
-//    TripletDirectionFrontConstraintClassifier
+    //    TripletRegionTPPConstraintClassifier,
+    //    TripletRegionECConstraintClassifier,
+    //    TripletRegionEQConstraintClassifier,
+    //    TripletRegionDCConstraintClassifier,
+    //    TripletRegionPOConstraintClassifier,
+    //    TripletDirectionRightConstraintClassifier,
+    //    TripletDirectionLeftConstraintClassifier,
+    //    TripletDirectionAboveConstraintClassifier,
+    //    TripletDirectionBelowConstraintClassifier,
+    //    TripletDirectionBehindConstraintClassifier,
+    //    TripletDirectionFrontConstraintClassifier
   )
   val tripletClassifiers = List(
     TripletRelationClassifier,
     TripletGeneralTypeClassifier,
     TripletRegionClassifier,
-    TripletDirectionClassifier//,
-//    TripletRegionClassifier,
-//    TripletDirectionClassifier,
-//    TripletRegionTPPClassifier,
-//    TripletRegionEQClassifier,
-//    TripletRegionDCClassifier,
-//    TripletRegionECClassifier,
-//    TripletRegionPOClassifier,
-//    TripletDirectionAboveClassifier,
-//    TripletDirectionBehindClassifier,
-//    TripletDirectionBelowClassifier,
-//    TripletDirectionFrontClassifier,
-//    TripletDirectionLeftClassifier,
-//    TripletDirectionRightClassifier
+    TripletDirectionClassifier //,
+    //    TripletRegionClassifier,
+    //    TripletDirectionClassifier,
+    //    TripletRegionTPPClassifier,
+    //    TripletRegionEQClassifier,
+    //    TripletRegionDCClassifier,
+    //    TripletRegionECClassifier,
+    //    TripletRegionPOClassifier,
+    //    TripletDirectionAboveClassifier,
+    //    TripletDirectionBehindClassifier,
+    //    TripletDirectionBelowClassifier,
+    //    TripletDirectionFrontClassifier,
+    //    TripletDirectionLeftClassifier,
+    //    TripletDirectionRightClassifier
   )
 
   val classifiers = prepClassifiers.values ++ roleClassifiers ++ tripletClassifiers
@@ -129,15 +129,6 @@ object MultiModalTripletApp extends App with Logging {
   }
 
   populateRoleDataFromAnnotatedCorpus()
-
-  val stream = new FileOutputStream(s"$resultsDir/segmentInfo.txt", false)
-  val writer = new PrintStream(stream, true)
-  segments().foreach(s => {
-    writer.println(s.getAssociatedImageID + "~" + s.getSegmentId + "~" + s.getBoxDimensions.getX + "~"
-      + s.getBoxDimensions.getY + "~" + s.getBoxDimensions.getWidth + "~" + s.getBoxDimensions.getHeight)
-  })
-  writer.close()
-  stream.close()
 
   if (isTrain) {
     println("training started ...")
