@@ -130,6 +130,15 @@ object MultiModalTripletApp extends App with Logging {
 
   populateRoleDataFromAnnotatedCorpus()
 
+  val stream = new FileOutputStream(s"$resultsDir/segmentInfo.txt", false)
+  val writer = new PrintStream(stream, true)
+  segments().foreach(s => {
+    writer.println(s.getAssociatedImageID + "~" + s.getSegmentId + "~" + s.getBoxDimensions.getX + "~"
+      + s.getBoxDimensions.getY + "~" + s.getBoxDimensions.getWidth + "~" + s.getBoxDimensions.getHeight)
+  })
+  writer.close()
+  stream.close()
+
   if (isTrain) {
     println("training started ...")
 
