@@ -40,8 +40,19 @@ var App = function () {
         var txt = "";        
         for (var i in images) {
             var phrases = images[i].phrases;
+            var newSegId = 0;  
             for (var j in phrases) {
                 var p = phrases[j];
+                if(p.segId > newSegId)
+                    newSegId = p.segId;
+            }   
+            newSegId += 1;             
+            for (var j in phrases) {
+                var p = phrases[j];
+                if(p.segId == -1 && p.segWidth > 0 && p.segHeight > 0){
+                    p.segId = newSegId;
+                    newSegId += 1;
+                }
                 txt += p.imFolder + "\t\t";
                 txt += p.imId + "\t\t";
                 txt += p.sentId + "\t\t";
