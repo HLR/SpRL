@@ -6,7 +6,7 @@ import scala.collection.JavaConversions._
 class AlignmentReader(annotationDir: String, isTrain: Boolean) {
 
   def setAlignments(phrases: List[Phrase]) = {
-    val name = if (isTrain) "train.txt" else "test.txt"
+    val name = if (isTrain) "phrases_train.txt" else "phrases_test.txt"
     val annotationLines = scala.io.Source.fromFile(annotationDir + name).getLines()
     annotationLines.filter(_.trim != "").foreach {
       l =>
