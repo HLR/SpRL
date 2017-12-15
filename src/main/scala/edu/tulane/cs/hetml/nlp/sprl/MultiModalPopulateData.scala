@@ -22,8 +22,14 @@ object MultiModalPopulateData extends Logging {
   lazy val xmlTestReader = new SpRLXmlReader(testFile, globalSpans)
   lazy val xmlTrainReader = new SpRLXmlReader(trainFile, globalSpans)
   def xmlReader = if (isTrain) xmlTrainReader else xmlTestReader
-  def imageReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, isTrain)
-  def alignmentReader = new AlignmentReader(alignmentAnnotationPath, isTrain)
+
+  lazy val imageTrainReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, true)
+  lazy val imageTestReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, false)
+  def imageReader = if (isTrain)  imageTrainReader else imageTestReader
+
+  lazy val alignmentTrainReader = new AlignmentReader(alignmentAnnotationPath, true)
+  lazy val alignmentTestReader = new AlignmentReader(alignmentAnnotationPath, false)
+  def alignmentReader = if(isTrain) alignmentTrainReader else alignmentTestReader
 
   def populateRoleDataFromAnnotatedCorpus(populateNullPairs: Boolean = true): Unit = {
     logger.info("Role population started ...")
@@ -184,7 +190,9 @@ object MultiModalPopulateData extends Logging {
         p.addPropertyValue("segId", sId.toString)
         p.removeProperty("goldAlignment")
         p.addPropertyValue("goldAlignment", sId.toString)
-        new Segment(imId, sId, -1, "", headWordFrom(p), new Rectangle2D.Double(x, y, w, h))
+        val head = headWordFrom(p)
+        val nearstConcept = imageReader.getSegmentConcepts.maxBy(x=> getSimilarity(x, head))
+        new Segment(imId, sId, -1, "", nearstConcept, new Rectangle2D.Double(x, y, w, h))
     }
 
     segments ++ newSegs
