@@ -248,6 +248,11 @@ object MultiModalSpRLTripletClassifiers {
     override def feature =  List(tripletMatchingSegmentRelationFeatures)
   }
 
+  /* Preposition multi-class classifier based on the visual features.
+  It recieves the visual features of two objects in the image and returns
+  a class value among a predefined list of prepositions.
+  * */
+
   object PrepositionClassifier extends Learnable(visualTriplets) {
     def label = visualTripletLabel
 
@@ -255,6 +260,9 @@ object MultiModalSpRLTripletClassifiers {
 
     override def feature = prepositionFeatures
   }
+
+  /* Below is the the list of binary classifiers per prepositions
+  * */
 
   object PrepositionOnClassifier extends Learnable(visualTriplets) {
     def label = visualTripletLabel is "on"
