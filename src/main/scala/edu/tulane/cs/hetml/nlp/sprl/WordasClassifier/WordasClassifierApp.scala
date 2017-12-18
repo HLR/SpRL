@@ -42,12 +42,13 @@ object WordasClassifierApp extends App {
 
   val languageHelper = new LanguageHelper()
   val wordToClosetClassifier = new mutable.HashMap[String, String]()
+  val missedWordsList = new mutable.HashMap[String, Int]()
   val trainedWordClassifier = new mutable.HashMap[String, SingleWordasClassifer]()
   val classifierDirectory = s"models/mSpRL/wordclassifer/"
 
-  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/W2C-Output.txt")
-//  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/missedWordsAfterReplacing.txt")
-//  val writerGoogleW2V = new PrintWriter(s"data/mSprl/results/wordclassifier/googleW2CPredictions.txt")
+//  val writer = new PrintWriter(s"data/mSprl/results/wordclassifier/W2C-Output.txt")
+  val writerMissedWords = new PrintWriter(s"data/mSpRL/results/wordclassifier/missedWords.txt")
+  val writerGoogleW2V = new PrintWriter(s"data/mSpRL/results/wordclassifier/googleW2CPredictions.txt")
 //  val replacedWords = new PrintWriter(s"data/mSprl/results/wordclassifier/replacedWords.txt")
 
   var missedWords = 0
@@ -158,25 +159,31 @@ object WordasClassifierApp extends App {
   if(!isTrain) {
     println("Testing...")
 
+
     //load Trained classifiers
     loadAllTrainedClassifiers()
     val testInstances = new ListBuffer[WordSegment]()
+    val ClefAnnReader = new CLEFAnnotationReader(imageDataPath, true)
 
     val testSegments =
       if (useAnntotatedClef) {
-        val ClefAnnReader = new CLEFAnnotationReader(imageDataPath, true)
+
         ClefAnnReader.clefSegments.toList
       }
       else
         allsegments
 
+    val allReferItExpressions = ClefAnnReader.referitText
     // Generate Test Instances for each word
     val tokenPhraseMap = mutable.HashMap[String, List[WordSegment]]()
-    val TS = testSegments.filter(t => t.referItExpression.trim != "")
+    val TS = testSegments.filter(t => t.getExpression.trim != "")
+
+    println(TS.count(t => trainedWordClassifier.contains(t.getExpression.trim.toLowerCase())))
+
     TS.foreach(s => {
-      val segWithFeatures =  TS.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
+      val segWithFeatures =  testSegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
 //        allsegments.filter(seg => seg.getAssociatedImageID.equals(s.getAssociatedImageID))
-      if(s.referItExpression!=null) {
+      if(s.getExpression!=null) {
 
         val filterRefExp =
           if(useAnntotatedClef)
@@ -205,7 +212,7 @@ object WordasClassifierApp extends App {
         }).toList
 
         if(seg_pairs.nonEmpty) {
-          tokenPhraseMap.put(s.getAssociatedImageID + "_" + s.getSegmentId + "_" + s.referItExpression, seg_pairs)
+          tokenPhraseMap.put(s.getAssociatedImageID + "_" + s.getSegmentId + "_" + s.getExpression, seg_pairs)
           testInstances ++= seg_pairs
         }
       }
@@ -246,33 +253,62 @@ object WordasClassifierApp extends App {
     //wordsegments.populate(testInstances)
 
     //fine tune
-    trainedWordClassifier.keys.foreach(h => {
-      val fineTuneExamples = testInstances.filter(t=> t.getWord==h)
-      wordsegments.populate(fineTuneExamples)
-      trainedWordClassifier(h).learn(10)
-      wordsegments.clear()
-    })
+//    trainedWordClassifier.keys.foreach(h => {
+//      val fineTuneExamples = testInstances.filter(t=> t.getWord==h)
+//      wordsegments.populate(fineTuneExamples)
+//      trainedWordClassifier(h).learn(10)
+//      wordsegments.clear()
+//    })
 
 
-    var count = 0
+      //missed words:
+
+    var correct = 0
     var wrong = 0
+    var top_correct = 0
+    var top_wrong = 0
     tokenPhraseMap.foreach{
       case (uniqueId, wordSegList) =>
         val row = uniqueId.split("_")
-
+        if (!trainedWordClassifier.contains(row(2))) {
+          if(!missedWordsList.contains(row(2))) {
+            val occurance = allReferItExpressions.filter(r => r.contains(row(2)))
+            missedWordsList.put(row(2), occurance.size)
+          }
+        }
         println(uniqueId)
-        val predictedSegId = computeMatrix(wordSegList)
-        writer.println(predictedSegId)
+        val predictedSegId = predictSegmentId(wordSegList)
+        val top = predictTopSegmentIds(wordSegList, 3)
+
         if(row(1).toInt == predictedSegId) {
-          count += 1
+          correct += 1
         } else {
           wrong += 1
         }
-    }
-    writer.close()
 
-    val percentage = count * 100.00f / tokenPhraseMap.size
-    println("Correct : " + count + "Wrong: " + wrong + "Percentage: " + percentage)
+        if(top.contains(row(1).toInt)) {
+          top_correct += 1
+        } else {
+          top_wrong += 1
+        }
+
+    }
+
+    missedWordsList.foreach(w => {
+      writerMissedWords.println(w._1 + "->" + w._2)
+    })
+    writerMissedWords.close()
+
+    val percentage = correct * 100.00f / tokenPhraseMap.size
+    val top_percentage = top_correct * 100.00f / tokenPhraseMap.size
+    println("Correct : " + correct + "Wrong: " + wrong + "Percentage: " + percentage)
+    println("Correct : " + top_correct + "Wrong: " + top_wrong + "Percentage: " + top_percentage)
+
+    wordToClosetClassifier.foreach(w => {
+      writerGoogleW2V.println(w._1 + "->" + w._2)
+    })
+
+    writerGoogleW2V.close()
 //
 //    writer.println("Total Missed Count: " + missedWords)
 //    writer.close()
@@ -284,15 +320,32 @@ object WordasClassifierApp extends App {
 //    replacedWords.close()
   }
 
-  def computeMatrix(instances: List[WordSegment]): Int = {
+  def predictSegmentId(instances: List[WordSegment]): Int = {
 
     val scoresMatrix = instances.groupBy(i => i.getWord).map(w => {
       computeScore(w._1, w._2, w._2.head.getPos)
     }).toList
     val norm = normalizeScores(scoresMatrix)
     val vector = combineScores(norm)
+    if(vector.forall(x=>x == 0))
+      return -1
     val regionId = vector.indexOf(vector.max) + 1
     regionId
+  }
+
+  def predictTopSegmentIds(instances: List[WordSegment], N: Int): List[Int] = {
+
+    val scoresMatrix = instances.groupBy(i => i.getWord).map(w => {
+      computeScore(w._1, w._2, w._2.head.getPos)
+    }).toList
+    val norm = normalizeScores(scoresMatrix)
+    val combined = combineScores(norm)
+    if(combined.forall(x=>x == 0))
+      return List()
+
+    val vector = combined.zipWithIndex.sortBy(_._1).reverse
+      .take(N).map(_._2+1)
+    vector
   }
 
   def computeScore(word: String, instances: List[WordSegment], postag : String): List[Double] = {
@@ -300,27 +353,27 @@ object WordasClassifierApp extends App {
     var countOnce = false
 
     val w = instances.map(i => {
-//      val score = getWordClassifierScore(word, i)
-//      if(score!=0.0)
-//        score
+      val score = getWordClassifierScore(word, i)
+      if(score!=0.0)
+        score
 //      else if(languageHelper.wordSpellVerifier(word)!="true") {
 //        useSpellingClassifier(word, i)
 //      }
-//      else {
-//        val predictedWord = getClosetClassifier(word, postag)
-//        if(predictedWord!="") {
-//          getWordClassifierScore(predictedWord, i)
-//        }
+      else {
+        val predictedWord = getClosetClassifier(word, postag)
+        if(predictedWord!="") {
+          getWordClassifierScore(predictedWord, i)
+        }
 //        else if(!countOnce) {
 //          //writer.println(i.getWord + " Missed")
 //          missedWords += 1
 //          countOnce = true
 //          0.0
 //        }
-//        else
-//          0.0
-//      }
-      getWordClassifierScore(word, i)
+        else
+          0.0
+      }
+//      getWordClassifierScore(word, i)
     })
     w
   }
@@ -356,7 +409,7 @@ object WordasClassifierApp extends App {
     if(wordToClosetClassifier.contains(word))
       return wordToClosetClassifier(word)
 
-    val threshold = if(pos.toUpperCase.contains("NN")) 0.50 else 0.99
+    val threshold = 0.3
 
     val scoreVector = refexpTrainedWords.map(r => {
       getGoogleSimilarity(r, word)
@@ -371,7 +424,7 @@ object WordasClassifierApp extends App {
       val index = scoreVector.indexOf(scoreVector.max)
       val predictedWord = refexpTrainedWords.get(index)
       predictedWordCount += 1
-      //writerGoogleW2V.println(s"Word Classifier ${word} -> Pos ${pos} -> predicted Classifier ${predictedWord}")
+      //writerGoogleW2V.println(s"Word Classifier ${word} -> predicted Classifier ${predictedWord}")
       wordToClosetClassifier.put(word, predictedWord)
       predictedWord
     }

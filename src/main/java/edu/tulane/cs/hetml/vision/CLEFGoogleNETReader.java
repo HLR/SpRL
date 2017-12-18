@@ -119,9 +119,9 @@ public class CLEFGoogleNETReader {
             String ID = s.getAssociatedImageID() + "_" + s.getSegmentId();
             Document d = new Document(ID);
             int len = 0;
-            if(s.referItExpression!=null)
-                len = s.referItExpression.length();
-            Sentence sen = new Sentence(d, ID, 0, len, s.referItExpression);
+            if(s.getExpression()!=null)
+                len = s.getExpression().length();
+            Sentence sen = new Sentence(d, ID, 0, len, s.getExpression());
             allDocuments.add(d);
             allSentences.add(sen);
         }

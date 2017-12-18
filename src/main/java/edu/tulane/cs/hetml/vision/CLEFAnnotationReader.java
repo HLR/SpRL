@@ -21,6 +21,7 @@ public class CLEFAnnotationReader {
     private List<String> allPhrases;
     public List<Document> clefDocuments;
     public List<Sentence> clefSentences;
+    public List<String> referitText;
 
     PrintWriter printToFile;
     PrintWriter printToFileNames;
@@ -42,6 +43,7 @@ public class CLEFAnnotationReader {
         allPhrases = new ArrayList<>();
         clefSentences = new ArrayList<>();
         clefDocuments = new ArrayList<>();
+        referitText = new ArrayList<>();
 
         if(!useNewData) {
             //Load Referit Text
@@ -62,6 +64,7 @@ public class CLEFAnnotationReader {
         else {
             loadPhraseText(directory);
             loadClefNewSegments(directory);
+            analyzeReferit(directory);
         }
 
     }
@@ -177,14 +180,15 @@ public class CLEFAnnotationReader {
     }
 
     private void loadClefNewSegments(String directory) throws IOException {
-        String file = directory + "/ImageSegmentsNewFeatures.txt";
+        String file = directory + "/SegmentCNNFeatures/ImageSegmentsFeaturesNewTest.txt";
         BufferedReader reader = new BufferedReader(new FileReader(file));
         String line;
         while ((line = reader.readLine()) != null) {
             String[] segInfo = line.split(",");
             String key = segInfo[0] + "-" + segInfo[1];
             if(referit.get(key)!=null) {
-                Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]), segInfo[2], referit.get(key), false);
+                Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]), segInfo[2], referit.get(key)
+                        .replace("-" , " "), false);
                 clefSegments.add(s);
             }
         }
@@ -213,13 +217,23 @@ public class CLEFAnnotationReader {
         }
     }
 
+    private void analyzeReferit(String directory) throws IOException {
+        String file = directory + "/ReferGames.txt";
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] segInfo = line.split("\\~");
+            referitText.add(segInfo[1]);
+        }
+    }
+
     private void loadPhraseText(String directory) throws IOException {
-        String file = directory + "/SegmentsPhraseText.txt";
+        String file = directory + "/PhraseSegmentPairs/SegmentsPhraseText_test_head.txt";
         BufferedReader reader = new BufferedReader(new FileReader(file));
         String line;
         while ((line = reader.readLine()) != null) {
             String[] segInfo = line.split("~");
-            if (segInfo.length==3)
+            if (segInfo.length>=3)
                 referit.put(segInfo[0] + "-" + segInfo[1], segInfo[2]);
             else
                 referit.put(segInfo[0] + "-" + segInfo[1], "");
@@ -231,9 +245,9 @@ public class CLEFAnnotationReader {
             String ID = s.getAssociatedImageID() + "_" + s.getSegmentId();
             Document d = new Document(ID);
             int len = 0;
-            if(s.referItExpression!=null)
-                len = s.referItExpression.length();
-            Sentence sen = new Sentence(d, ID, 0, len, s.referItExpression);
+            if(s.getExpression()!=null)
+                len = s.getExpression().length();
+            Sentence sen = new Sentence(d, ID, 0, len, s.getExpression());
             clefDocuments.add(d);
             clefSentences.add(sen);
         }

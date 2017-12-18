@@ -19,7 +19,7 @@ public class Segment {
     private String segmentConcept;
     private String imageId;
     public List<String> tagged;
-    public String referItExpression;
+    private String referItExpression;
     public String filteredTokens;
     private boolean isMatching;
     private Rectangle2D boxDimensions;
