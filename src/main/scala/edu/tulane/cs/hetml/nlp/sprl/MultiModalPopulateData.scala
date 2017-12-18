@@ -197,13 +197,13 @@ object MultiModalPopulateData extends Logging {
 
   private def setBestAlignment() = {
     alignmentMethod match {
-      case "gold" =>
-        phrases().foreach(p => {
-          if (p.containsProperty("goldAlignment")) {
-            p.addPropertyValue("bestAlignment", p.getPropertyFirstValue("goldAlignment"))
-            p.addPropertyValue("bestAlignmentScore", "1.0")
-          }
-        })
+//      case "gold" =>
+//        phrases().foreach(p => {
+//          if (p.containsProperty("goldAlignment")) {
+//            p.addPropertyValue("bestAlignment", p.getPropertyFirstValue("goldAlignment"))
+//            p.addPropertyValue("bestAlignmentScore", "1.0")
+//          }
+//        })
       case _ =>
         sentences().foreach(s => {
           val phraseSegments = (sentences(s) ~> sentenceToPhrase)

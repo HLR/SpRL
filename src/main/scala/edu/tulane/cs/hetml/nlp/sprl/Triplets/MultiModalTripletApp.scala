@@ -130,6 +130,23 @@ object MultiModalTripletApp extends App with Logging {
 
   populateRoleDataFromAnnotatedCorpus()
 
+  val str = if(isTrain) "train" else "test"
+  val os = new PrintStream(s"$resultsDir/segmentPhrasePairs_${str}_head.txt")
+  segments().foreach{
+    s=>
+      val p = (segments(s) ~> segmentToSegmentPhrasePair~> segmentPhrasePairToPhrase)
+          .filter(x=>x.getPropertyFirstValue("bestAlignment") == s.getSegmentId.toString).toList
+      p.foreach{
+        x =>
+          os.println(s.getAssociatedImageID + "~" + s.getSegmentId + "~" + headWordFrom(x) + "~" + x.getSentence.getId
+            + "~" + x.getSentence.getText)
+      }
+      if(p.isEmpty){
+        os.println(s.getAssociatedImageID + "~" + s.getSegmentId + "~")
+      }
+  }
+  os.close()
+
   if (isTrain) {
     println("training started ...")
 
