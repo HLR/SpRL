@@ -73,6 +73,11 @@ public class Segment {
         return referItExpression;
     }
 
+
+    public void setExpression(String expression) {
+        referItExpression = expression;
+    }
+
     public boolean isExpressionAndSegmentMatching() {
         return isMatching;
     }

@@ -22,9 +22,15 @@ public class CLEFAnnotationReader {
     public List<Document> clefDocuments;
     public List<Sentence> clefSentences;
     public List<String> referitText;
+    public List<String> missingWords;
 
     PrintWriter printToFile;
     PrintWriter printToFileNames;
+
+    public CLEFAnnotationReader(String directory) throws IOException {
+        missingWords = new ArrayList<>();
+        loadMissingWords(directory);
+    }
 
     public CLEFAnnotationReader(String directory, Boolean useNewData) throws IOException {
 
@@ -67,6 +73,16 @@ public class CLEFAnnotationReader {
             analyzeReferit(directory);
         }
 
+    }
+
+    private void loadMissingWords(String directory) throws IOException {
+        String file = directory + "/WordClassifier/missingWords.txt";
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] word = line.split("_");
+            missingWords.add(word[0]);
+        }
     }
 
     private void annotatedFilesConversion(String directory) throws IOException {
@@ -223,7 +239,7 @@ public class CLEFAnnotationReader {
         String line;
         while ((line = reader.readLine()) != null) {
             String[] segInfo = line.split("\\~");
-            referitText.add(segInfo[1]);
+            referitText.add(line);
         }
     }
 

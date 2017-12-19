@@ -8,6 +8,12 @@ public class WordSegment {
     private boolean isHead;
     private String pos;
 
+    public WordSegment(String word, Segment segment, Boolean isMatching) {
+        this.word = word;
+        this.segment = segment;
+        this.isMatching = isMatching;
+    }
+
     public WordSegment(String word, Segment segment, Boolean isMatching, boolean isHead, String pos) {
         this.word = word;
         this.segment = segment;
