@@ -7,7 +7,8 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
-
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
+import scala.collection.mutable
 import scala.io.Source
 
 class WordClassifierHelper {
@@ -19,9 +20,12 @@ class WordClassifierHelper {
   val refexpTrainedWords = new RefExpTrainedWordReader(imageDataPath).filteredWords
 
   val allsegments = getSegmentFeatures()
+  val wordToClosetClassifier = new mutable.HashMap[String, String]()
+  val useWord2Vec = true
+  val missedTrainedWords = new CLEFAnnotationReader(imageDataPath).missingWords
 
   //load Trained classifiers
-  loadAllTrainedClassifiers()
+  loadAllTrainedClassifiers(true)
 
   def getSegmentFeatures() : List[Segment] = {
     val filename = imageDataPath + "/ImageSegmentsNewFeatures.txt"
@@ -54,45 +58,91 @@ class WordClassifierHelper {
 
   def computeMatrix(instances: List[WordSegment]): List[Double] = {
     val scoresMatrix = instances.groupBy(i => i.getWord).map(w => {
-      computeScore(w._1, w._2)
+      computeScore(w._1, w._2, useWord2Vec)
     }).toList
     val norm = normalizeScores(scoresMatrix)
     val vector = combineScores(norm)
     vector
   }
 
-  def computeScore(word: String, instances: List[WordSegment]): List[Double] = {
-      instances.map(i => {
+  def computeScore(word: String, instances: List[WordSegment], useWord2Vec: Boolean): List[Double] = {
+    val w = instances.map(i => {
+      if(useWord2Vec) {
+        val score = getWordClassifierScore(word, i)
+        if(score!=0.0)
+          score
+        else {
+          val predictedWord = getClosetClassifier(word)
+          if(predictedWord!="") {
+            getWordClassifierScore(predictedWord, i)
+          }
+          else
+            0.0
+        }
+      }
+      else
         getWordClassifierScore(word, i)
-      })
+    })
+    w
   }
 
-  def loadAllTrainedClassifiers(): Unit = {
-      refexpTrainedWords.foreach(word => {
+  def loadAllTrainedClassifiers(loadMissedTrained: Boolean): Unit ={
+    refexpTrainedWords.foreach(word => {
+      val c = new SingleWordasClassifer(word)
+      c.modelSuffix = word
+      c.modelDir = classifierDirectory
+      c.load()
+      trainedWordClassifier.put(word, c)
+    })
+    if(loadMissedTrained) {
+      missedTrainedWords.foreach(word => {
         val c = new SingleWordasClassifer(word)
         c.modelSuffix = word
         c.modelDir = classifierDirectory
         c.load()
         trainedWordClassifier.put(word, c)
       })
+    }
+  }
+
+  def getClosetClassifier(word: String) : String = {
+    // RefExp Trained words
+    if(wordToClosetClassifier.contains(word))
+      return wordToClosetClassifier(word)
+
+    val threshold = 0.3
+
+    val scoreVector = refexpTrainedWords.map(r => {
+      getGoogleSimilarity(r, word)
+    })
+
+    if(scoreVector.max > threshold) {
+      val index = scoreVector.indexOf(scoreVector.max)
+      val predictedWord = refexpTrainedWords.get(index)
+      wordToClosetClassifier.put(word, predictedWord)
+      predictedWord
+    }
+    else {
+      wordToClosetClassifier.put(word, "")
+      ""
+    }
   }
 
   def getWordClassifierScore(word: String, i: WordSegment) : Double ={
-      if(trainedWordClassifier.contains(word)) {
-        val c = trainedWordClassifier(word)
-        val scores = c.classifier.scores(i)
-        if(scores.size()>0) {
-          val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
-          orgValue(0).score
-        }
-        else {
-          0.0
-        }
+    if(trainedWordClassifier.contains(word)) {
+      val c = trainedWordClassifier(word)
+      val scores = c.classifier.scores(i)
+      if(scores.size()>0) {
+        val orgValue = scores.toArray.filter(s => s.value.equalsIgnoreCase("true"))
+        orgValue(0).score
       }
-      else
+      else {
         0.0
+      }
+    }
+    else
+      0.0
   }
-
   def normalizeScores(scoreMatrix: List[List[Double]]):List[List[Double]] = {
       scoreMatrix.map(w=> w.map(s=>if(s == 0) 0.0 else s/w.map(Math.abs).sum))
   }

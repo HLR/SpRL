@@ -115,7 +115,8 @@ object MultiModalSpRLSensors {
             r.setProperty("similarity", sim.toString)
 
           case "classifier" =>
-            val sim = alignmentHelper.getScore(p.getText, s)
+            val lemma = headWordLemma(p)
+            val sim = alignmentHelper.getScore(lemma, s)
             r.setProperty("similarity", sim.toString)
         }
 
