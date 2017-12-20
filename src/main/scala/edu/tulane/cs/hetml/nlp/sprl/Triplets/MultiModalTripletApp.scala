@@ -252,12 +252,14 @@ object MultiModalTripletApp extends App with Logging {
           val res = x.test()
           ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
-      val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
-      ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
-      prepClassifiers.foreach {
-        x =>
-          val res = x._2.test(visualTripletsFiltered)
-          ReportHelper.saveEvalResults(outStream, s"${x._1}(within data model)", res)
+      if(visualTripletsFiltered.nonEmpty) {
+        val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
+        ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
+        prepClassifiers.foreach {
+          x =>
+            val res = x._2.test(visualTripletsFiltered)
+            ReportHelper.saveEvalResults(outStream, s"${x._1}(within data model)", res)
+        }
       }
     }
     else {
@@ -284,14 +286,15 @@ object MultiModalTripletApp extends App with Logging {
           val res = x.test()
           ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
-      val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
-      ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
-      constrainedPrepClassifiers.foreach {
-        x =>
-          val res = x.test(visualTripletsFiltered)
-          ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
+      if(visualTripletsFiltered.nonEmpty) {
+        val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
+        ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
+        constrainedPrepClassifiers.foreach {
+          x =>
+            val res = x.test(visualTripletsFiltered)
+            ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
+        }
       }
-
       //      report(x => TripletRelationConstraintClassifier(x),
       //        x => TRConstraintClassifier(x),
       //        x => LMConstraintClassifier(x),

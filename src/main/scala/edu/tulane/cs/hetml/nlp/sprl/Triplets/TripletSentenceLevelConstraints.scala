@@ -268,16 +268,15 @@ object TripletSentenceLevelConstraints {
   val tripletConstraints = ConstrainedClassifier.constraint[Sentence] {
 
     x: Sentence =>
-      var a =
+      var a: FirstOrderConstraint = null
+      a =
       //roleIntegrity(x) and
         roleShouldHaveRel(x) and
           boostTrajector(x) and
           boostLandmark(x) and
           boostTripletByGeneralType(x) and
           boostGeneralByDirectionMulti(x) and
-          boostGeneralByRegionMulti(x) and
-          discardRelationByImage(x) and
-          approveRelationByImage(x) //and
+          boostGeneralByRegionMulti(x)
       //prepositionConsistency(x) and
       //matchVisualAndTextRels(x)
       //prepositionsConsistency(x) and
@@ -287,11 +286,11 @@ object TripletSentenceLevelConstraints {
       //noDuplicates(x)
       //boostTripletByImageTriplet(x)
 
-      //      if (mSpRLConfigurator.imageConstraints)
-      //        a = a and
-
-      //          //boostTrajectorByImage(x) and
-      //          uniqueSegmentAssignment(x)
+      if (mSpRLConfigurator.populateImages) {
+        a = a and
+          discardRelationByImage(x) and
+          approveRelationByImage(x) //and
+      }
       a
   }
 
