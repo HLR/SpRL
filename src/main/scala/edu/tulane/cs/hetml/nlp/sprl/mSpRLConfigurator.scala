@@ -11,8 +11,8 @@ object mSpRLConfigurator {
   val alignmentAnnotationPath = imageDataPath + "/alignments/"
   val modelDir = "models/mSpRL/"
   val spatialIndicatorLex = "data/mSprl/spatialIndicator.lex"
-  val trainFile = "data/TrainSet.xml"//"data/mSprl/saiapr_tc-12/newSprl2017_train.xml"//
-  val testFile = "data/TestSet.xml"//"data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//
+  val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"//"data/TrainSet.xml"//
+  val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//"data/TestSet.xml"//
   val suffix = ""
   val model = FeatureSets.BaseLineWithImage
   var isTrain = true
