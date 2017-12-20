@@ -22,7 +22,7 @@ public class Relation {
     }
 
     public boolean containsProperty(String name) {
-        return properties.containsKey(name);
+        return properties.containsKey(name) && properties.get(name) != null;
     }
 
     public String getProperty(String name) {
