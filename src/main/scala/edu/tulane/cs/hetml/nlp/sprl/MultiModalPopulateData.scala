@@ -136,13 +136,28 @@ object MultiModalPopulateData extends Logging {
 
     logger.info("Data population started ...")
     val isTrain = false
+
     documents.populate(documentList, isTrain)
     sentences.populate(documentList.flatMap(d => documentToSentenceGenerating(d)), isTrain)
     if (populateNullPairs) {
       phrases.populate(List(dummyPhrase), isTrain)
     }
-    val candidateRelations = CandidateGenerator.generatePairCandidates(phrases().toList, populateNullPairs, indicatorClassifier)
-    pairs.populate(candidateRelations, isTrain)
+    val spCandidatesTrain = CandidateGenerator.getIndicatorCandidates(phrases().toList)
+    val trCandidatesTrain = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+      .filterNot(x => spCandidatesTrain.contains(x))
+    val lmCandidatesTrain = CandidateGenerator.getLandmarkCandidates(phrases().toList)
+      .filterNot(x => spCandidatesTrain.contains(x))
+
+
+    logger.info("Triplet population started ...")
+    val candidateRelations = CandidateGenerator.generateAllTripletCandidates(
+      x => trCandidatesTrain.exists(_.getId == x.getId),
+      x => indicatorClassifier(x),
+      x => lmCandidatesTrain.exists(_.getId == x.getId),
+      isTrain
+    )
+
+    triplets.populate(candidateRelations, isTrain)
 
     logger.info("Data population finished.")
   }

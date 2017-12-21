@@ -25,6 +25,6 @@ object mSpRLConfigurator {
   val useConstraints = true
   val trainPrepositionClassifier = false
   val alignmentMethod = "gold" // possible values: "classifier" "gold", "w2v"
-  val populateImages = true //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
+  var populateImages = true //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val globalSpans = false // set true when dataset has global spans for roles
 }
