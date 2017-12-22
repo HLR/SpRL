@@ -21,16 +21,9 @@ public class CLEFAnnotationReader {
     private List<String> allPhrases;
     public List<Document> clefDocuments;
     public List<Sentence> clefSentences;
-    public List<String> referitText;
-    public List<String> missingWords;
 
     PrintWriter printToFile;
     PrintWriter printToFileNames;
-
-    public CLEFAnnotationReader(String directory) throws IOException {
-        missingWords = new ArrayList<>();
-        loadMissingWords(directory);
-    }
 
     public CLEFAnnotationReader(String directory, Boolean useNewData) throws IOException {
 
@@ -49,40 +42,21 @@ public class CLEFAnnotationReader {
         allPhrases = new ArrayList<>();
         clefSentences = new ArrayList<>();
         clefDocuments = new ArrayList<>();
-        referitText = new ArrayList<>();
 
-        if(!useNewData) {
-            //Load Referit Text
-            //loadReferit(directory);
+        //Load Referit Text
+        //loadReferit(directory);
 
-            //Annotated File Conversion
-            String annDir = directory + "/annotatedFiles";
-            annotatedFilesConversion(annDir);
+        //Annotated File Conversion
+        String annDir = directory + "/annotatedFiles";
+        annotatedFilesConversion(annDir);
 
-            //Load Test Images
-            loadTestImage(annDir);
+        //Load Test Images
+        loadTestImage(annDir);
 
-            //Load Test Segments
-            loadTestSegment(annDir);
+        //Load Test Segments
+        loadTestSegment(annDir);
 
-            generateNLPBaseClasses();
-        }
-        else {
-            loadPhraseText(directory);
-            loadClefNewSegments(directory);
-            analyzeReferit(directory);
-        }
-
-    }
-
-    private void loadMissingWords(String directory) throws IOException {
-        String file = directory + "/WordClassifier/missingWords.txt";
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] word = line.split("_");
-            missingWords.add(word[0]);
-        }
+        generateNLPBaseClasses();
     }
 
     private void annotatedFilesConversion(String directory) throws IOException {
@@ -195,21 +169,6 @@ public class CLEFAnnotationReader {
         }
     }
 
-    private void loadClefNewSegments(String directory) throws IOException {
-        String file = directory + "/SegmentCNNFeatures/ImageSegmentsFeaturesNewTest.txt";
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] segInfo = line.split(",");
-            String key = segInfo[0] + "-" + segInfo[1];
-            if(referit.get(key)!=null) {
-                Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]), segInfo[2], referit.get(key)
-                        .replace("-" , " "), false);
-                clefSegments.add(s);
-            }
-        }
-    }
-
     private void loadTestSegment(String directory) throws IOException {
         String file = directory + "/Output/ClefSegment.txt";
         BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -218,41 +177,8 @@ public class CLEFAnnotationReader {
             String[] segInfo = line.split("\\~");
             System.out.println(line);
             String exp = removeDuplicates(segInfo[2]);
-            Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]),"", exp,false);
+            Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]),"", exp);
             clefSegments.add(s);
-        }
-    }
-
-    private void loadReferit(String directory) throws IOException {
-        String file = directory + "/ReferGames.txt";
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] segInfo = line.split("\\~");
-            referit.put(segInfo[0], segInfo[1] + "~" + segInfo[2] + "~" + segInfo[3]);
-        }
-    }
-
-    private void analyzeReferit(String directory) throws IOException {
-        String file = directory + "/ReferGames.txt";
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] segInfo = line.split("\\~");
-            referitText.add(line);
-        }
-    }
-
-    private void loadPhraseText(String directory) throws IOException {
-        String file = directory + "/PhraseSegmentPairs/SegmentsPhraseText_test_head.txt";
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] segInfo = line.split("~");
-            if (segInfo.length>=3)
-                referit.put(segInfo[0] + "-" + segInfo[1], segInfo[2]);
-            else
-                referit.put(segInfo[0] + "-" + segInfo[1], "");
         }
     }
 
@@ -261,9 +187,9 @@ public class CLEFAnnotationReader {
             String ID = s.getAssociatedImageID() + "_" + s.getSegmentId();
             Document d = new Document(ID);
             int len = 0;
-            if(s.getExpression()!=null)
-                len = s.getExpression().length();
-            Sentence sen = new Sentence(d, ID, 0, len, s.getExpression());
+            if(s.getSegmentConcept()!=null)
+                len = s.getSegmentConcept().length();
+            Sentence sen = new Sentence(d, ID, 0, len, s.getSegmentConcept());
             clefDocuments.add(d);
             clefSentences.add(sen);
         }
