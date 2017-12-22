@@ -19,18 +19,16 @@ public class Segment {
     private String segmentConcept;
     private String imageId;
     public List<String> tagged;
-    private String referItExpression;
+//    private String referItExpression;
     public String filteredTokens;
     private boolean isMatching;
     private Rectangle2D boxDimensions;
 
-    public Segment(String ImageId, int segmentId, String segmentFeatures, String referItExpression, boolean isMatching) {
+    public Segment(String ImageId, int segmentId, String segmentFeatures, String segmentConcept) {
         this.imageId = ImageId;
         this.segmentId = segmentId;
         this.segmentFeatures = segmentFeatures;
-        this.referItExpression = referItExpression;
-        this.isMatching = isMatching;
-        this.tagged = new ArrayList<>();
+        this.segmentConcept = segmentConcept;
     }
 
     public Segment(String ImageId, int segmentId, int segmentCode, String segmentFeatures, String segmentConcept,
@@ -69,14 +67,19 @@ public class Segment {
         return segmentConcept;
     }
 
-    public String getExpression() {
-        return referItExpression;
+    public void setSegmentConcept(String concept)
+    {
+        this.segmentConcept = concept;
     }
 
-
-    public void setExpression(String expression) {
-        referItExpression = expression;
-    }
+//    public String getExpression() {
+//        return referItExpression;
+//    }
+//
+//
+//    public void setExpression(String expression) {
+//        referItExpression = expression;
+//    }
 
     public boolean isExpressionAndSegmentMatching() {
         return isMatching;

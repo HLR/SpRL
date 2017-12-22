@@ -159,7 +159,7 @@ object MultiModalPopulateData extends Logging {
     }
   }
 
-  private def getAdjustedSegments(segments: List[Segment]): List[Segment] = {
+  def getAdjustedSegments(segments: List[Segment]): List[Segment] = {
     val alignedPhrases = phrases().filter(_.containsProperty("goldAlignment"))
     val update = alignedPhrases
       .filter(p => segments.exists(s => s.getAssociatedImageID == p.getPropertyFirstValue("imageId") &&
