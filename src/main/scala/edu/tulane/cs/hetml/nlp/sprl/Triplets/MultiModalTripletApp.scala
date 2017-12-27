@@ -160,7 +160,34 @@ object MultiModalTripletApp extends App with Logging {
         x.test(triplets())
         x.save()
     }
+    if(populateImages) {
+      val gtRels = triplets().filter(x => tripletIsRelation(x) == "Relation"
+        && x.getArgument(0).containsProperty("goldAlignment") && x.getArgument(2).containsProperty("goldAlignment"))
+      TripletImageRegionClassifier.learn(iterations, gtRels)
+      TripletImageRegionClassifier.modelDir = s"models/mSpRL/triplet/$featureSet/"
+      TripletImageRegionClassifier.save()
 
+      val errorWriter = new PrintStream(s"$resultsDir/region_error_analysis_${if (isTrain) "train" else "test"}.txt")
+      gtRels.foreach {
+        r =>
+          val aligned = triplets(r) ~> tripletToVisualTriplet
+          if (aligned.nonEmpty) {
+            val x = aligned.head
+            val features = List(
+              x.getTrBox.getX, x.getTrBox.getY, x.getTrBox.getWidth, x.getTrBox.getHeight,
+              x.getLmBox.getX, x.getLmBox.getY, x.getLmBox.getWidth, x.getLmBox.getHeight,
+              x.getEuclideanDistance, x.getIou, x.getLmAreaBbox, x.getLmAreaImage, x.getLmAspectRatio,
+              x.getTrAreaBbox, x.getTrAreaImage, x.getTrAreawrtLM, x.getTrAspectRatio, x.getAbove, x.getBelow,
+              x.getLeft, x.getRight, x.getIntersectionArea, x.getUnionArea).mkString("\t\t")
+
+            errorWriter.println(
+              x.getImageId + "\t\t" + r.getProperty("ActualId") + "\t\t" + x.getFirstSegId + "\t\t" + x.getTrajector +
+                "\t\t" + x.getSecondSegId + "\t\t" + x.getLandmark + "\t\t" + x.getSp + "\t\t" +
+                TripletImageRegionClassifier(r) + "\t\t" + tripletSpecificType(r) + "\t\t" + features)
+          }
+      }
+      errorWriter.close()
+    }
     if (trainPrepositionClassifier) {
 
       val visualTripletsFiltered = visualTriplets().toList.filter(x => x.getSp != null)
@@ -230,6 +257,34 @@ object MultiModalTripletApp extends App with Logging {
       x => IndicatorRoleClassifier(x) == "true",
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
+    if(populateImages) {
+      val gtRels = triplets().filter(x => tripletIsRelation(x) == "Relation"
+        && x.getArgument(0).containsProperty("goldAlignment") && x.getArgument(2).containsProperty("goldAlignment"))
+      TripletImageRegionClassifier.modelDir = s"models/mSpRL/triplet/$featureSet/"
+      TripletImageRegionClassifier.load()
+      TripletImageRegionClassifier.test(gtRels)
+      val errorWriter = new PrintStream(s"$resultsDir/region_error_analysis_${if (isTrain) "train" else "test"}.txt")
+      gtRels.foreach {
+        r =>
+          val aligned = triplets(r) ~> tripletToVisualTriplet
+          if (aligned.nonEmpty) {
+            val x = aligned.head
+            val features = List(
+              x.getTrBox.getX, x.getTrBox.getY, x.getTrBox.getWidth, x.getTrBox.getHeight,
+              x.getLmBox.getX, x.getLmBox.getY, x.getLmBox.getWidth, x.getLmBox.getHeight,
+              x.getEuclideanDistance, x.getIou, x.getLmAreaBbox, x.getLmAreaImage, x.getLmAspectRatio,
+              x.getTrAreaBbox, x.getTrAreaImage, x.getTrAreawrtLM, x.getTrAspectRatio, x.getAbove, x.getBelow,
+              x.getLeft, x.getRight, x.getIntersectionArea, x.getUnionArea).mkString("\t\t")
+
+            errorWriter.println(
+              x.getImageId + "\t\t" + r.getProperty("ActualId") + "\t\t" + x.getFirstSegId + "\t\t" + x.getTrajector +
+                "\t\t" + x.getSecondSegId + "\t\t" + x.getLandmark + "\t\t" + x.getSp + "\t\t" +
+                TripletImageRegionClassifier(r) + "\t\t" + tripletSpecificType(r) + "\t\t" + features)
+          }
+      }
+      errorWriter.close()
+    }
+
     if (!useConstraints) {
       val visualTripletsFiltered = visualTriplets.getTestingInstances.toList.filter(x => x.getSp != null)
       val trajectors = phrases.getTestingInstances.filter(x => TrajectorRoleClassifier(x) == "true").toList
@@ -252,7 +307,7 @@ object MultiModalTripletApp extends App with Logging {
           val res = x.test()
           ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
-      if(visualTripletsFiltered.nonEmpty) {
+      if (visualTripletsFiltered.nonEmpty) {
         val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
         ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
         prepClassifiers.foreach {
@@ -286,7 +341,7 @@ object MultiModalTripletApp extends App with Logging {
           val res = x.test()
           ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
-      if(visualTripletsFiltered.nonEmpty) {
+      if (visualTripletsFiltered.nonEmpty) {
         val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
         ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
         constrainedPrepClassifiers.foreach {
