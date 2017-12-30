@@ -64,7 +64,7 @@ object ExpressionClassifierApp extends App {
     sentences.populate(allSentence, isTrain)
   }
   else {
-    val ClefAnnReader = new CLEFAnnotationReader(imageDataPath)
+    val ClefAnnReader = new CLEFAnnotationReader(imageDataPath, false)
 
     val clefSegments =
       if(useAnntotatedClef) {

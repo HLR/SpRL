@@ -88,12 +88,14 @@ object MultiModalSpRLSensors {
   val matchingCandidates = List("NN", "JJR", "JJ", "NNP", "NNS")
 
   lazy val alignmentHelper = new WordClassifierHelper()
+  alignmentHelper.loadAllTrainedClassifiers(true)
 
   def segmentToSegmentPhrasePairs(s: Segment): List[Relation] = {
     val image = images().filter(i => i.getId == s.getAssociatedImageID)
     val phrases = (images(image) ~> -documentToImage ~> documentToSentence ~> sentenceToPhrase)
       .filter(p => p != dummyPhrase && matchingCandidates.exists(x => headWordPos(p).toUpperCase().contains(x)))
       .toList
+
     phrases.map {
       p =>
         val r = new Relation()
@@ -115,10 +117,10 @@ object MultiModalSpRLSensors {
             r.setProperty("similarity", sim.toString)
 
           case "classifier" =>
-            val sim = alignmentHelper.getScore(p.getText, s)
+            val lemma = headWordLemma(p)
+            val sim = alignmentHelper.getPhraseHeadwordSegmentScore(lemma, s)
             r.setProperty("similarity", sim.toString)
         }
-
         r
     }
   }

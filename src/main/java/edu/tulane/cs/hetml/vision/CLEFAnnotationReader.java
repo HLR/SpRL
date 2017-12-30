@@ -25,7 +25,7 @@ public class CLEFAnnotationReader {
     PrintWriter printToFile;
     PrintWriter printToFileNames;
 
-    public CLEFAnnotationReader(String directory) throws IOException {
+    public CLEFAnnotationReader(String directory, Boolean useNewData) throws IOException {
 
         File d = new File(directory);
 
@@ -44,7 +44,7 @@ public class CLEFAnnotationReader {
         clefDocuments = new ArrayList<>();
 
         //Load Referit Text
-        loadReferit(directory);
+        //loadReferit(directory);
 
         //Annotated File Conversion
         String annDir = directory + "/annotatedFiles";
@@ -108,14 +108,14 @@ public class CLEFAnnotationReader {
                             // Referit Key
                             String referitKey = fileName + "_" + segCodeText[0] + ".jpg";
                             String newData;
-                            if (referit.get(referitKey) != null) {
-                                String[] oldData = referit.get(referitKey).split("~");
-                                // Our Text in Referit
-                                newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~" + oldData[1] + "~" + oldData[2];
-                            } else {
+//                            if (referit.get(referitKey) != null) {
+//                                String[] oldData = referit.get(referitKey).split("~");
+//                                // Our Text in Referit
+//                                newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~" + oldData[1] + "~" + oldData[2];
+//                            } else {
                                 //Segment Description doesn't exist in ReferIt Dataset
                                 newData = fileName + "~" + segCodeText[0] + "~" + arg1Phrase + "~0.0~0.0";
-                            }
+//                            }
                             //Save the new generated data to file
                             printToFile.println(newData);
                         }
@@ -177,18 +177,8 @@ public class CLEFAnnotationReader {
             String[] segInfo = line.split("\\~");
             System.out.println(line);
             String exp = removeDuplicates(segInfo[2]);
-            Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]),"", exp,false);
+            Segment s = new Segment(segInfo[0], Integer.parseInt(segInfo[1]),"", exp);
             clefSegments.add(s);
-        }
-    }
-
-    private void loadReferit(String directory) throws IOException {
-        String file = directory + "/ReferGames.txt";
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] segInfo = line.split("\\~");
-            referit.put(segInfo[0], segInfo[1] + "~" + segInfo[2] + "~" + segInfo[3]);
         }
     }
 
@@ -197,9 +187,9 @@ public class CLEFAnnotationReader {
             String ID = s.getAssociatedImageID() + "_" + s.getSegmentId();
             Document d = new Document(ID);
             int len = 0;
-            if(s.referItExpression!=null)
-                len = s.referItExpression.length();
-            Sentence sen = new Sentence(d, ID, 0, len, s.referItExpression);
+            if(s.getSegmentConcept()!=null)
+                len = s.getSegmentConcept().length();
+            Sentence sen = new Sentence(d, ID, 0, len, s.getSegmentConcept());
             clefDocuments.add(d);
             clefSentences.add(sen);
         }
