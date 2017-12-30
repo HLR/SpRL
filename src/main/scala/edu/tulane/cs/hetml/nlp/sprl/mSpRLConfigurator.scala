@@ -11,12 +11,13 @@ object mSpRLConfigurator {
   val alignmentAnnotationPath = imageDataPath + "/alignments/"
   val modelDir = "models/mSpRL/"
   val spatialIndicatorLex = "data/mSprl/spatialIndicator.lex"
-  val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"
-  val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//"data/TrainSet.xml"
+  val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"//"data/TrainSet.xml"//
+  val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//"data/TestSet.xml"//
   val suffix = ""
   val model = FeatureSets.BaseLineWithImage
   var isTrain = false
-  val useAnntotatedClef = true
+  val trainTestTogether = false
+  val useAnntotatedClef = false
   val jointTrain = false
   val skipIndividualClassifiersTraining = false  /* When using joint train, it will ignore individual classifiers
                                                   * training and loads them from the disk*/
@@ -24,7 +25,6 @@ object mSpRLConfigurator {
   val useConstraints = false
   val trainPrepositionClassifier = false
   val alignmentMethod = "gold" // possible values: "classifier" "gold", "w2v"
-  val imageConstraints = model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
-  val populateImages = true //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
+  var populateImages = true //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val globalSpans = false // set true when dataset has global spans for roles
 }

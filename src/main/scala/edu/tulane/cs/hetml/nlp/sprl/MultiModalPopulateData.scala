@@ -19,9 +19,20 @@ import scala.collection.mutable.ListBuffer
 
 object MultiModalPopulateData extends Logging {
 
-  lazy val xmlReader = new SpRLXmlReader(if (isTrain) trainFile else testFile, globalSpans)
-  lazy val imageReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, isTrain)
-  lazy val alignmentReader = new AlignmentReader(alignmentAnnotationPath, isTrain)
+  lazy val xmlTestReader = new SpRLXmlReader(testFile, globalSpans)
+  lazy val xmlTrainReader = new SpRLXmlReader(trainFile, globalSpans)
+
+  def xmlReader = if (isTrain) xmlTrainReader else xmlTestReader
+
+  lazy val imageTrainReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, true)
+  lazy val imageTestReader = new ImageReaderHelper(imageDataPath, trainFile, testFile, false)
+
+  def imageReader = if (isTrain) imageTrainReader else imageTestReader
+
+  lazy val alignmentTrainReader = new AlignmentReader(alignmentAnnotationPath, true)
+  lazy val alignmentTestReader = new AlignmentReader(alignmentAnnotationPath, false)
+
+  def alignmentReader = if (isTrain) alignmentTrainReader else alignmentTestReader
 
   def populateRoleDataFromAnnotatedCorpus(populateNullPairs: Boolean = true): Unit = {
     logger.info("Role population started ...")
@@ -49,12 +60,12 @@ object MultiModalPopulateData extends Logging {
 
     xmlReader.setRoles(phraseInstances)
 
-    alignmentReader.setAlignments(phraseInstances)
-
     if (populateImages) {
+      alignmentReader.setAlignments(phraseInstances)
       images.populate(imageReader.getImageList, isTrain)
       val segs = getAdjustedSegments(imageReader.getSegmentList)
       segments.populate(segs, isTrain)
+      imageSegmentsDic = getImageSegmentsDic()
       setBestAlignment()
     }
 
@@ -125,13 +136,28 @@ object MultiModalPopulateData extends Logging {
 
     logger.info("Data population started ...")
     val isTrain = false
+
     documents.populate(documentList, isTrain)
     sentences.populate(documentList.flatMap(d => documentToSentenceGenerating(d)), isTrain)
     if (populateNullPairs) {
       phrases.populate(List(dummyPhrase), isTrain)
     }
-    val candidateRelations = CandidateGenerator.generatePairCandidates(phrases().toList, populateNullPairs, indicatorClassifier)
-    pairs.populate(candidateRelations, isTrain)
+    val spCandidatesTrain = CandidateGenerator.getIndicatorCandidates(phrases().toList)
+    val trCandidatesTrain = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+      .filterNot(x => spCandidatesTrain.contains(x))
+    val lmCandidatesTrain = CandidateGenerator.getLandmarkCandidates(phrases().toList)
+      .filterNot(x => spCandidatesTrain.contains(x))
+
+
+    logger.info("Triplet population started ...")
+    val candidateRelations = CandidateGenerator.generateAllTripletCandidates(
+      x => trCandidatesTrain.exists(_.getId == x.getId),
+      x => indicatorClassifier(x),
+      x => lmCandidatesTrain.exists(_.getId == x.getId),
+      isTrain
+    )
+
+    triplets.populate(candidateRelations, isTrain)
 
     logger.info("Data population finished.")
   }
@@ -150,8 +176,10 @@ object MultiModalPopulateData extends Logging {
 
   private def getAdjustedSegments(segments: List[Segment]): List[Segment] = {
     val alignedPhrases = phrases().filter(_.containsProperty("goldAlignment"))
-    val update = alignedPhrases.filter(_.getPropertyFirstValue("goldAlignment") != "-1")
-    val addNew = alignedPhrases.filter(_.getPropertyFirstValue("goldAlignment") == "-1")
+    val update = alignedPhrases
+      .filter(p => segments.exists(s => s.getAssociatedImageID == p.getPropertyFirstValue("imageId") &&
+        s.getSegmentId == p.getPropertyFirstValue("segId").toInt))
+    val addNew = alignedPhrases.filter(p => !update.contains(p))
 
     update.foreach {
       p =>
@@ -167,7 +195,6 @@ object MultiModalPopulateData extends Logging {
 
         seg.getBoxDimensions.setRect(x, y, w, h)
     }
-    var sId = 1000
     val newSegs = addNew.map {
       p =>
         val imId = p.getPropertyFirstValue("imageId")
@@ -176,48 +203,32 @@ object MultiModalPopulateData extends Logging {
         val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
         val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
         val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
-        sId += 1
-        p.removeProperty("segId")
-        p.addPropertyValue("segId", sId.toString)
-        p.removeProperty("goldAlignment")
-        p.addPropertyValue("goldAlignment", sId.toString)
-        new Segment(imId, sId, -1, "", headWordFrom(p), new Rectangle2D.Double(x, y, w, h))
+        new Segment(imId, p.getPropertyFirstValue("segId").toInt, -1, "", headWordFrom(p), new Rectangle2D.Double(x, y, w, h))
     }
 
     segments ++ newSegs
   }
 
   private def setBestAlignment() = {
-    alignmentMethod match {
-      case "gold" =>
-        phrases().foreach(p => {
-          if (p.containsProperty("goldAlignment")) {
-            p.addPropertyValue("bestAlignment", p.getPropertyFirstValue("goldAlignment"))
-            p.addPropertyValue("bestAlignmentScore", "1.0")
+    sentences().foreach(s => {
+      val phraseSegments = (sentences(s) ~> sentenceToPhrase)
+        .toList.flatMap(p => (phrases(p) ~> -segmentPhrasePairToPhrase).toList)
+        .sortBy(x => x.getProperty("similarity").toDouble).reverse
+      val usedSegments = ListBuffer[String]()
+      val usedPhrases = ListBuffer[String]()
+      phraseSegments.foreach(pair => {
+        if (!usedPhrases.contains(pair.getArgumentId(0)) && !usedSegments.contains(pair.getArgumentId(1))) {
+          usedPhrases.add(pair.getArgumentId(0))
+          usedSegments.add(pair.getArgumentId(1))
+          val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
+          if (pair.getProperty("similarity").toDouble > 0.30 || alignmentMethod == "classifier") {
+            p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
+            p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
           }
-        })
-      case _ =>
-        sentences().foreach(s => {
-          val phraseSegments = (sentences(s) ~> sentenceToPhrase)
-            .toList.flatMap(p => (phrases(p) ~> -segmentPhrasePairToPhrase).toList)
-            .sortBy(x => x.getProperty("similarity").toDouble).reverse
-          val usedSegments = ListBuffer[String]()
-          val usedPhrases = ListBuffer[String]()
-          phraseSegments.foreach(pair => {
-            if (!usedPhrases.contains(pair.getArgumentId(0)) && !usedSegments.contains(pair.getArgumentId(1))) {
-              usedPhrases.add(pair.getArgumentId(0))
-              usedSegments.add(pair.getArgumentId(1))
-              val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
-              if (pair.getProperty("similarity").toDouble > 0.30 || alignmentMethod == "classifier") {
-                p.addPropertyValue("bestAlignment", pair.getArgumentId(1))
-                p.addPropertyValue("imageId", pair.getArgument(1).asInstanceOf[Segment].getAssociatedImageID)
-                p.addPropertyValue("bestAlignmentScore", pair.getProperty("similarity"))
-              }
-            }
-          }
-          )
-        })
-    }
+        }
+      }
+      )
+    })
   }
 }
 

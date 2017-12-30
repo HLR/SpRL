@@ -127,45 +127,12 @@ object MultiModalSpRLSensors {
     pair.getArgumentId(0) == phrase.getId
   }
 
-  def TripletToVisualTripletMatching(r: Relation, vt: ImageTriplet): Boolean = {
-    val (first, second, third) = getTripletArguments(r)
-    if(first.getPropertyFirstValue("imageId") != vt.getImageId)
-      return false
-    val trSegId = first.getPropertyFirstValue("bestAlignment")
-    val lmSegId = third.getPropertyFirstValue("bestAlignment")
-    if (trSegId != null && lmSegId != null) {
-
-      val trSeg = (phrases(first) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
-        .find(_.getSegmentId.toString.equalsIgnoreCase(trSegId))
-      val lmSeg = (phrases(third) ~> -segmentPhrasePairToPhrase ~> -segmentToSegmentPhrasePair)
-        .find(_.getSegmentId.toString.equalsIgnoreCase(lmSegId))
-
-      if (trSeg.nonEmpty && lmSeg.nonEmpty) {
-
-        if (vt.getImageId == trSeg.get.getAssociatedImageID &&
-          vt.getFirstSegId.toString == trSegId && vt.getSecondSegId.toString == lmSegId) {
-          vt.setTrajector(first.getText.toLowerCase())
-          vt.setLandmark(third.getText.toLowerCase())
-          if (tripletIsRelation(r) == "Relation")
-            vt.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
-          return true
-        }
-      }
-    }
-    false
-  }
-
-  lazy val imageSegments = segments().groupBy(_.getAssociatedImageID).map{
-    i =>
-      val t = i._2.flatMap { seg1 =>
-        val img = images().find(_.getId == seg1.getAssociatedImageID).get
-        i._2.filter(x => x != seg1).map {
-          seg2 =>
-            new ImageTriplet(seg1.getAssociatedImageID, seg1.getSegmentId,
-              seg2.getSegmentId, seg1.getBoxDimensions, seg2.getBoxDimensions, img.getWidth, img.getHeight)
-        }
-      }
-      (i._1, t)
+  def SentenceToVisualTripletMatching(s: Sentence, vt: ImageTriplet): Boolean = {
+    val triplet = (visualTriplets(vt) ~> -tripletToVisualTriplet).headOption
+    if(triplet.nonEmpty)
+      triplet.get.getParent.getId == s.getId
+    else
+      false
   }
 
   def TripletToVisualTripletGenerating(r: Relation): List[ImageTriplet] = {
@@ -182,7 +149,7 @@ object MultiModalSpRLSensors {
       if (trSeg.nonEmpty && lmSeg.nonEmpty) {
 
         val imId = trSeg.get.getAssociatedImageID
-        val imageRel = imageSegments(imId).filter(x =>
+        val imageRel = imageSegmentsDic(imId).filter(x =>
           x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
 
         imageRel.foreach {

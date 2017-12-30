@@ -35,8 +35,8 @@ object MultiModalSpRLTripletClassifiers {
       tripletDistanceTrSp, tripletDistanceLmSp
     ) ++
       (featureSet match {
-        case FeatureSets.BaseLineWithImage => List(tripletLmMatchingSegmentSimilarity,
-          tripletTrMatchingSegmentSimilarity, tripletMatchingSegmentRelationFeatures)
+        case FeatureSets.BaseLineWithImage => List(tripletTrMatchingSegmentSimilarity,
+          tripletMatchingSegmentRelationFeatures)
         case FeatureSets.WordEmbedding => List(tripletTrVector, tripletLmVector)
         case FeatureSets.WordEmbeddingPlusImage => List(tripletTrVector, tripletLmVector,
           tripletLmMatchingSegmentSimilarity, tripletTrMatchingSegmentSimilarity)
@@ -50,22 +50,15 @@ object MultiModalSpRLTripletClassifiers {
     visualTripletBelow, visualTripletAbove, visualTripletLeft, visualTripletRight, visualTripletUnion, visualTripletIntersection,
     visualTripletTrajectorW2V, visualTripletlandmarkW2V)
 
-  object SpatialRoleClassifier extends Learnable(phrases) {
-    def label = spatialRole
-
-    override lazy val classifier = new SparseNetworkLearner()
-
-    override def feature = phraseFeatures
-  }
-
-  val p = new SparsePerceptron.Parameters()
-  p.learningRate = .1
-  p.thickness = 2
-
   object TrajectorRoleClassifier extends Learnable(phrases) {
     def label = trajectorRole is "Trajector"
 
-    override lazy val classifier = new SparsePerceptron(p)
+    override lazy val classifier = new SparseNetworkLearner {
+      val p = new SparseAveragedPerceptron.Parameters()
+      p.learningRate = .1
+      p.thickness = 2
+      baseLTU = new SparseAveragedPerceptron(p)
+    }
 
     override def feature = phraseFeatures
   }
@@ -73,16 +66,26 @@ object MultiModalSpRLTripletClassifiers {
   object LandmarkRoleClassifier extends Learnable(phrases) {
     def label = landmarkRole is "Landmark"
 
-    override lazy val classifier = new SparsePerceptron(p)
+    override lazy val classifier = new SparseNetworkLearner {
+      val p = new SparseAveragedPerceptron.Parameters()
+      p.learningRate = .1
+      p.thickness = 2
+      baseLTU = new SparseAveragedPerceptron(p)
+    }
 
     override def feature = (phraseFeatures ++ List(lemma, headWordLemma))
-      .diff(List())
+      .diff(List(similarityToMatchingSegment))
   }
 
   object IndicatorRoleClassifier extends Learnable(phrases) {
     def label = indicatorRole is "Indicator"
 
-    override lazy val classifier = new SparsePerceptron(p)
+    override lazy val classifier = new SparseNetworkLearner {
+      val p = new SparseAveragedPerceptron.Parameters()
+      p.learningRate = .1
+      p.thickness = 2
+      baseLTU = new SparseAveragedPerceptron(p)
+    }
 
     override def feature = (phraseFeatures(FeatureSets.BaseLine) ++ List(headSubCategorization))
       .diff(List(headWordPos, headWordFrom, headDependencyRelation))
@@ -91,12 +94,7 @@ object MultiModalSpRLTripletClassifiers {
   object TripletRelationClassifier extends Learnable(triplets) {
     def label = tripletIsRelation is "Relation"
 
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.thickness = 2
-      baseLTU = new SparseAveragedPerceptron(p)
-    }
+    override lazy val classifier = new SparsePerceptron()
 
     override def feature =  (tripletFeatures)
       .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))
@@ -127,14 +125,6 @@ object MultiModalSpRLTripletClassifiers {
 
     override def feature = (tripletFeatures)
       .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))
-  }
-
-  object TripletSpecificTypeClassifier extends Learnable(triplets) {
-    def label = tripletSpecificType
-
-    override lazy val classifier = new SparseNetworkLearner()
-
-    override def feature = tripletFeatures
   }
 
   object TripletDirectionClassifier extends Learnable(triplets) {
@@ -251,12 +241,17 @@ object MultiModalSpRLTripletClassifiers {
   }
 
   object TripletImageRegionClassifier extends Learnable(triplets) {
-    def label = tripletRegion
+    def label = tripletSpecificType
 
     override lazy val classifier = new SparseNetworkLearner()
 
     override def feature =  List(tripletMatchingSegmentRelationFeatures)
   }
+
+  /* Preposition multi-class classifier based on the visual features.
+  It recieves the visual features of two objects in the image and returns
+  a class value among a predefined list of prepositions.
+  * */
 
   object PrepositionClassifier extends Learnable(visualTriplets) {
     def label = visualTripletLabel
@@ -265,6 +260,9 @@ object MultiModalSpRLTripletClassifiers {
 
     override def feature = prepositionFeatures
   }
+
+  /* Below is the the list of binary classifiers per prepositions
+  * */
 
   object PrepositionOnClassifier extends Learnable(visualTriplets) {
     def label = visualTripletLabel is "on"
