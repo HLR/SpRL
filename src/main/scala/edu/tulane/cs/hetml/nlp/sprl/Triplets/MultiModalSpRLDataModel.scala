@@ -1,14 +1,13 @@
-package edu.tulane.cs.hetml.nlp.sprl
+package edu.tulane.cs.hetml.nlp.sprl.Triplets
 
 import edu.illinois.cs.cogcomp.saul.datamodel.DataModel
 import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers.PrepositionClassifier
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSensors._
 import edu.tulane.cs.hetml.vision._
-
-import scala.collection.mutable.ListBuffer
 
 /** Created by Taher on 2017-01-11.
   */

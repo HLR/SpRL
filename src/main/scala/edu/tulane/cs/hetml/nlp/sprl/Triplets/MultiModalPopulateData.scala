@@ -1,15 +1,14 @@
-package edu.tulane.cs.hetml.nlp.sprl
+package edu.tulane.cs.hetml.nlp.sprl.Triplets
 
 import java.awt.geom.Rectangle2D
-import java.io.PrintStream
 
 import edu.illinois.cs.cogcomp.saul.util.Logging
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.documentToSentenceGenerating
 import edu.tulane.cs.hetml.nlp.sprl.Helpers._
-import edu.tulane.cs.hetml.vision.{ImageTriplet, ImageTripletReader, Segment}
-import mSpRLConfigurator._
+import MultiModalSpRLDataModel.{segments, _}
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.tripletConfigurator.{isTrain, _}
+import edu.tulane.cs.hetml.vision.{ImageTripletReader, Segment}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
@@ -19,6 +18,7 @@ import scala.collection.mutable.ListBuffer
 
 object MultiModalPopulateData extends Logging {
 
+  LexiconHelper.path = spatialIndicatorLex
   lazy val xmlTestReader = new SpRLXmlReader(testFile, globalSpans)
   lazy val xmlTrainReader = new SpRLXmlReader(trainFile, globalSpans)
 
@@ -31,6 +31,7 @@ object MultiModalPopulateData extends Logging {
 
   lazy val alignmentTrainReader = new AlignmentReader(alignmentAnnotationPath, true)
   lazy val alignmentTestReader = new AlignmentReader(alignmentAnnotationPath, false)
+
 
   def alignmentReader = if (isTrain) alignmentTrainReader else alignmentTestReader
 
@@ -72,43 +73,6 @@ object MultiModalPopulateData extends Logging {
     logger.info("Role population finished.")
   }
 
-  def populatePairDataFromAnnotatedCorpus(indicatorClassifier: Phrase => Boolean,
-                                          populateNullPairs: Boolean = true
-                                         ): Unit = {
-
-    logger.info("Pair population started ...")
-    val phraseInstances = (if (isTrain) phrases.getTrainingInstances.toList else phrases.getTestingInstances.toList)
-      .filter(_.getId != dummyPhrase.getId)
-
-    val candidateRelations = CandidateGenerator.generatePairCandidates(phraseInstances, populateNullPairs, indicatorClassifier)
-    pairs.populate(candidateRelations, isTrain)
-
-    val relations = if (isTrain) pairs.getTrainingInstances.toList else pairs.getTestingInstances.toList
-    xmlReader.setPairTypes(relations, populateNullPairs)
-
-    logger.info("Pair population finished.")
-  }
-
-  def populateTripletDataFromAnnotatedCorpusFromPairs(
-                                                       trSpFilter: (Relation) => Boolean,
-                                                       spFilter: (Phrase) => Boolean,
-                                                       lmSpFilter: (Relation) => Boolean
-                                                     ): Unit = {
-
-    logger.info("Triplet population started ...")
-    val candidateRelations = CandidateGenerator.generateTripletCandidatesFromPairs(
-      trSpFilter,
-      spFilter,
-      lmSpFilter,
-      isTrain
-    )
-    triplets.populate(candidateRelations, isTrain)
-
-    xmlReader.setTripletRelationTypes(candidateRelations)
-
-    logger.info("Triplet population finished.")
-  }
-
   def populateTripletDataFromAnnotatedCorpus(
                                               trFilter: (Phrase) => Boolean,
                                               spFilter: (Phrase) => Boolean,
@@ -116,7 +80,7 @@ object MultiModalPopulateData extends Logging {
                                             ): Unit = {
 
     logger.info("Triplet population started ...")
-    val candidateRelations = CandidateGenerator.generateAllTripletCandidates(
+    val candidateRelations = TripletCandidateGenerator.generateAllTripletCandidates(
       trFilter,
       spFilter,
       lmFilter,
@@ -142,15 +106,15 @@ object MultiModalPopulateData extends Logging {
     if (populateNullPairs) {
       phrases.populate(List(dummyPhrase), isTrain)
     }
-    val spCandidatesTrain = CandidateGenerator.getIndicatorCandidates(phrases().toList)
-    val trCandidatesTrain = CandidateGenerator.getTrajectorCandidates(phrases().toList)
+    val spCandidatesTrain = TripletCandidateGenerator.getIndicatorCandidates(phrases().toList)
+    val trCandidatesTrain = TripletCandidateGenerator.getTrajectorCandidates(phrases().toList)
       .filterNot(x => spCandidatesTrain.contains(x))
-    val lmCandidatesTrain = CandidateGenerator.getLandmarkCandidates(phrases().toList)
+    val lmCandidatesTrain = TripletCandidateGenerator.getLandmarkCandidates(phrases().toList)
       .filterNot(x => spCandidatesTrain.contains(x))
 
 
     logger.info("Triplet population started ...")
-    val candidateRelations = CandidateGenerator.generateAllTripletCandidates(
+    val candidateRelations = TripletCandidateGenerator.generateAllTripletCandidates(
       x => trCandidatesTrain.exists(_.getId == x.getId),
       x => indicatorClassifier(x),
       x => lmCandidatesTrain.exists(_.getId == x.getId),

@@ -4,10 +4,10 @@ import java.io.File
 
 import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.{FeatureSets, ReportHelper}
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalPopulateData._
+import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLPairClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator.{isTrain, _}
+import edu.tulane.cs.hetml.nlp.sprl.Pairs.pairConfigurator.{isTrain, _}
 import org.apache.commons.io.FileUtils
 
 object MultiModalPairSpRLApp extends App with Logging {
@@ -134,7 +134,7 @@ object MultiModalPairSpRLApp extends App with Logging {
       val indicators = phrases.getTestingInstances.filter(x => PairsSentenceLevelConstraintClassifiers.IndicatorConstraintClassifier(x) == "Indicator").toList
       val tripletList = triplets.getTestingInstances.toList
 
-      ReportHelper.reportTripletResults(testFile, resultsDir, s"${expName}${suffix}_triplet", tripletList, globalSpans)
+      ReportHelper.reportTripletResults(testFile, resultsDir, s"${expName}${suffix}_triplet", tripletList, false)
 
       ReportHelper.saveAsXml(tripletList, trajectors, indicators, landmarks,
         x => TripletGeneralTypeClassifier(x),
