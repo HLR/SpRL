@@ -10,7 +10,7 @@ import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLPairClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator.{isTrain, _}
 import org.apache.commons.io.FileUtils
 
-object MultiModalPairSpRLApp extends App with Logging{
+object MultiModalPairSpRLApp extends App with Logging {
 
   val expName = "pairs_" + ((model, useConstraints) match {
     case (FeatureSets.BaseLine, false) => "BM"
@@ -47,36 +47,15 @@ object MultiModalPairSpRLApp extends App with Logging{
   if (isTrain) {
     println("training started ...")
 
-    if(skipIndividualClassifiersTraining){
-      TrajectorRoleClassifier.load()
-      IndicatorRoleClassifier.load()
-      LandmarkRoleClassifier.load()
-    }
-    else {
-      TrajectorRoleClassifier.learn(iterations)
-      IndicatorRoleClassifier.learn(iterations)
-      LandmarkRoleClassifier.learn(iterations)
-    }
+    TrajectorRoleClassifier.learn(iterations)
+    IndicatorRoleClassifier.learn(iterations)
+    LandmarkRoleClassifier.learn(iterations)
+
     populatePairDataFromAnnotatedCorpus(x => IndicatorRoleClassifier(x) == "Indicator")
     ReportHelper.saveCandidateList(isTrain = true, pairs.getTrainingInstances.toList)
 
-    if(skipIndividualClassifiersTraining) {
-      TrajectorPairClassifier.load()
-      LandmarkPairClassifier.load()
-    }
-    else{
-      TrajectorPairClassifier.learn(iterations)
-      LandmarkPairClassifier.learn(iterations)
-    }
-
-    if (jointTrain) {
-      //JoinTraining using constraints
-      //To make the trianing faster use the pre-trained models
-      // then apply 10 joint training iterations
-      /*      JointTrainSparseNetwork(sentences, TRConstraintClassifier :: LMConstraintClassifier ::
-              IndicatorConstraintClassifier :: TRPairConstraintClassifier ::
-              LMPairConstraintClassifier :: Nil, init = false, it = 10)*/
-    }
+    TrajectorPairClassifier.learn(iterations)
+    LandmarkPairClassifier.learn(iterations)
 
     TrajectorRoleClassifier.save()
     IndicatorRoleClassifier.save()
