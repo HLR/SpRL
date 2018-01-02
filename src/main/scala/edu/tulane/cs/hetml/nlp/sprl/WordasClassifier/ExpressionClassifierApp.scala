@@ -8,13 +8,12 @@ import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordExpressionSegmentConstraintClassifiers.ExpressionasClassiferConstraintClassifier
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierDataModel._
-import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
 import edu.tulane.cs.hetml.vision._
 import me.tongfei.progressbar.ProgressBar
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
-
+import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierConfigurator._
 /** Created by Umar on 2017-10-20.
   */
 
