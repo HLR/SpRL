@@ -20,3 +20,5 @@ annotation-cache/
 *.swp
 *.class
 *.log
+gurobi.ilp
+gurobi.lp

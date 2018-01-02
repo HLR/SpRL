@@ -367,7 +367,7 @@ class WordClassifierHelper {
   def getPhraseSegmentScores(instances: List[WordSegment]): List[Double] = {
 
     val scoresMatrix = instances.groupBy(i => i.getWord).map(w => {
-      computeScore(w._1, w._2, useWord2VecClassifier)
+      computeScore(w._1, w._2)
     }).toList
     val norm = normalizeScores(scoresMatrix)
     val vector = combineScores(norm)

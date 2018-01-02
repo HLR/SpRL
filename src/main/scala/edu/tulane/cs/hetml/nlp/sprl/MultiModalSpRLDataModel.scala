@@ -456,7 +456,14 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
   val tripletSpecificType = property(triplets) {
-    r: Relation => if (r.containsProperty("SpecificType")) r.getProperty("SpecificType") else "None"
+    r: Relation =>
+      if (r.containsProperty("RCC8"))
+        if (rcc8Values.exists(x => r.getProperty("RCC8").toUpperCase().contains(x)))
+          rcc8Values.find(x => r.getProperty("RCC8").toUpperCase().contains(x)).get
+        else if (directionValues.exists(x => r.getProperty("RCC8").toLowerCase().contains(x)))
+          directionValues.find(x => r.getProperty("RCC8").toLowerCase().contains(x)).get
+        else "None"
+      else "None"
   }
   val rcc8Values = List("PO", "TPP", "EC", "DC", "EQ")
   val tripletRegion = property(triplets) {
