@@ -10,13 +10,13 @@ object WordasClassifierApp extends App {
 
   val wordClassifierHelper = new WordClassifierHelper()
 
-  if(preprocessReferitExp)
-    wordClassifierHelper.preprocessReferIt()
+//  if(preprocessReferitExp)
+//    wordClassifierHelper.preprocessReferIt()
 
   if(isTrain) {
     println("Training...")
-    wordClassifierHelper.trainOnFrequencyWordClassifiers()
-    wordClassifierHelper.trainMissingWordsClassifers()
+    //wordClassifierHelper.trainOnFrequencyWordClassifiers()
+    wordClassifierHelper.trainClefWordsClassifiers()
   }
 
   if(!isTrain) {

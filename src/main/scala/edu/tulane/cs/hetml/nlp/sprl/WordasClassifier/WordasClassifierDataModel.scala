@@ -95,7 +95,7 @@ object WordasClassifierDataModel extends DataModel {
   def loadWordClassifiers(): Unit = {
     val trainedWordsReader = new WordasClassifierTrainedWordsReader()
     trainedWordsReader.loadTrainedWords(imageDataPath)
-    val refexpTrainedWords = (trainedWordsReader.filteredWords ++ trainedWordsReader.missingWords).toList.sorted
+    val refexpTrainedWords = (trainedWordsReader.filteredWords ++ trainedWordsReader.clefWords).toList.sorted
 
     var i = 0
     refexpTrainedWords.foreach(word => {
