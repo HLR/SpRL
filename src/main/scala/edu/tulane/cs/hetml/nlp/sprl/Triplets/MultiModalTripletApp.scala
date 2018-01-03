@@ -21,7 +21,7 @@ object MultiModalTripletApp extends App with Logging {
     case (FeatureSets.BaseLineWithImage, false, _) => "BM+I_" + alignmentMethod + "_alignment"
     case (FeatureSets.BaseLineWithImage, true, false) => "BM+C+I_" + alignmentMethod + "_alignment"
     case (FeatureSets.BaseLineWithImage, true, true) => "BM+C+I+Prep_" + alignmentMethod +
-      //(if (alignmentMethod == "topN") "=" + topAlignmentCount else "") +
+      (if (alignmentMethod == "topN") "=" + topAlignmentCount else "") +
       "_alignment"
     case (FeatureSets.WordEmbedding, false, _) => "BM+E"
     case (FeatureSets.WordEmbedding, true, _) => "BM+C+E"
