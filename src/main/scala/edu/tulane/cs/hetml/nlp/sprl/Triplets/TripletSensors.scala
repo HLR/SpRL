@@ -5,11 +5,11 @@ import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.getHeadword
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.WordClassifierHelper
 import MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors.matchingCandidates
-import edu.tulane.cs.hetml.vision.{ImageTriplet, Segment}
+import edu.tulane.cs.hetml.vision.{ImageTriplet, Segment, WordSegment}
 
 object TripletSensors {
   lazy val alignmentHelper = new WordClassifierHelper()
-  if (tripletConfigurator.alignmentMethod == "classifier")
+  if (tripletConfigurator.alignmentMethod == "classifier" || tripletConfigurator.alignmentMethod == "topN")
     alignmentHelper.loadAllTrainedClassifiers(true)
 
   def TripletToVisualTripletGenerating(r: Relation): List[ImageTriplet] = {
@@ -48,6 +48,7 @@ object TripletSensors {
   }
 
   def segmentToSegmentPhrasePairs(s: Segment): List[Relation] = {
+
     val image = images().filter(i => i.getId == s.getAssociatedImageID)
     val phrases = (images(image) ~> -documentToImage ~> documentToSentence ~> sentenceToPhrase)
       .filter(p => p != dummyPhrase && matchingCandidates.exists(x => headWordPos(p).toUpperCase().contains(x)))
@@ -77,6 +78,8 @@ object TripletSensors {
             val lemma = headWordLemma(p)
             val sim = alignmentHelper.getPhraseHeadwordSegmentScore(lemma, s)
             r.setProperty("similarity", sim.toString)
+
+          case "topN" =>
         }
         r
     }

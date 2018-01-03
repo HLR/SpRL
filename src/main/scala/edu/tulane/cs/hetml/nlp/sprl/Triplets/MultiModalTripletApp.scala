@@ -20,7 +20,9 @@ object MultiModalTripletApp extends App with Logging {
     case (FeatureSets.BaseLine, true, _) => "BM+C"
     case (FeatureSets.BaseLineWithImage, false, _) => "BM+I_" + alignmentMethod + "_alignment"
     case (FeatureSets.BaseLineWithImage, true, false) => "BM+C+I_" + alignmentMethod + "_alignment"
-    case (FeatureSets.BaseLineWithImage, true, true) => "BM+C+I+Prep_" + alignmentMethod + "_alignment"
+    case (FeatureSets.BaseLineWithImage, true, true) => "BM+C+I+Prep_" + alignmentMethod +
+      //(if (alignmentMethod == "topN") "=" + topAlignmentCount else "") +
+      "_alignment"
     case (FeatureSets.WordEmbedding, false, _) => "BM+E"
     case (FeatureSets.WordEmbedding, true, _) => "BM+C+E"
     case (FeatureSets.WordEmbeddingPlusImage, false, _) => "BM+E+I"
@@ -214,7 +216,7 @@ object MultiModalTripletApp extends App with Logging {
           val res = x.test()
           ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
-      if (usePrepositions) {
+      if (usePrepositions && visualTripletsFiltered.nonEmpty) {
         val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
         ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
       }
@@ -245,7 +247,7 @@ object MultiModalTripletApp extends App with Logging {
           ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
 
-      if (usePrepositions) {
+      if (usePrepositions && visualTripletsFiltered.nonEmpty) {
         val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
         ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
       }

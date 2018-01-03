@@ -9,6 +9,8 @@ import scala.collection.JavaConversions._
 class ImageReaderHelper(dataDir: String, trainFileName: String, testFileName: String, isTrain: Boolean) {
 
   lazy val reader = new CLEFImageReader(dataDir, trainFileName, testFileName, false, false)
+  val ClefSegReader = new CLEFNewSegmentCNNFeaturesReader()
+  ClefSegReader.loadFeatures(dataDir, isTrain)
 
   def getImageRelationList: List[SegmentRelation] = {
 
@@ -21,11 +23,12 @@ class ImageReaderHelper(dataDir: String, trainFileName: String, testFileName: St
 
   def getSegmentList: List[Segment] = {
 
-    if (isTrain) {
-      reader.trainingSegments.toList
-    } else {
-      reader.testSegments.toList
-    }
+//    if (isTrain) {
+//      reader.trainingSegments.toList
+//    } else {
+//      reader.testSegments.toList
+//    }
+    ClefSegReader.clefSegments.toList
   }
 
   def getImageList: List[Image] = {

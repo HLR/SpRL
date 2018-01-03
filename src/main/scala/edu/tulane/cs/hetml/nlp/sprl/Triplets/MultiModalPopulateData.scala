@@ -7,8 +7,9 @@ import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.documentToSentenceGenerating
 import edu.tulane.cs.hetml.nlp.sprl.Helpers._
 import MultiModalSpRLDataModel.{segments, _}
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSensors.alignmentHelper
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.tripletConfigurator.{isTrain, _}
-import edu.tulane.cs.hetml.vision.{ImageTripletReader, Segment}
+import edu.tulane.cs.hetml.vision.{ImageTripletReader, Segment, WordSegment}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
@@ -65,9 +66,32 @@ object MultiModalPopulateData extends Logging {
       alignmentReader.setAlignments(phraseInstances)
       images.populate(imageReader.getImageList, isTrain)
       val segs = getAdjustedSegments(imageReader.getSegmentList)
+      //val segs = imageReader.getSegmentList
       segments.populate(segs, isTrain)
       imageSegmentsDic = getImageSegmentsDic()
-      setBestAlignment()
+      if (alignmentMethod != "topN") {
+        setBestAlignment()
+      }
+      else {
+        val ws = segmentPhrasePairs().map {
+          pair =>
+            val s = (segmentPhrasePairs(pair) ~> -segmentToSegmentPhrasePair).head
+            val p = (segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase).head
+            val segs = (segments(s) ~> -imageToSegment ~> imageToSegment).toList
+            val lemma = headWordLemma(p)
+            val wordSegs = segs.map(x => new WordSegment(lemma, x, false))
+            val topIds = alignmentHelper.predictTopSegmentIds(wordSegs, tripletConfigurator.topAlignmentCount)
+            if (topIds.contains(s.getSegmentId)) {
+              val wordSegment = new WordSegment(lemma, s, false)
+              wordSegment.setPhrase(p)
+              wordSegment
+            }
+            else
+              null
+        }.filter(x => x != null)
+        wordSegments.populate(ws)
+      }
+
     }
 
     logger.info("Role population finished.")
@@ -145,6 +169,17 @@ object MultiModalPopulateData extends Logging {
         s.getSegmentId == p.getPropertyFirstValue("segId").toInt))
     val addNew = alignedPhrases.filter(p => !update.contains(p))
 
+    imageTestReader.reader.allSegments.foreach{
+      old =>
+        val seg = segments.find(x =>
+          x.getAssociatedImageID == old.getAssociatedImageID &&
+            x.getSegmentId == old.getSegmentId
+        )
+        if(seg.nonEmpty){
+          seg.get.setBoxDimensions(old.getBoxDimensions)
+        }
+    }
+
     update.foreach {
       p =>
         val seg = segments.find(x =>
@@ -156,8 +191,11 @@ object MultiModalPopulateData extends Logging {
         val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
         val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
         val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
-
-        seg.getBoxDimensions.setRect(x, y, w, h)
+        if (seg.getBoxDimensions == null)
+          seg.setBoxDimensions(new Rectangle2D.Double(x, y, w, h))
+        else {
+          seg.getBoxDimensions.setRect(x, y, w, h)
+        }
     }
     val newSegs = addNew.map {
       p =>
@@ -167,6 +205,7 @@ object MultiModalPopulateData extends Logging {
         val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
         val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
         val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
+
         new Segment(imId, p.getPropertyFirstValue("segId").toInt, -1, "", headWordFrom(p), new Rectangle2D.Double(x, y, w, h))
     }
 

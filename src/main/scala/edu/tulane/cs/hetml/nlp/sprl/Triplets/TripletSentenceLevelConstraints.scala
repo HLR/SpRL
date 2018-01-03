@@ -5,12 +5,16 @@ import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Helpers.WordClassifierHelper
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.vision.{ImageTriplet, WordSegment}
 
 import scala.collection.JavaConversions._
 
 object TripletSentenceLevelConstraints {
+  val imageSupportsSp2 = new ImageSupportsSpClassifier2()
   val imageSupportsSp = new ImageSupportsSpClassifier()
+  val wordAsClassifierHelper = TripletSensors.alignmentHelper
 
   val roleShouldHaveRel = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
@@ -146,6 +150,90 @@ object TripletSentenceLevelConstraints {
       a
   }
 
+  lazy val sentWordSegs = wordSegments().groupBy(_.getPhrase.getSentence.getId)
+  val alignmentConsistency = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      if(sentWordSegs.contains(s.getId)) {
+        val pairs = sentWordSegs(s.getId)
+        //wordSegments().filter(x => x.getPhrase.getSentence.getId == s.getId).toList
+        val perSeg = pairs.groupBy(_.getSegment)
+        val perPhrase = pairs.groupBy(_.getPhrase)
+
+        perPhrase.foreach {
+          z =>
+            val w = z._2.head.getWord
+            val c = wordAsClassifierHelper.trainedWordClassifier(w)
+            z._2.foreach {
+              x =>
+                var b: FirstOrderConstraint = new FirstOrderConstant(true)
+                z._2.filter(y => y != x).foreach {
+                  y =>
+                    b = b and (c on y is "false")
+                }
+                a = a and ((c on x is "true") ==> b)
+            }
+        }
+        perSeg.foreach {
+          z =>
+            z._2.foreach {
+              x =>
+                val w = x.getWord
+                val c = wordAsClassifierHelper.trainedWordClassifier(w)
+                var b: FirstOrderConstraint = new FirstOrderConstant(true)
+                z._2.filter(y => y != x).foreach {
+                  y =>
+                    b = b and (c on y is "false")
+                }
+                a = a and ((c on x is "true") ==> b)
+            }
+        }
+      }
+      a
+  }
+
+  val approveRelationByImage2 = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      if(sentWordSegs.contains(s.getId)) {
+        a = new FirstOrderConstant(true)
+        val candidateAlignments = sentWordSegs(s.getId)
+        //wordSegments().filter(x => x.getPhrase.getSentence.getId == s.getId).toList
+        val candidatePhraseIds = candidateAlignments.map(_.getPhrase.getId)
+        val img = (sentences(s) ~> -documentToSentence ~> documentToImage).head
+        (sentences(s) ~> sentenceToTriplets)
+          .filter(x => candidatePhraseIds.contains(x.getArgumentId(0)) && candidatePhraseIds.contains(x.getArgumentId(2)))
+          .foreach {
+            r =>
+              val tr = headWordLemma((triplets(r) ~> tripletToTr).head)
+              val lm = headWordLemma((triplets(r) ~> tripletToLm).head)
+              val sp = (triplets(r) ~> tripletToSp).head.getText.toLowerCase.replace(" ", "_")
+              val trPairs = candidateAlignments.filter(y => y.getPhrase.getId == r.getArgumentId(0))
+              val lmPairs = candidateAlignments.filter(y => y.getPhrase.getId == r.getArgumentId(2))
+              trPairs.foreach {
+                x =>
+                  val trSeg = x.getSegment
+                  val t = new WordSegment(tr, trSeg, false)
+                  val trAlignment = wordAsClassifierHelper.trainedWordClassifier(x.getWord)
+                  lmPairs.foreach {
+                    y =>
+                      val lmAlignment = wordAsClassifierHelper.trainedWordClassifier(y.getWord)
+                      val lmSeg = y.getSegment
+                      val vt = new ImageTriplet(sp, tr, lm, trSeg.getBoxDimensions, lmSeg.getBoxDimensions,
+                        img.getWidth, img.getHeight)
+                      val l = new WordSegment(lm, lmSeg, false)
+                      a = a and
+                        (((imageSupportsSp2 on vt is "true")
+                          and (trAlignment on t is "true")
+                          and (lmAlignment on l is "true")) ==>
+                          (TripletRelationClassifier on r is "true"))
+                  }
+              }
+          }
+      }
+      a
+  }
 
   val approveRelationByImage = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
@@ -185,8 +273,9 @@ object TripletSentenceLevelConstraints {
 
       if (tripletConfigurator.usePrepositions) {
         a = a and
-          discardRelationByImage(x) and
-          approveRelationByImage(x) //and
+          //discardRelationByImage(x) and
+          alignmentConsistency(x) and
+          approveRelationByImage2(x)
       }
       a
   }
