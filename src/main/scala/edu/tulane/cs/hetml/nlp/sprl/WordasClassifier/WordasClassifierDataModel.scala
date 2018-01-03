@@ -5,10 +5,9 @@ import java.io._
 import edu.illinois.cs.cogcomp.saul.datamodel.DataModel
 import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Sentence}
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierClassifiers.{ExpressionasClassifer, SingleWordasClassifer}
-import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator.imageDataPath
 import edu.tulane.cs.hetml.vision._
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierSensors._
-import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
+import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierConfigurator._
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -96,7 +95,7 @@ object WordasClassifierDataModel extends DataModel {
   def loadWordClassifiers(): Unit = {
     val trainedWordsReader = new WordasClassifierTrainedWordsReader()
     trainedWordsReader.loadTrainedWords(imageDataPath)
-    val refexpTrainedWords = (trainedWordsReader.filteredWords ++ trainedWordsReader.missingWords).toList.sorted
+    val refexpTrainedWords = (trainedWordsReader.filteredWords ++ trainedWordsReader.clefWords).toList.sorted
 
     var i = 0
     refexpTrainedWords.foreach(word => {

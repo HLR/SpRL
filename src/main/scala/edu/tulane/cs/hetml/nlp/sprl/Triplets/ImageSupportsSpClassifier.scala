@@ -5,7 +5,7 @@ import java.io.PrintStream
 import edu.illinois.cs.cogcomp.lbjava.classify.{FeatureVector, ScoreSet}
 import edu.illinois.cs.cogcomp.lbjava.learn.Learner
 import edu.tulane.cs.hetml.nlp.BaseTypes.Relation
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
+import MultiModalSpRLDataModel._
 
 class ImageSupportsSpClassifier extends Learner("sprl.ImageSpClassifier") {
 
@@ -27,7 +27,7 @@ class ImageSupportsSpClassifier extends Learner("sprl.ImageSpClassifier") {
       result.put("false", 0.0)
     }
     else {
-      val scores = getImageSpScores(aligned.head).take(20)
+      val scores = getImageSpScores(aligned.head).take(5)
       val sp = r.getArgument(1).getText.replaceAll(" ", "_").toLowerCase()
       val found = scores.find(x=> x._1.trim.equalsIgnoreCase(sp))
       if (found.isEmpty) {

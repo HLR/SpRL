@@ -5,9 +5,10 @@ import java.io.PrintStream
 import edu.illinois.cs.cogcomp.lbjava.classify.{FeatureVector, ScoreSet}
 import edu.illinois.cs.cogcomp.lbjava.learn.Learner
 import edu.tulane.cs.hetml.nlp.BaseTypes.Relation
-import MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.vision.ImageTriplet
 
-class SegmentPhraseSimilarityClassifier extends Learner("sprl.SegmentPhraseSimilarity") {
+class ImageSupportsSpClassifier2 extends Learner("sprl.ImageSpClassifier") {
 
   override def allowableValues: Array[String] = {
     Array[String]("false", "true")
@@ -18,15 +19,19 @@ class SegmentPhraseSimilarityClassifier extends Learner("sprl.SegmentPhraseSimil
   }
 
   override def scores(example: AnyRef): ScoreSet = {
-    val pair = example.asInstanceOf[Relation]
-    val phrase = segmentPhrasePairs(pair) ~> segmentPhrasePairToPhrase head
-    val seg = segmentPhrasePairs(pair) ~> -segmentToSegmentPhrasePair head
-    val phraseHead = headWordFrom(phrase)
-    val concept = seg.getSegmentConcept
-    val sim = getSimilarity(phraseHead, concept)
     val result: ScoreSet = new ScoreSet
-    result.put("false", 0.2)
-    result.put("true", sim)
+    val r = example.asInstanceOf[ImageTriplet]
+    val scores = getImageSpScores(r).take(20)
+    val sp = r.getSp
+    val found = scores.find(x => x._1.trim.equalsIgnoreCase(sp))
+    if (found.isEmpty) {
+      result.put("true", 0.0)
+      result.put("false", 1.0)
+    }
+    else {
+      result.put("true", found.get._2 * 10)
+      result.put("false", 0.0)
+    }
     result
   }
 

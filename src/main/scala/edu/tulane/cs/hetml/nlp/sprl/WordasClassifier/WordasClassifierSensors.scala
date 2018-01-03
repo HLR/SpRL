@@ -3,7 +3,7 @@ package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 import edu.tulane.cs.hetml.vision._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierDataModel._
-import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
+import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierConfigurator._
 
 object WordasClassifierSensors {
 

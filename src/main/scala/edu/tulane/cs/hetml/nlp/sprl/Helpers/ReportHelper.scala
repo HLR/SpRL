@@ -9,9 +9,10 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRL2013._
 import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRLAnnotation
 import edu.tulane.cs.hetml.nlp.sprl.Eval._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLPairClassifiers
 import edu.tulane.cs.hetml.nlp.sprl.SpRL2017.{Scene, SpRL2017Document}
+import edu.tulane.cs.hetml.vision.ImageTriplet
 import org.h2.store.fs.FilePath
 
 import scala.collection.JavaConversions._
@@ -21,6 +22,35 @@ import scala.util.control.Breaks.{break, breakable}
 /** Created by taher on 2017-02-28.
   */
 object ReportHelper {
+
+  def saveImageTripletErrorTypes(rels: List[Relation],
+                                 imTripletToRel: Relation => Iterable[ImageTriplet],
+                                 resultsDir: String,
+                                 isTrain: Boolean,
+                                 groundTruth: Relation => String,
+                                 typeClassifier: Relation => String
+                              ) = {
+    val errorWriter = new PrintStream(s"$resultsDir/region_error_analysis_${if (isTrain) "train" else "test"}.txt")
+    rels.foreach {
+      r =>
+        val aligned = imTripletToRel(r)
+        if (aligned.nonEmpty) {
+          val x = aligned.head
+          val features = List(
+            x.getTrBox.getX, x.getTrBox.getY, x.getTrBox.getWidth, x.getTrBox.getHeight,
+            x.getLmBox.getX, x.getLmBox.getY, x.getLmBox.getWidth, x.getLmBox.getHeight,
+            x.getEuclideanDistance, x.getIou, x.getLmAreaBbox, x.getLmAreaImage, x.getLmAspectRatio,
+            x.getTrAreaBbox, x.getTrAreaImage, x.getTrAreawrtLM, x.getTrAspectRatio, x.getAbove, x.getBelow,
+            x.getLeft, x.getRight, x.getIntersectionArea, x.getUnionArea).mkString("\t\t")
+
+          errorWriter.println(
+            x.getImageId + "\t\t" + r.getProperty("ActualId") + "\t\t" + x.getFirstSegId + "\t\t" + x.getTrajector +
+              "\t\t" + x.getSecondSegId + "\t\t" + x.getLandmark + "\t\t" + x.getSp + "\t\t" +
+              typeClassifier(r) + "\t\t" + groundTruth(r) + "\t\t" + features)
+        }
+    }
+    errorWriter.close()
+  }
 
   def saveEvalResultsFromXmlFile(actualFile: String, predictedFile: String, output: String):Unit = {
 

@@ -1,9 +1,12 @@
 package edu.tulane.cs.hetml.vision;
 
+import edu.tulane.cs.hetml.nlp.BaseTypes.Phrase;
+
 public class WordSegment {
 
     private String word;
     private Segment segment;
+    private Phrase phrase;
     private boolean isMatching;
     private boolean isHead;
     private String pos;
@@ -48,5 +51,13 @@ public class WordSegment {
 
     public void setPos(String pos) {
         this.pos = pos;
+    }
+
+    public Phrase getPhrase() {
+        return phrase;
+    }
+
+    public void setPhrase(Phrase phrase) {
+        this.phrase = phrase;
     }
 }

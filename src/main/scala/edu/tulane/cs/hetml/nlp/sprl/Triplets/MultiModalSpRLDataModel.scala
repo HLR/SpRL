@@ -1,14 +1,14 @@
-package edu.tulane.cs.hetml.nlp.sprl
+package edu.tulane.cs.hetml.nlp.sprl.Triplets
 
 import edu.illinois.cs.cogcomp.saul.datamodel.DataModel
 import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
+import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers.PrepositionClassifier
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSensors._
+import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
 import edu.tulane.cs.hetml.vision._
-
-import scala.collection.mutable.ListBuffer
 
 /** Created by Taher on 2017-01-11.
   */
@@ -37,6 +37,7 @@ object MultiModalSpRLDataModel extends DataModel {
   val images = node[Image]
   val segments = node[Segment]
   val segmentPhrasePairs = node[Relation]((r: Relation) => r.getId)
+  val wordSegments = node[WordSegment]
   val visualTriplets = node[ImageTriplet]
 
   /*
@@ -698,11 +699,11 @@ object MultiModalSpRLDataModel extends DataModel {
     r: Relation =>
       val aligned = triplets(r) ~> tripletToVisualTriplet
       if (aligned.nonEmpty) {
-        val x = PrepositionClassifier.classifier.scores(aligned.head)
+        val x = VisualTripletClassifier.classifier.scores(aligned.head)//PrepositionClassifier.classifier.scores(aligned.head)
         if (x.toArray.exists(_.score.isNaN))
           "-"
         else
-          PrepositionClassifier(aligned.head)
+          VisualTripletClassifier(aligned.head)
       }
       else
         "-"
@@ -1047,7 +1048,7 @@ object MultiModalSpRLDataModel extends DataModel {
   }
 
   def getImageSpScores(r: ImageTriplet) = {
-    val x = PrepositionClassifier.classifier.scores(r)
+    val x = VisualTripletClassifier.classifier.scores(r)
     val min = x.toArray.map(_.score).min
     val sum = x.toArray.map(_.score - min).sum
     val scores = x.toArray.sortBy(_.score * -1).map(y => (y.value, (y.score - min) / sum))

@@ -6,7 +6,7 @@ import edu.illinois.cs.cogcomp.saul.datamodel.property.Property
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets.FeatureSets
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLDataModel._
 
 object MultiModalSpRLPairClassifiers {
   var featureSet = FeatureSets.WordEmbeddingPlusImage
