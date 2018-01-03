@@ -273,9 +273,10 @@ object TripletSentenceLevelConstraints {
 
       if (tripletConfigurator.usePrepositions) {
         a = a and
-          //discardRelationByImage(x) and
-          alignmentConsistency(x) and
-          approveRelationByImage2(x)
+          discardRelationByImage(x) and
+          approveRelationByImage(x)
+//          //alignmentConsistency(x) and
+//          //approveRelationByImage2(x)
       }
       a
   }

@@ -16,122 +16,90 @@ import scala.collection.mutable.ListBuffer
   */
 object VisualTripletsApp extends App {
 
-  val flickerTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "Flickr30k.majorityhead")
-  val msCocoTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "MSCOCO.originalterm")
+  val frequentPrepositions = List("in", "on", "between", "in front of", "behind", "above", "in between", "around",
+    "over", "at", "next to")
+
   val isTrain = false
+  val useVGdata = false
+  val finetunePrep = false
   val classifierDirectory = s"models/mSpRL/VisualTriplets/"
-  val classifierSuffix = "combined_perceptron"
-  val classifierOnSuffix = "combined_on_perceptron"
-  val classifierInSuffix = "combined_in_perceptron"
-  val classifierAboveSuffix = "combined_above_perceptron"
-  val classifierInFrontOfSuffix = "combined_InFrontOf_perceptron"
-  val externalTrainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
-  val testTriplets = flickerTripletReader.testImageTriplets ++ msCocoTripletReader.testImageTriplets
+  val classifierSuffix = "vg_perceptron"
+  val cleftestInstances = new ListBuffer[ImageTriplet]()
+  val clefTrainInstances = new ListBuffer[ImageTriplet]()
 
-//  val visualClassifier = new VisualTripletClassifiers.VisualTripletClassifier()
+  val VGJsonReader = new JSONReader()
 
-//  visualClassifier.modelSuffix = classifierSuffix
-//  visualClassifier.modelDir = classifierDirectory
-
-  VisualTripletOnClassifier.modelSuffix = classifierOnSuffix
-  VisualTripletOnClassifier.modelDir = classifierDirectory
-
-  VisualTripletInClassifier.modelSuffix = classifierInSuffix
-  VisualTripletInClassifier.modelDir = classifierDirectory
-
-  VisualTripletInFrontOfClassifier.modelSuffix = classifierInFrontOfSuffix
-  VisualTripletInFrontOfClassifier.modelDir = classifierDirectory
-
-  VisualTripletAboveClassifier.modelSuffix = classifierAboveSuffix
-  VisualTripletAboveClassifier.modelDir = classifierDirectory
+  val (trainingInstances, testInstances) =
+    if(useVGdata) {
+    VGJsonReader.readJsonFile("data/mSprl/saiapr_tc-12/VGData/")
+    val vgFrequentSPTriplets = VGJsonReader.allImageTriplets.filter(x => frequentPrepositions.contains(x.getSp))
+    val trainingSize = vgFrequentSPTriplets.size() * 0.8
+    vgFrequentSPTriplets.splitAt(trainingSize.toInt)
+    }
+    else
+      (List(), List())
 
   if (isTrain) {
-//
-//    val clefTrainInstances = new ListBuffer[ImageTriplet]()
-//    val filename = s"$resultsDir/clefprepdata.txt"
-//    for (line <- Source.fromFile(filename).getLines) {
-//      val parts = line.split(",")
-//      val trBox = RectangleHelper.parseRectangle(parts(3), "-")
-//      val lmBox = RectangleHelper.parseRectangle(parts(4), "-")
-//      val imageWidth = parts(5).toDouble
-//      val imageHeight = parts(6).toDouble
-//      clefTrainInstances += new ImageTriplet(parts(0), parts(1), parts(2), trBox, lmBox
-//        , imageWidth, imageHeight, parts(7).toDouble, parts(8).toDouble,
-//        parts(9).toDouble, parts(10).toDouble, parts(11).toDouble, parts(12).toDouble, parts(13).toDouble, parts(14).toDouble,
-//        parts(15).toDouble, parts(16).toDouble, parts(17).toDouble, parts(18).toDouble, parts(19).toDouble, parts(20).toDouble,
-//        parts(21).toDouble, RectangleHelper.getIntersectionArea(trBox, lmBox, imageWidth * imageHeight), RectangleHelper.getUnionArea(trBox, lmBox, imageWidth * imageHeight)
-//      )
-//    }
 
-    visualTriplets.populate(externalTrainTriplets)
+    visualTriplets.populate(trainingInstances)
+
     VisualTripletClassifier.learn(50)
-//    VisualTripletOnClassifier.learn(50)
-//    VisualTripletInClassifier.learn(50)
+    VisualTripletClassifier.save()
+    VisualTripletClassifier.test(visualTriplets())
 
     //fine tune
-//    visualTriplets.clear()
-//    visualTriplets.populate(clefTrainInstances)
-//    VisualTripletOnClassifier.learn(10)
-//    VisualTripletInClassifier.learn(10)
-//    VisualTripletInFrontOfClassifier.learn(50)
-//    VisualTripletAboveClassifier.learn(50)
-//
-//    visualClassifier.save()
-//    VisualTripletOnClassifier.save()
-//    VisualTripletInFrontOfClassifier.save()
-//    VisualTripletInClassifier.save()
-//    VisualTripletAboveClassifier.save()
-//    visualClassifier.test(visualTriplets())
-//    VisualTripletOnClassifier.test(visualTriplets())
-//    VisualTripletInFrontOfClassifier.test(visualTriplets())
-//    VisualTripletInClassifier.test(visualTriplets())
-//    VisualTripletAboveClassifier.test(visualTriplets())
+    if(finetunePrep) {
+      visualTriplets.clear()
+      visualTriplets.populate(clefTrainInstances)
+      VisualTripletClassifier.learn(10)
+      VisualTripletClassifier.save()
+    }
   }
   else {
-//      val testInstances = new ListBuffer[ImageTriplet]()
-//      val filename = s"$resultsDir/clefprepdata-test.txt"
-//      for (line <- Source.fromFile(filename).getLines) {
-//        val parts = line.split(",")
-//        if(parts(0)!="-") {
-//          val trBox = RectangleHelper.parseRectangle(parts(3), "-")
-//          val lmBox = RectangleHelper.parseRectangle(parts(4), "-")
-//          val imageWidth = parts(5).toDouble
-//          val imageHeight = parts(6).toDouble
-//
-//          testInstances += new ImageTriplet(parts(0), parts(1), parts(2), trBox, lmBox, imageWidth, imageHeight,
-//            parts(7).toDouble, parts(8).toDouble, parts(9).toDouble, parts(10).toDouble, parts(11).toDouble,
-//            parts(12).toDouble, parts(13).toDouble, parts(14).toDouble, parts(15).toDouble, parts(16).toDouble,
-//            parts(17).toDouble, parts(18).toDouble, parts(19).toDouble, parts(20).toDouble, parts(21).toDouble,
-//            RectangleHelper.getIntersectionArea(trBox, lmBox, imageWidth * imageHeight),
-//            RectangleHelper.getUnionArea(trBox, lmBox, imageWidth * imageHeight))
-//        }
-//      }
 
     VisualTripletClassifier.load()
-//    VisualTripletOnClassifier.load()
-//    VisualTripletInFrontOfClassifier.load()
-//    VisualTripletInClassifier.load()
-
-    visualTriplets.populate(testTriplets, isTrain) //testTriplets, isTrain)
-
+    loadClefTestData()
+    visualTriplets.populate(cleftestInstances, isTrain) //testTriplets, isTrain)
     val results = VisualTripletClassifier.test()
-
-    val outStream = new FileOutputStream(s"$resultsDir/VisualClassifier-Combined-test.txt", false)
-
+    val outStream = new FileOutputStream(s"$resultsDir/VisualClassifier-VG-test.txt", false)
     ReportHelper.saveEvalResults(outStream, "Visual triplet(within data model)", results)
+  }
 
+  def loadClefTestData() = {
 
-//    println("Classifier On")
-//    VisualTripletOnClassifier.test()
-//    println("Classifier In_Front_Of")
-//    VisualTripletInFrontOfClassifier.test()
-//    println("Classifier In")
-//    VisualTripletInClassifier.test()
-//    println("Classifier Above")
-//    VisualTripletAboveClassifier.test()
+    val filename = s"$resultsDir/clef_prep_test.txt"
+    for (line <- Source.fromFile(filename).getLines) {
+      val parts = line.split(",")
+      if(parts(0)!="-") {
+        val trBox = RectangleHelper.parseRectangle(parts(3), "-")
+        val lmBox = RectangleHelper.parseRectangle(parts(4), "-")
+        val imageWidth = parts(5).toDouble
+        val imageHeight = parts(6).toDouble
+        parts(0) = parts(0).replaceAll("_", " ")
+        cleftestInstances += new ImageTriplet(parts(0), parts(1), parts(2), trBox, lmBox, imageWidth, imageHeight)
+      }
+    }
+  }
 
-//      val outStream = new FileOutputStream(s"data/mSprl/results/preposition-prediction-${classifierSuffix}.txt")
-//      ReportHelper.saveEvalResults(outStream, "preposition", results)
+  def clefTrainData() = {
+
+        val filename = s"$resultsDir/clefprepdata.txt"
+        for (line <- Source.fromFile(filename).getLines) {
+          val parts = line.split(",")
+          val trBox = RectangleHelper.parseRectangle(parts(3), "-")
+          val lmBox = RectangleHelper.parseRectangle(parts(4), "-")
+          val imageWidth = parts(5).toDouble
+          val imageHeight = parts(6).toDouble
+          clefTrainInstances += new ImageTriplet(parts(0), parts(1), parts(2), trBox, lmBox, imageWidth, imageHeight)
+        }
+  }
+
+  def getInstances() : (List[ImageTriplet], List[ImageTriplet]) = {
+      val flickerTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "Flickr30k.majorityhead")
+      val msCocoTripletReader = new ImageTripletReader("data/mSprl/saiapr_tc-12/imageTriplets", "MSCOCO.originalterm")
+      val trainTriplets = flickerTripletReader.trainImageTriplets ++ msCocoTripletReader.trainImageTriplets
+      val testTriplets = flickerTripletReader.testImageTriplets ++ flickerTripletReader.testImageTriplets
+    (trainTriplets.toList, testTriplets.toList)
   }
 }
 

@@ -10,6 +10,7 @@ import MultiModalPopulateData._
 import MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
 import tripletConfigurator._
 import org.apache.commons.io.FileUtils
 
@@ -168,7 +169,8 @@ object MultiModalTripletApp extends App with Logging {
 
     if (!trainTestTogether) {
       if (usePrepositions)
-        PrepositionClassifier.load()
+        //PrepositionClassifier.load()
+        VisualTripletClassifier.load()
       classifiers.foreach(x => x.load())
     }
 
@@ -248,7 +250,7 @@ object MultiModalTripletApp extends App with Logging {
       }
 
       if (usePrepositions && visualTripletsFiltered.nonEmpty) {
-        val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
+        val prepResult = VisualTripletClassifier.test(visualTripletsFiltered)
         ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
       }
 

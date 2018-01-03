@@ -31,10 +31,10 @@ object TripletSensors {
 
         imageRel.foreach {
           x =>
-            x.setTrajector(first.getText.toLowerCase())
-            x.setLandmark(third.getText.toLowerCase())
+            x.setTrajector(getHeadword(first).getText.toLowerCase())
+            x.setLandmark(getHeadword(third).getText.toLowerCase())
             if (tripletIsRelation(r) == "Relation")
-              x.setSp(second.getText.toLowerCase.trim.replaceAll(" ", "_"))
+              x.setSp(second.getText.toLowerCase.trim) //.replaceAll(" ", "_"))
 
         }
         imageRel.toList
