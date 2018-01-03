@@ -2,8 +2,6 @@ package edu.tulane.cs.hetml.nlp.sprl.Helpers
 
 import java.io.{File, IOException, PrintWriter}
 
-import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator
-
 import scala.io.Source
 import scala.collection.JavaConversions._
 
@@ -11,8 +9,9 @@ import scala.collection.JavaConversions._
   * Created by taher on 2017-04-07.
   */
 object LexiconHelper {
+  var path = ""
   def createSpatialIndicatorLexicon(xmlReader: SpRLXmlReader, minFreq: Int = 1): Unit = {
-    val lexFile = new File(mSpRLConfigurator.spatialIndicatorLex)
+    val lexFile = new File(path)
     xmlReader.reader.setPhraseTagName("SPATIALINDICATOR")
     val indicators = xmlReader.reader.getPhrases()
     val sps = indicators.groupBy(_.getText.toLowerCase.trim)
@@ -27,7 +26,7 @@ object LexiconHelper {
 
   lazy val spatialIndicatorLexicon: List[String] = {
 
-    val lexFile = new File(mSpRLConfigurator.spatialIndicatorLex)
+    val lexFile = new File(path)
     if (!lexFile.exists())
       throw new IOException(s"cannot find ${lexFile.getAbsolutePath} file")
     Source.fromFile(lexFile).getLines().toList

@@ -5,7 +5,7 @@ package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 object WordasClassifierConfigurator {
   val resultsDir = "data/mSpRL/results/"
   val useAnntotatedClef = true
-  val isTrain = false
+  var isTrain = true
   val imageDataPath = "data/mSprl/saiapr_tc-12"
   val alignmentAnnotationPath = imageDataPath + "/alignments/"
   val clefNewSegmentFeatures = imageDataPath + "/SegmentCNNFeatures/"

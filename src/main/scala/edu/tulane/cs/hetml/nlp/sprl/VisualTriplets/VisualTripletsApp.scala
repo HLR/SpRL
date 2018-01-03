@@ -7,7 +7,7 @@ import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper
 import edu.tulane.cs.hetml.vision._
 import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletsDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator.resultsDir
+import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierConfigurator.resultsDir
 import scala.util.Random
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer

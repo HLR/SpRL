@@ -3,10 +3,11 @@ package edu.tulane.cs.hetml.nlp.sprl.WordasClassifier
 import java.io.PrintWriter
 
 import edu.tulane.cs.hetml.nlp.BaseTypes._
-import edu.tulane.cs.hetml.nlp.sprl.Helpers.{CandidateGenerator, ReportHelper}
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalPopulateData.populateRoleDataFromAnnotatedCorpus
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
+import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalPopulateData.populateRoleDataFromAnnotatedCorpus
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletCandidateGenerator
+import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierConfigurator._
 import edu.tulane.cs.hetml.vision._
 
 import scala.collection.JavaConversions._
@@ -31,10 +32,10 @@ object AnnotationApp extends App {
 
   val sens = sentences().filter(s=> docs.exists(d=> d.getId.equals(s.getDocument.getId)))
 
-  val trCandidates = CandidateGenerator.getTrajectorCandidates(phrases().filter(p => p!=dummyPhrase
+  val trCandidates = TripletCandidateGenerator.getTrajectorCandidates(phrases().filter(p => p!=dummyPhrase
     && testImages.exists(t=> {p.getDocument.getId.endsWith("/" + t.getId + ".eng")})).toList)
 
-  val lmCandidates = CandidateGenerator.getLandmarkCandidates(phrases().filter(p => p!=dummyPhrase
+  val lmCandidates = TripletCandidateGenerator.getLandmarkCandidates(phrases().filter(p => p!=dummyPhrase
     && testImages.exists(t=> {p.getDocument.getId.endsWith("/" + t.getId + ".eng")})).toList)
 
   var TrCandidateCount = 0

@@ -1,18 +1,19 @@
-package edu.tulane.cs.hetml.nlp.sprl.Helpers
+package edu.tulane.cs.hetml.nlp.sprl.Pairs
 
 import java.io.{File, IOException, PrintWriter}
 
 import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.nlp.sprl.mSpRLConfigurator._
+import edu.tulane.cs.hetml.nlp.sprl.Helpers.{LexiconHelper, ReportHelper}
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLDataModel.{phrases, _}
+
 import scala.collection.JavaConversions._
 import scala.io.Source
 
 /** Created by taher on 2017-02-28.
   */
-object CandidateGenerator {
+object PairCandidateGenerator {
 
   def generateTripletCandidatesFromPairs(
                                           trSpFilter: (Relation) => Boolean,
@@ -40,44 +41,6 @@ object CandidateGenerator {
         List()
       }
     })
-  }
-
-  val withoutLandmarkIndicators = List("on the right", "on the left", "in the center", "in the centre", "on the right", "on the left")
-
-  def generateAllTripletCandidates(
-                                    trFilter: (Phrase) => Boolean,
-                                    spFilter: (Phrase) => Boolean,
-                                    lmFilter: (Phrase) => Boolean,
-                                    isTrain: Boolean
-                                  ): List[Relation] = {
-
-    val instances = if (isTrain) phrases.getTrainingInstances else phrases.getTestingInstances
-
-    val indicators = instances.filter(t => t.getId != dummyPhrase.getId && spFilter(t)).toList
-      .sortBy(x => x.getSentence.getStart + x.getStart)
-
-    val trajectors = instances.filter(t => t.getId != dummyPhrase.getId && trFilter(t)).toList
-      .sortBy(x => x.getSentence.getStart + x.getStart)
-
-    val landmarks = instances.filter(t => t.getId != dummyPhrase.getId && lmFilter(t)).toList
-      .sortBy(x => x.getSentence.getStart + x.getStart) ++ List(dummyPhrase)
-
-    val candidateRelations = indicators.flatMap(sp => {
-      val trList = trajectors.filter(t => sp.getSentence.getId == t.getSentence.getId)
-      if (trList.nonEmpty) {
-        val lmList = landmarks.filter(t => t.getId == dummyPhrase.getId || sp.getSentence.getId == t.getSentence.getId)
-        if (lmList.nonEmpty) {
-          trList.flatMap(tr => lmList.map(lm => createRelation(Some(tr), Some(sp), Some(lm))))
-            .filter(r => r.getArgumentIds.toList.distinct.size == 3) // distinct arguments
-        } else {
-          List()
-        }
-      } else {
-        List()
-      }
-    })
-    candidateRelations.filterNot(x => x.getArgumentId(2) != dummyPhrase.getId &&
-      withoutLandmarkIndicators.exists(i => i.equalsIgnoreCase(x.getArgument(1).getText)))
   }
 
   def generatePairCandidates(
@@ -154,24 +117,6 @@ object CandidateGenerator {
     r.setParent(sp.get.getSentence)
     r.setId(r.getArgumentId(0) + "_" + r.getArgumentId(1) + "_" + r.getArgumentId(2))
     r
-  }
-
-  private def getRolePosTagLexicon(phrases: List[Phrase], tagName: String, minFreq: Int, generate: Boolean): List[String] = {
-
-    val lexFile = new File(s"data/mSprl/${tagName.toLowerCase}PosTag.lex")
-    if (generate) {
-      val posTagLex = phrases.filter(x => x.containsProperty(s"${tagName.toUpperCase}_id"))
-        .map(x => pos(x)).groupBy(x => x).map { case (key, list) => (key, list.size) }.filter(_._2 >= minFreq)
-        .keys.toList
-      val writer = new PrintWriter(lexFile)
-      posTagLex.foreach(p => writer.println(p))
-      writer.close()
-      posTagLex
-    } else {
-      if (!lexFile.exists())
-        throw new IOException(s"cannot find ${lexFile.getAbsolutePath} file")
-      Source.fromFile(lexFile).getLines().toList
-    }
   }
 
 }
