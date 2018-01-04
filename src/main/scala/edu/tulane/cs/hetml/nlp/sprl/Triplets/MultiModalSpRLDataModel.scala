@@ -91,6 +91,9 @@ object MultiModalSpRLDataModel extends DataModel {
   val sentenceToVisualTriplet = edge(sentences, visualTriplets)
   sentenceToVisualTriplet.addSensor(SentenceToVisualTripletMatching _)
 
+  val sentenceToWordSegments = edge(sentences, wordSegments)
+  sentenceToWordSegments.addSensor((s: Sentence, ws: WordSegment) => s.getId == ws.getPhrase.getSentence.getId)
+
   /*
   Properties
    */

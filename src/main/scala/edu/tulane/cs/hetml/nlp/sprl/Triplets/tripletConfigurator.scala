@@ -24,8 +24,8 @@ object tripletConfigurator {
   val useConstraints = true
   val usePrepositions = true
   val trainPrepositionClassifier = false
-  val alignmentMethod = "gold" // possible values: "classifier" "gold", "w2v", "topN"
-  val topAlignmentCount = 5
+  val alignmentMethod = "topN" // possible values: "classifier" "gold", "w2v", "topN"
+  val topAlignmentCount = 3
   var populateImages = true //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val globalSpans = false // set true when dataset has global spans for roles
 }

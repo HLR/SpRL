@@ -10,7 +10,6 @@ import MultiModalPopulateData._
 import MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
 import tripletConfigurator._
 import org.apache.commons.io.FileUtils
 
@@ -35,9 +34,9 @@ object MultiModalTripletApp extends App with Logging {
   MultiModalSpRLTripletClassifiers.featureSet = model
 
   val constraintRoleClassifiers = List[ConstrainedClassifier[Phrase, Sentence]](
-    TRConstraintClassifier,
-    LMConstraintClassifier,
-    IndicatorConstraintClassifier
+    //TRConstraintClassifier,
+    //LMConstraintClassifier,
+    //IndicatorConstraintClassifier
   )
 
   val roleClassifiers = List[Learnable[Phrase]](
@@ -47,10 +46,10 @@ object MultiModalTripletApp extends App with Logging {
   )
 
   val constraintTripletClassifiers = List[ConstrainedClassifier[Relation, Sentence]](
-    TripletRelationConstraintClassifier,
-    TripletGeneralTypeConstraintClassifier,
-    TripletRegionConstraintClassifier,
-    TripletDirectionConstraintClassifier
+    TripletRelationConstraintClassifier//,
+    //TripletGeneralTypeConstraintClassifier,
+    //TripletRegionConstraintClassifier,
+    //TripletDirectionConstraintClassifier
   )
 
   val tripletClassifiers = List[Learnable[Relation]](
@@ -169,8 +168,7 @@ object MultiModalTripletApp extends App with Logging {
 
     if (!trainTestTogether) {
       if (usePrepositions)
-        //PrepositionClassifier.load()
-        VisualTripletClassifier.load()
+        PrepositionClassifier.load()
       classifiers.foreach(x => x.load())
     }
 
@@ -249,9 +247,25 @@ object MultiModalTripletApp extends App with Logging {
           ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
 
-      if (usePrepositions && visualTripletsFiltered.nonEmpty) {
-        val prepResult = VisualTripletClassifier.test(visualTripletsFiltered)
-        ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
+      if (usePrepositions) {
+        if (visualTripletsFiltered.nonEmpty) {
+          val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
+          ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
+        }
+        if(alignmentMethod == "topN") {
+          TripletSensors.alignmentHelper.trainedWordClassifier.keys.foreach {
+            w =>
+              val wClassifier = TripletSensors.alignmentHelper.trainedWordClassifier(w)
+              val constrainedWClassifier = new ConstrainedSingleWordAsClassifier(w)
+              val filtered = wordSegments().filter(_.getWord.equalsIgnoreCase(w))
+              if (filtered.nonEmpty) {
+                val res = wClassifier.test(filtered)
+                ReportHelper.saveEvalResults(outStream, s"Word as classifier '$w'", res)
+                val constrainedRes = constrainedWClassifier.test(filtered)
+                ReportHelper.saveEvalResults(outStream, s"Constrained Word as classifier '$w'", constrainedRes)
+              }
+          }
+        }
       }
 
       reportForErrorAnalysis(x => TripletRelationConstraintClassifier(x),
