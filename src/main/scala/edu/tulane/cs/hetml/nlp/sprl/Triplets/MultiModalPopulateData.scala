@@ -66,7 +66,6 @@ object MultiModalPopulateData extends Logging {
       alignmentReader.setAlignments(phraseInstances)
       images.populate(imageReader.getImageList, isTrain)
       val segs = getAdjustedSegments(imageReader.getSegmentList)
-      //val segs = imageReader.getSegmentList
       segments.populate(segs, isTrain)
       imageSegmentsDic = getImageSegmentsDic()
       if (alignmentMethod != "topN") {
@@ -164,23 +163,10 @@ object MultiModalPopulateData extends Logging {
 
   def getAdjustedSegments(segments: List[Segment]): List[Segment] = {
 
-    imageTestReader.reader.allSegments.foreach {
-      old =>
-        val seg = segments.find(x =>
-          x.getAssociatedImageID == old.getAssociatedImageID &&
-            x.getSegmentId == old.getSegmentId
-        )
-        if (seg.nonEmpty) {
-          seg.get.setBoxDimensions(old.getBoxDimensions)
-        }
-    }
-
     val alignedPhrases = phrases().filter(_.containsProperty("goldAlignment"))
     val update = alignedPhrases
       .filter(p => segments.exists(s => s.getAssociatedImageID == p.getPropertyFirstValue("imageId") &&
         p.getPropertyValues("segId").exists(_.toInt == s.getSegmentId)))
-    val addNew = alignedPhrases.filter(p => !update.contains(p))
-
 
     update.foreach {
       p =>
@@ -201,19 +187,8 @@ object MultiModalPopulateData extends Logging {
             }
         }
     }
-    val newSegs = addNew.map {
-      p =>
-        val imId = p.getPropertyFirstValue("imageId")
-        val im = images().find(_.getId == imId).get
-        val x = Math.min(im.getWidth, Math.max(0, p.getPropertyFirstValue("segX").toDouble))
-        val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
-        val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
-        val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
 
-        new Segment(imId, p.getPropertyFirstValue("segId").toInt, -1, "", headWordFrom(p), new Rectangle2D.Double(x, y, w, h))
-    }
-
-    segments ++ newSegs
+    segments
   }
 
   private def setBestAlignment() = {

@@ -27,8 +27,8 @@ class ImageSupportsSpClassifier extends Learner("sprl.ImageSpClassifier") {
       result.put("false", 0.0)
     }
     else {
-      val scores = getImageSpScores(aligned.head).take(5)
-      val sp = r.getArgument(1).getText.replaceAll(" ", "_").toLowerCase()
+      val scores = getImageSpScores(aligned.head).take(20)
+      val sp = r.getArgument(1).getText.trim.toLowerCase()
       val found = scores.find(x=> x._1.trim.equalsIgnoreCase(sp))
       if (found.isEmpty) {
         result.put("none", 0.0)
