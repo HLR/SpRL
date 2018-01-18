@@ -16,14 +16,14 @@ object tripletConfigurator {
   val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//"data/TestSet.xml"//
   val suffix = ""
   val model = FeatureSets.BaseLineWithImage
-  var isTrain = false
+  var isTrain = true
   WordasClassifierConfigurator.isTrain = isTrain
   val trainTestTogether = false
   val jointTrain = false
   val iterations = 50
   val useConstraints = true
   val usePrepositions = true
-  val trainPrepositionClassifier = false
+  val trainPrepositionClassifier = true
   val alignmentMethod = "gold" // possible values: "classifier" "gold", "w2v", "topN"
   val topAlignmentCount = 3
   var populateImages = true //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage

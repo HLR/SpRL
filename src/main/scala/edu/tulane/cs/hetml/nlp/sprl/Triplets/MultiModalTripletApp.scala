@@ -38,9 +38,9 @@ object MultiModalTripletApp extends App with Logging {
   MultiModalSpRLTripletClassifiers.featureSet = model
 
   val constraintRoleClassifiers = List[ConstrainedClassifier[Phrase, Sentence]](
-    //TRConstraintClassifier,
-    //LMConstraintClassifier,
-    //IndicatorConstraintClassifier
+    TRConstraintClassifier,
+    LMConstraintClassifier,
+    IndicatorConstraintClassifier
   )
 
   val roleClassifiers = List[Learnable[Phrase]](
@@ -50,10 +50,10 @@ object MultiModalTripletApp extends App with Logging {
   )
 
   val constraintTripletClassifiers = List[ConstrainedClassifier[Relation, Sentence]](
-    TripletRelationConstraintClassifier//,
-    //TripletGeneralTypeConstraintClassifier,
-    //TripletRegionConstraintClassifier,
-    //TripletDirectionConstraintClassifier
+    TripletRelationConstraintClassifier,
+    TripletGeneralTypeConstraintClassifier,
+    TripletRegionConstraintClassifier,
+    TripletDirectionConstraintClassifier
   )
 
   val tripletClassifiers = List[Learnable[Relation]](
@@ -64,9 +64,10 @@ object MultiModalTripletApp extends App with Logging {
   )
 
   // load all classifiers form all lists
+  val classifiersModel = if(featureSet == FeatureSets.BaseLine) featureSet.toString else featureSet + "_" + alignmentMethod
   val classifiers = roleClassifiers ++ tripletClassifiers
   classifiers.foreach(x => {
-    x.modelDir = s"models/mSpRL/triplet/$featureSet/"
+    x.modelDir = s"models/mSpRL/triplet/$classifiersModel/"
     x.modelSuffix = suffix
   })
   if (usePrepositions) {
@@ -121,7 +122,7 @@ object MultiModalTripletApp extends App with Logging {
         && (triplets(x) ~> tripletToVisualTriplet).nonEmpty)
         .toList
       ImageTripletTypeClassifier.learn(iterations, gtRels)
-      ImageTripletTypeClassifier.modelDir = s"models/mSpRL/triplet/$featureSet/"
+      ImageTripletTypeClassifier.modelDir = s"models/mSpRL/triplet/$classifiersModel/"
       ImageTripletTypeClassifier.save()
 
       ReportHelper.saveImageTripletErrorTypes(gtRels,
@@ -193,7 +194,7 @@ object MultiModalTripletApp extends App with Logging {
         && (triplets(x) ~> tripletToVisualTriplet).nonEmpty)
         .toList
 
-      ImageTripletTypeClassifier.modelDir = s"models/mSpRL/triplet/$featureSet/"
+      ImageTripletTypeClassifier.modelDir = s"models/mSpRL/triplet/$classifiersModel/"
       ImageTripletTypeClassifier.load()
       ImageTripletTypeClassifier.test(gtRels)
 
