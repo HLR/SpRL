@@ -1,14 +1,13 @@
 package edu.tulane.cs.hetml.nlp.sprl
 
 import java.awt.geom.Rectangle2D
-import java.io.PrintStream
 
 import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.documentToSentenceGenerating
 import edu.tulane.cs.hetml.nlp.sprl.Helpers._
-import edu.tulane.cs.hetml.vision.{ImageTriplet, ImageTripletReader, Segment}
+import edu.tulane.cs.hetml.vision.{ImageTripletReader, Segment}
 import mSpRLConfigurator._
 
 import scala.collection.JavaConversions._
