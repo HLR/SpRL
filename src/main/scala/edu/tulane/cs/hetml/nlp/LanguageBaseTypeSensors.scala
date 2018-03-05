@@ -70,6 +70,10 @@ object LanguageBaseTypeSensors extends Logging {
     r.getParent != null && s.getId == getSentence(r.getParent).getId
   }
 
+  def tripletToCoRefTripletMatching(r1: Relation, r2: Relation): Boolean = {
+    r1.getId==r2.getId.split("~")(0)
+  }
+
   def phraseToRelationMatching(p: Phrase, r: Relation): Boolean = {
     r.getParent != null && p.getId == getPhrase(r.getParent).getId
   }

@@ -235,6 +235,47 @@ object TripletSentenceLevelConstraints {
       a
   }
 
+  val approveRelationByCoReference = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          val coRefRels = triplets(x) ~> tripletsToCoRefTriplet
+          val pLM = x.getProperty("ProbableLandmark")
+          coRefRels.foreach(r => {
+            x.setProperty("ProbableLandmark", r.getArgument(2).toString)
+            a = a and ((TripletRelationClassifier on x is "true") ==>
+              (TripletRelationClassifier on x is "true"))
+          })
+          x.setProperty("ProbableLandmark", pLM)
+      }
+      a
+  }
+
+
+  val discardRelationByCoReference = ConstrainedClassifier.constraint[Sentence] {
+    var a: FirstOrderConstraint = null
+    s: Sentence =>
+      a = new FirstOrderConstant(true)
+      (sentences(s) ~> sentenceToTriplets).foreach {
+        x =>
+          if(x.getProperty("ImplicitLandmark")=="true") {
+            val coRefRels = triplets(x) ~> tripletsToCoRefTriplet
+            val pLM = x.getProperty("ProbableLandmark")
+            val res = coRefRels.map(r => {
+              x.setProperty("ProbableLandmark", r.getArgument(2).toString)
+              TripletRelationClassifier(x)
+            })
+            x.setProperty("ProbableLandmark", pLM)
+            val b = res.filter(r => r=="false").size
+            if(b>=(res.size/2))
+              a = a and (TripletRelationClassifier on x is "false")
+          }
+      }
+      a
+  }
+
   val approveRelationByImage = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
@@ -264,25 +305,13 @@ object TripletSentenceLevelConstraints {
     x: Sentence =>
       var a: FirstOrderConstraint = null
       a =
-        roleShouldHaveRel(x) and
+        approveRelationByCoReference(x) and
+          roleShouldHaveRel(x) and
           boostTrajector(x) and
-          boostLandmark(x) and
           boostTripletByGeneralType(x) and
           boostGeneralByDirectionMulti(x) and
           boostGeneralByRegionMulti(x)
 
-      if (tripletConfigurator.usePrepositions) {
-        if(tripletConfigurator.alignmentMethod == "topN"){
-          a = a and
-            alignmentConsistency(x) and
-            approveRelationByImage2(x)
-        }
-        else{
-          a = a and
-            discardRelationByImage(x) //and
-            //approveRelationByImage(x)
-        }
-      }
       a
   }
 
