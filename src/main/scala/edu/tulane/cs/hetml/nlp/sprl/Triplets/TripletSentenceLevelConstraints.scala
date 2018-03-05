@@ -5,10 +5,9 @@ import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.nlp.sprl.Helpers.WordClassifierHelper
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.vision.{ImageTriplet, WordSegment}
-
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.tripletConfigurator._
 import scala.collection.JavaConversions._
 
 object TripletSentenceLevelConstraints {
@@ -241,14 +240,10 @@ object TripletSentenceLevelConstraints {
       a = new FirstOrderConstant(true)
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
-          val coRefRels = triplets(x) ~> tripletsToCoRefTriplet
-          val pLM = x.getProperty("ProbableLandmark")
-          coRefRels.foreach(r => {
-            x.setProperty("ProbableLandmark", r.getArgument(2).toString)
-            a = a and ((TripletRelationClassifier on x is "true") ==>
-              (TripletRelationClassifier on x is "true"))
-          })
-          x.setProperty("ProbableLandmark", pLM)
+          if(x.getProperty("ImplicitLandmark")=="true") {
+            if(x.getProperty("CoRefTrue")=="true")
+              a = a and (TripletRelationClassifier on x is "true")
+          }
       }
       a
   }
@@ -261,15 +256,7 @@ object TripletSentenceLevelConstraints {
       (sentences(s) ~> sentenceToTriplets).foreach {
         x =>
           if(x.getProperty("ImplicitLandmark")=="true") {
-            val coRefRels = triplets(x) ~> tripletsToCoRefTriplet
-            val pLM = x.getProperty("ProbableLandmark")
-            val res = coRefRels.map(r => {
-              x.setProperty("ProbableLandmark", r.getArgument(2).toString)
-              TripletRelationClassifier(x)
-            })
-            x.setProperty("ProbableLandmark", pLM)
-            val b = res.filter(r => r=="false").size
-            if(b>=(res.size/2))
+            if(x.getProperty("CoRefFalse")=="true")
               a = a and (TripletRelationClassifier on x is "false")
           }
       }
@@ -304,14 +291,14 @@ object TripletSentenceLevelConstraints {
 
     x: Sentence =>
       var a: FirstOrderConstraint = null
-      a =
-        approveRelationByCoReference(x) and
-          roleShouldHaveRel(x) and
+      a = roleShouldHaveRel(x) and
           boostTrajector(x) and
           boostTripletByGeneralType(x) and
           boostGeneralByDirectionMulti(x) and
           boostGeneralByRegionMulti(x)
-
+      if(useCoReferenceConstraints) {
+        //a = a and approveRelationByCoReference(x) and discardRelationByCoReference(x)
+      }
       a
   }
 

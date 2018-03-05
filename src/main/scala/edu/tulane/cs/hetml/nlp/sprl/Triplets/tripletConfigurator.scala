@@ -16,7 +16,7 @@ object tripletConfigurator {
   val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//"data/TestSet.xml"//
   val suffix = ""
   val model = FeatureSets.BaseLine
-  var isTrain = false
+  var isTrain = true
   WordasClassifierConfigurator.isTrain = isTrain
   val trainTestTogether = false
   val jointTrain = false
@@ -29,5 +29,6 @@ object tripletConfigurator {
   var populateImages = false //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val globalSpans = false // set true when dataset has global spans for roles
   val useCoReference = true
+  var useCoReferenceConstraints = true
   val useCrossSentence = false
 }
