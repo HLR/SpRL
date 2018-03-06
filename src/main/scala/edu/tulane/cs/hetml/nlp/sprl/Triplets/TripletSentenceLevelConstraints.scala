@@ -243,12 +243,14 @@ object TripletSentenceLevelConstraints {
         x =>
           val coRefRels = triplets(x) ~> tripletsToCoRefTriplet
           val pLM = x.getProperty("ProbableLandmark")
-          coRefRels.foreach(r => {
+          val res = coRefRels.map(r => {
             x.setProperty("ProbableLandmark", r.getArgument(2).toString)
-            a = a and ((TripletRelationClassifier on x is "true") ==>
-              (TripletRelationClassifier on x is "true"))
+            TripletRelationClassifier(x)
           })
           x.setProperty("ProbableLandmark", pLM)
+          val b = res.filter(r => r=="true").size
+          if(b>=1)
+            a = a and (TripletRelationClassifier on x is "true")
       }
       a
   }
@@ -269,7 +271,7 @@ object TripletSentenceLevelConstraints {
             })
             x.setProperty("ProbableLandmark", pLM)
             val b = res.filter(r => r=="false").size
-            if(b>=(res.size/2))
+            if(b>=1)//(res.size/2))
               a = a and (TripletRelationClassifier on x is "false")
           }
       }
@@ -305,7 +307,7 @@ object TripletSentenceLevelConstraints {
     x: Sentence =>
       var a: FirstOrderConstraint = null
       a =
-        approveRelationByCoReference(x) and
+        //approveRelationByCoReference(x) and
           roleShouldHaveRel(x) and
           boostTrajector(x) and
           boostTripletByGeneralType(x) and
