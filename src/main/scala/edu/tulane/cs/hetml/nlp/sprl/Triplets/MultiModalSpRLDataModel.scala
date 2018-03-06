@@ -488,7 +488,7 @@ object MultiModalSpRLDataModel extends DataModel {
       else "None"
   }
 
-  val JF2_1 = property(triplets) {
+  val JF2_1 = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
       if(useCoReference && r.getProperty("ImplicitLandmark")=="true" && r.getProperty("ProbableLandmark")!="None")
@@ -552,7 +552,7 @@ object MultiModalSpRLDataModel extends DataModel {
       roleToSpDependencyPath(first, second) + "::" + second.getText.toLowerCase
   }
 
-  val JF2_8 = property(triplets) {
+  val JF2_8 = property(triplets, cache = true) {
     r: Relation =>
       val (_, _, third) = getTripletArguments(r)
       if (third == dummyPhrase)
@@ -632,7 +632,7 @@ object MultiModalSpRLDataModel extends DataModel {
       }
   }
 
-  val JF2_14 = property(triplets) {
+  val JF2_14 = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
       if(useCoReference && r.getProperty("ImplicitLandmark")=="true" && r.getProperty("ProbableLandmark")!="None")
@@ -666,7 +666,7 @@ object MultiModalSpRLDataModel extends DataModel {
       wordForm(second)
   }
 
-  val tripletLmWordForm = property(triplets) {
+  val tripletLmWordForm = property(triplets, cache = true) {
     r: Relation =>
       val (_, _, third) = getTripletArguments(r)
       if(useCoReference && r.getProperty("ImplicitLandmark")=="true" && r.getProperty("ProbableLandmark")!="None")
@@ -797,7 +797,7 @@ object MultiModalSpRLDataModel extends DataModel {
       withoutLandmark.exists(_.equalsIgnoreCase(second.getText))
   }
 
-  val tripletHeadWordForm = property(triplets) {
+  val tripletHeadWordForm = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
       if(useCoReference && r.getProperty("ImplicitLandmark")=="true" && r.getProperty("ProbableLandmark")!="None")
@@ -842,7 +842,7 @@ object MultiModalSpRLDataModel extends DataModel {
       headVector(second)
   }
 
-  val tripletLmVector = property(triplets, ordered = true) {
+  val tripletLmVector = property(triplets, cache = true, ordered = true) {
     r: Relation =>
       val (_, _, third) = getTripletArguments(r)
       if(useCoReference && r.getProperty("ImplicitLandmark")=="true" && r.getProperty("ProbableLandmark")!="None")
@@ -851,7 +851,7 @@ object MultiModalSpRLDataModel extends DataModel {
       headVector(third)
   }
 
-  val tripletLemma = property(triplets) {
+  val tripletLemma = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
       if(useCoReference && r.getProperty("ImplicitLandmark")=="true" && r.getProperty("ProbableLandmark")!="None")
@@ -860,7 +860,7 @@ object MultiModalSpRLDataModel extends DataModel {
       lemma(first) + "::" + lemma(second) + "::" + lemma(third)
   }
 
-  val tripletHeadWordLemma = property(triplets) {
+  val tripletHeadWordLemma = property(triplets, cache = true) {
     r: Relation =>
       val (first, second, third) = getTripletArguments(r)
       if(useCoReference && r.getProperty("ImplicitLandmark")=="true" && r.getProperty("ProbableLandmark")!="None")

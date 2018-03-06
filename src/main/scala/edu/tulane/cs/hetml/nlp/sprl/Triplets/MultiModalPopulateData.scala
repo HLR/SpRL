@@ -13,10 +13,10 @@ import edu.tulane.cs.hetml.nlp.sprl.Triplets.tripletConfigurator.{isTrain, _}
 import edu.tulane.cs.hetml.relations.RelationInformationReader
 import edu.tulane.cs.hetml.vision.{ImageTripletReader, Segment, WordSegment}
 import me.tongfei.progressbar.ProgressBar
-
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors.getGoogleSimilarity
+import edu.tulane.cs.hetml.nlp.sprl.Triplets.tripletConfigurator._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers.TripletRelationClassifier
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers.TripletRelationConstraintClassifier
 
@@ -218,7 +218,7 @@ object MultiModalPopulateData extends Logging {
             ProbableLandmark.foreach(p => {
               if(p._3>0) {
                 val rNew = new Relation()
-                rNew.setId(r.getId + "~" + count)
+                rNew.setId(r.getId)
                 rNew.setArgument(0, r.getArgument(0))
                 rNew.setArgument(1, r.getArgument(1))
                 rNew.setArgument(2, p._1)
@@ -248,63 +248,35 @@ object MultiModalPopulateData extends Logging {
       })
       p.stop()
     }
-
     triplets.populate(candidateRelations, isTrain)
-    if(!isTrain)
-      tripletsCoReference.populate(coReferenceTriplets, isTrain)
-//    if(newExperiment) {
-//      var correct = 0
-//      var wrong = 0
-//      var wrongPred = 0
-//      var coRefcorrect = 0
-//      var coRefwrong = 0
-//      var coRefwrongPred = 0
-//      triplets().filter(r => r.getProperty("ImplicitLandmark")=="true").foreach(r => {
-//        val gRel = r.getProperty("Relation")
-//        val pRel = TripletRelationConstraintClassifier(r)
-//        if(gRel=="true" && pRel=="true")
-//          correct = correct + 1
-//        else if(gRel=="true" && pRel=="false")
-//          wrong = wrong + 1
-//        else if(gRel!="true" && pRel=="true")
-//          wrongPred = wrongPred + 1
-//        println("R ->" + gRel + "P ->" + pRel)
-////        println("Features ->" + JF2_1(r) + " " + JF2_2(r) + " " + JF2_3(r) + " " + JF2_4(r) + " " + JF2_5(r) + " " + JF2_6(r) + " " +
-////          JF2_8(r) + " " + JF2_9(r) + " " + JF2_10(r) + " " + JF2_11(r) + " " + JF2_13(r) + " " + JF2_14(r) + " " + JF2_15(r) + " " +
-////          tripletSpWithoutLandmark(r) + " " + tripletPhrasePos(r) + " " + tripletDependencyRelation(r) + " " + tripletHeadWordPos(r) + " " +
-////          tripletLmBeforeSp(r) + " " + tripletTrBeforeLm(r) + " " + tripletTrBeforeSp(r) + " " +
-////          tripletDistanceTrSp(r) + " " + tripletDistanceLmSp(r))
-//
-//        val impLM = r.getProperty("ProbableLandmark")
-//        var found = -1
-//        coReferenceTriplets.filter(rNew => rNew.getId==r.getId).foreach(rNew => {
-//
-//          r.setProperty("ProbableLandmark", rNew.getArgument(2).toString)
-//
-////          println("Features ->" + JF2_1(r) + " " + JF2_2(r) + " " + JF2_3(r) + " " + JF2_4(r) + " " + JF2_5(r) + " " + JF2_6(r) + " " +
-////            JF2_8(r) + " " + JF2_9(r) + " " + JF2_10(r) + " " + JF2_11(r) + " " + JF2_13(r) + " " + JF2_14(r) + " " + JF2_15(r) + " " +
-////            tripletSpWithoutLandmark(r) + " " + tripletPhrasePos(r) + " " + tripletDependencyRelation(r) + " " + tripletHeadWordPos(r) + " " +
-////            tripletLmBeforeSp(r) + " " + tripletTrBeforeLm(r) + " " + tripletTrBeforeSp(r) + " " +
-////            tripletDistanceTrSp(r) + " " + tripletDistanceLmSp(r))
-//          val res = TripletRelationConstraintClassifier(r)
-//          if(res=="true" && gRel=="true")
-//            found = 0
-//          else if(res=="false" && gRel=="true")
-//            found = 1
-//          else if(res=="true" && gRel!="true")
-//            found = 2
-//        })
-//        if(found ==0)
-//          coRefcorrect = coRefcorrect + 1
-//        else if(found==1)
-//          coRefwrong = coRefwrong + 1
-//        else if(found==2)
-//          coRefwrongPred = coRefwrongPred + 1
-//        r.setProperty("ProbableLandmark", impLM)
-//      })
-//      println("Correct -> " + correct + " Wrong -> " + wrong + " Wrongly Pred -> " + wrongPred)
-//      println("CoRefCorrect -> " + coRefcorrect + " CoRefWrong -> " + coRefwrong + " CoRef Wrongly Pred -> " + coRefwrongPred)
-//    }
+
+    if(!isTrain) {
+      //tripletsCoReference.populate(coReferenceTriplets, isTrain)
+      useCoReferenceConstraints = false
+      triplets().filter(r => r.getProperty("ImplicitLandmark")=="true").foreach(r => {
+        val impLM = r.getProperty("ProbableLandmark")
+        var coRefTrue = "false"
+        var coRefFalseCount = 0
+        val coRefRels = coReferenceTriplets.filter(rNew => rNew.getId==r.getId)
+        coRefRels.foreach(rNew => {
+          r.setProperty("ProbableLandmark", rNew.getArgument(2).toString)
+          val res = TripletRelationConstraintClassifier(r)
+          if(res=="true")
+            coRefTrue = "true"
+          else
+            coRefFalseCount = coRefFalseCount + 1
+        })
+        if(coRefFalseCount>=coRefRels.size/2 && coRefTrue!="true")
+          r.setProperty("CoRefFalse", "true")
+        else
+          r.setProperty("CoRefFalse", "false")
+
+        r.setProperty("CoRefTrue", coRefTrue)
+
+        r.setProperty("ProbableLandmark", impLM)
+      })
+      useCoReferenceConstraints = true
+    }
 
     logger.info("Triplet population finished.")
   }
