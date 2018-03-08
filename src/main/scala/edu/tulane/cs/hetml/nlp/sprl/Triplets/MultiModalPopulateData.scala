@@ -129,6 +129,7 @@ object MultiModalPopulateData extends Logging {
           r.setProperty("ImplicitLandmark","false")
       })
       println("Processing for Co-Reference...")
+      val similarityMin = 1.00
       //**
       // Landmark Candidates
       val instances = if (isTrain) phrases.getTrainingInstances else phrases.getTestingInstances
@@ -164,29 +165,25 @@ object MultiModalPopulateData extends Logging {
               uniqueRelsForLM.update(key, count)
             }
           })
-          //**
-          // get all sentence triplets where tr and sp matches
-//          val senSameRels = candidateRelations.filter(c => c.getProperty("ActualId")==r.getProperty("ActualId") &&
-//            c.getArgument(0).toString==r.getArgument(0).toString && c.getArgument(1).toString==r.getArgument(1).toString)
 
+          //**
+          // get all landmark candidates for the sentence
           val rSId = r.getArgumentId(0).split("\\(")(0)
-          val sentenceLMs =
-            if(useCrossSentence) {
-              val docId = sentences().filter(s => s.getId==rSId).head.getDocument.getId
-              val sens = sentences().filter(s => s.getDocument.getId==docId)
-              landmarks.filter(l => {
-                sens.exists(s => {
-                  s.getId==l.getSentence.getId
-                }) && l.getText!=r.getArgument(0).toString && l.getText!=r.getArgument(2).toString
-              })
-            }
-            else {
-              //**
-              // get all landmark candidates for the sentence
-              landmarks.filter(l => {
-                l.getSentence.getId == rSId && l.getText!=r.getArgument(0).toString && l.getText!=r.getArgument(2).toString
-              })
-            }
+          val sentenceLMs = landmarks.filter(l => {
+            l.getSentence.getId == rSId && l.getText!=r.getArgument(0).toString && l.getText!=r.getArgument(2).toString
+          })
+
+//            if(useCrossSentence) {
+//              val docId = sentences().filter(s => s.getId==rSId).head.getDocument.getId
+//              val sens = sentences().filter(s => s.getDocument.getId==docId)
+//              landmarks.filter(l => {
+//                sens.exists(s => {
+//                  s.getId==l.getSentence.getId
+//                }) && l.getText!=r.getArgument(0).toString && l.getText!=r.getArgument(2).toString
+//              })
+//            }
+//            else {
+//            }
 
           //**
           // Similarity scroes for each
@@ -204,19 +201,19 @@ object MultiModalPopulateData extends Logging {
             }
           })
 
-          val ProbableLandmark = w2vVectorScores.sortBy(_._3).last
-          if (ProbableLandmark._3 > 0.75 && ProbableLandmark._1.getText != "None") {
-            val pLM = headWordFrom(ProbableLandmark._1)
-            r.setProperty("ProbableLandmark", pLM)
-          }
-          else {
-            r.setProperty("ProbableLandmark", "None")
-          }
+//          val ProbableLandmark = w2vVectorScores.sortBy(_._3).last
+//          if (ProbableLandmark._3 > 0.75 && ProbableLandmark._1.getText != "None") {
+//            val pLM = headWordFrom(ProbableLandmark._1)
+//            r.setProperty("ProbableLandmark", pLM)
+//          }
+//          else {
+//            r.setProperty("ProbableLandmark", "None")
+//          }
           if(!isTrain) {
             val ProbableLandmark = w2vVectorScores.sortBy(_._3)
             var count = 0
-            ProbableLandmark.foreach(p => {
-              if(p._3>0) {
+            ProbableLandmark.takeRight(1).foreach(p => {
+              if(p._3>similarityMin) {
                 val rNew = new Relation()
                 rNew.setId(r.getId)
                 rNew.setArgument(0, r.getArgument(0))
@@ -225,7 +222,7 @@ object MultiModalPopulateData extends Logging {
 
                 rNew.setArgumentId(0, r.getArgumentId(0))
                 rNew.setArgumentId(1, r.getArgumentId(1))
-                rNew.setArgumentId(2, p._1.getId)
+                rNew.setArgumentId(2, r.getArgumentId(2))
 
                 rNew.setParent(r.getParent)
 
@@ -242,40 +239,16 @@ object MultiModalPopulateData extends Logging {
             })
           }
         }
-        else {
-          r.setProperty("ProbableLandmark", "None")
-        }
+//        else {
+//          r.setProperty("ProbableLandmark", "None")
+//        }
       })
       p.stop()
     }
     triplets.populate(candidateRelations, isTrain)
 
-    if(!isTrain) {
-      //tripletsCoReference.populate(coReferenceTriplets, isTrain)
-      useCoReferenceConstraints = false
-      triplets().filter(r => r.getProperty("ImplicitLandmark")=="true").foreach(r => {
-        val impLM = r.getProperty("ProbableLandmark")
-        var coRefTrue = "false"
-        var coRefFalseCount = 0
-        val coRefRels = coReferenceTriplets.filter(rNew => rNew.getId==r.getId)
-        coRefRels.foreach(rNew => {
-          r.setProperty("ProbableLandmark", rNew.getArgument(2).toString)
-          val res = TripletRelationConstraintClassifier(r)
-          if(res=="true")
-            coRefTrue = "true"
-          else
-            coRefFalseCount = coRefFalseCount + 1
-        })
-        if(coRefFalseCount>=coRefRels.size/2 && coRefTrue!="true")
-          r.setProperty("CoRefFalse", "true")
-        else
-          r.setProperty("CoRefFalse", "false")
-
-        r.setProperty("CoRefTrue", coRefTrue)
-
-        r.setProperty("ProbableLandmark", impLM)
-      })
-      useCoReferenceConstraints = true
+    if(!isTrain && useCoReference) {
+      tripletsCoReference.populate(coReferenceTriplets, isTrain)
     }
 
     logger.info("Triplet population finished.")
