@@ -91,6 +91,15 @@ object MultiModalSpRLTripletClassifiers {
       .diff(List(headWordPos, headWordFrom, headDependencyRelation))
   }
 
+  object TripletCoReferenceRelationClassifier extends Learnable(triplets) {
+    def label = tripletIsRelation is "Relation"
+
+    override lazy val classifier = new SparsePerceptron()
+
+    override def feature =  (tripletFeatures)
+      .diff(List(tripletLmVector, tripletMatchingSegmentRelationFeatures))
+  }
+
   object TripletRelationClassifier extends Learnable(triplets) {
     def label = tripletIsRelation is "Relation"
 

@@ -5,7 +5,7 @@ import java.io.PrintWriter
 
 import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.BaseTypes._
-import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.documentToSentenceGenerating
+import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.{documentToSentenceGenerating, getHeadword}
 import edu.tulane.cs.hetml.nlp.sprl.Helpers._
 import MultiModalSpRLDataModel.{segments, _}
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSensors.alignmentHelper
@@ -13,6 +13,7 @@ import edu.tulane.cs.hetml.nlp.sprl.Triplets.tripletConfigurator.{isTrain, _}
 import edu.tulane.cs.hetml.relations.RelationInformationReader
 import edu.tulane.cs.hetml.vision.{ImageTripletReader, Segment, WordSegment}
 import me.tongfei.progressbar.ProgressBar
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors.getGoogleSimilarity
@@ -46,6 +47,12 @@ object MultiModalPopulateData extends Logging {
 
   def alignmentReader = if (isTrain) alignmentTrainReader else alignmentTestReader
 
+  def getVGCount(r: Relation): Int = {
+    val (tr, sp, lm) = getTripletArguments(r)
+    val instances = visualgenomeRelationsList.filter(v => v.getPredicate==sp.getText && v.getSubject==getHeadword(tr) &&
+      r.getArgument(2).toString.contains(v.getObject))
+    instances.size
+  }
   def populateRoleDataFromAnnotatedCorpus(populateNullPairs: Boolean = true): Unit = {
     logger.info("Role population started ...")
     if (isTrain && onTheFlyLexicon) {
@@ -122,11 +129,20 @@ object MultiModalPopulateData extends Logging {
     xmlReader.setTripletRelationTypes(candidateRelations)
 
     if(useCoReference) {
+      val implicitLMs = List("it","them", "him", "her")
       candidateRelations.foreach(r => {
-        if(r.getArgument(2).toString=="it")
-          r.setProperty("ImplicitLandmark","true")
-        else
-          r.setProperty("ImplicitLandmark","false")
+        if(isTrain) {
+          if (implicitLMs.contains(r.getArgument(2).toString) && r.getProperty("Relation") == "true")
+            r.setProperty("ImplicitLandmark", "true")
+          else
+            r.setProperty("ImplicitLandmark", "false")
+        }
+        else {
+          if (implicitLMs.contains(r.getArgument(2).toString))
+            r.setProperty("ImplicitLandmark", "true")
+          else
+            r.setProperty("ImplicitLandmark", "false")
+        }
       })
       println("Processing for Co-Reference...")
       val similarityMin = 1.00
@@ -172,76 +188,66 @@ object MultiModalPopulateData extends Logging {
           val sentenceLMs = landmarks.filter(l => {
             l.getSentence.getId == rSId && l.getText!=r.getArgument(0).toString && l.getText!=r.getArgument(2).toString
           })
-
-//            if(useCrossSentence) {
-//              val docId = sentences().filter(s => s.getId==rSId).head.getDocument.getId
-//              val sens = sentences().filter(s => s.getDocument.getId==docId)
-//              landmarks.filter(l => {
-//                sens.exists(s => {
-//                  s.getId==l.getSentence.getId
-//                }) && l.getText!=r.getArgument(0).toString && l.getText!=r.getArgument(2).toString
-//              })
-//            }
-//            else {
-//            }
-
-          //**
-          // Similarity scroes for each
-          val w2vVectorScores = uniqueRelsForLM.toList.map(t => {
-            val rSplited = t._1.split("-")
-            if(rSplited.length==3) {
-              val v = getMaxW2VScore(rSplited(2), sentenceLMs)
-              v
-            }
-            else {
-              val dummyLM = new Phrase()
-              dummyLM.setText("None")
-              dummyLM.setId("dummy")
-              (dummyLM, -1, 0.0)
-            }
-          })
-
-//          val ProbableLandmark = w2vVectorScores.sortBy(_._3).last
-//          if (ProbableLandmark._3 > 0.75 && ProbableLandmark._1.getText != "None") {
-//            val pLM = headWordFrom(ProbableLandmark._1)
-//            r.setProperty("ProbableLandmark", pLM)
-//          }
-//          else {
-//            r.setProperty("ProbableLandmark", "None")
-//          }
-          if(!isTrain) {
-            val ProbableLandmark = w2vVectorScores.sortBy(_._3)
-            var count = 0
-            ProbableLandmark.takeRight(1).foreach(p => {
-              if(p._3>similarityMin) {
-                val rNew = new Relation()
-                rNew.setId(r.getId)
-                rNew.setArgument(0, r.getArgument(0))
-                rNew.setArgument(1, r.getArgument(1))
-                rNew.setArgument(2, p._1)
-
-                rNew.setArgumentId(0, r.getArgumentId(0))
-                rNew.setArgumentId(1, r.getArgumentId(1))
-                rNew.setArgumentId(2, r.getArgumentId(2))
-
-                rNew.setParent(r.getParent)
-
-                rNew.setProperty("RCC8", r.getProperty("RCC8"))
-                rNew.setProperty("Relation", r.getProperty("Relation"))
-                rNew.setProperty("FoR", r.getProperty("FoR"))
-                rNew.setProperty("SpecificType", r.getProperty("SpecificType"))
-                rNew.setProperty("ActualId", r.getProperty("ActualId"))
-                rNew.setProperty("GeneralType", r.getProperty("GeneralType"))
-
-                coReferenceTriplets += rNew
-                count = count + 1
+          if(sentenceLMs.size>0){
+            //**
+            // Similarity scroes for each
+            val totalInstances = uniqueRelsForLM.size
+            val w2vVectorScores = uniqueRelsForLM.toList.map(t => {
+              val rSplited = t._1.split("-")
+              if(rSplited.length==3) {
+                val v = getMaxW2VScore(rSplited(2), sentenceLMs, t._2, totalInstances)
+                v
+              }
+              else {
+                val dummyLM = new Phrase()
+                dummyLM.setText("None")
+                dummyLM.setId("dummy")
+                (dummyLM, -1, 0.0)
               }
             })
+
+            val ProbableLandmark = w2vVectorScores.sortBy(_._3).last
+            if (ProbableLandmark._3 > 0.60 && ProbableLandmark._1.getText != "None") {
+              val pLM = headWordFrom(ProbableLandmark._1)
+              r.setProperty("ProbableLandmark", pLM)
+            }
+            else {
+              r.setProperty("ProbableLandmark", "None")
+            }
+            if(!isTrain) {
+              val ProbableLandmark = w2vVectorScores.sortBy(_._3)
+              var count = 0
+              ProbableLandmark.takeRight(3).foreach(p => {
+                if(p._3>0.0) {
+                  val rNew = new Relation()
+                  rNew.setId(r.getId + "~" + count)
+                  rNew.setArgument(0, r.getArgument(0))
+                  rNew.setArgument(1, r.getArgument(1))
+                  rNew.setArgument(2, p._1)
+
+                  rNew.setArgumentId(0, r.getArgumentId(0))
+                  rNew.setArgumentId(1, r.getArgumentId(1))
+                  rNew.setArgumentId(2, p._1.getId)
+
+                  rNew.setParent(r.getParent)
+
+                  rNew.setProperty("RCC8", r.getProperty("RCC8"))
+                  rNew.setProperty("Relation", r.getProperty("Relation"))
+                  rNew.setProperty("FoR", r.getProperty("FoR"))
+                  rNew.setProperty("SpecificType", r.getProperty("SpecificType"))
+                  rNew.setProperty("ActualId", r.getProperty("ActualId"))
+                  rNew.setProperty("GeneralType", r.getProperty("GeneralType"))
+
+                  coReferenceTriplets += rNew
+                  count = count + 1
+                }
+              })
+            }
           }
         }
-//        else {
-//          r.setProperty("ProbableLandmark", "None")
-//        }
+        else {
+          r.setProperty("ProbableLandmark", "None")
+        }
       })
       p.stop()
     }
@@ -254,12 +260,15 @@ object MultiModalPopulateData extends Logging {
     logger.info("Triplet population finished.")
   }
 
-  def getMaxW2VScore(replacementLM: String, sentenceLMs: List[Phrase]): (Phrase, Int, Double) = {
+  def getMaxW2VScore(replacementLM: String, sentenceLMs: List[Phrase], tripletCount: Double, totalTriplets : Double): (Phrase, Int, Double) = {
     val scores = sentenceLMs.map(w => {
       val phraseText = w.getText.replaceAll("[^A-Za-z0-9]", " ")
       phraseText.replaceAll("\\s+", " ");
       w.setText(phraseText)
-      getGoogleSimilarity(replacementLM, headWordFrom(w))
+      val g = getGoogleSimilarity(replacementLM, headWordFrom(w))
+      val o = tripletCount / totalTriplets
+      val total = g/2 + o/2
+      total
     })
     val maxScore = scores.max
     val maxIndex = scores.indexOf(scores.max)

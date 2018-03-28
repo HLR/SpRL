@@ -12,8 +12,8 @@ object tripletConfigurator {
   val alignmentAnnotationPath = imageDataPath + "/alignments/"
   val modelDir = "models/mSpRL/"
   val spatialIndicatorLex = "data/mSprl/spatialIndicator.lex"
-  val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"//"data/TrainSet.xml"//
-  val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//"data/TestSet.xml"//
+  val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"
+  val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"
   val suffix = ""
   val model = FeatureSets.BaseLine
   var isTrain = false
@@ -28,6 +28,6 @@ object tripletConfigurator {
   val topAlignmentCount = 3
   var populateImages = false //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val globalSpans = false // set true when dataset has global spans for roles
-  val useCoReference = true
+  val useCoReference = false
   var useCoReferenceConstraints = false
 }
