@@ -25,9 +25,9 @@ object SpRLwithOntologiesApp extends App with Logging {
   sentences.populate(readerSpRL.getSentences, isTrain)
 
   readerSpRL.reader.addPropertiesFromTag( "TRAJECTOR", phrases.getTrainingInstances.toList, XmlMatchings.elementContainsXmlHeadwordMatching)
-  readerTrips.addPropertiesFromTag("PHRASE_type",phrases.getTrainingInstances.toList, XmlMatchings.elementContainsXmlHeadwordMatching)
+  readerTrips.addPropertiesFromTag("PHRASE",phrases.getTrainingInstances.toList, XmlMatchings.elementContainsXmlHeadwordMatching)
 
-  val s= phrases.getTrainingInstances.head.getPropertyValues("PHRASE_type")
+  val s= phrases.getTrainingInstances.head.getPropertyFirstValue("PHRASE_type")
 
   print("p= ", s)
 

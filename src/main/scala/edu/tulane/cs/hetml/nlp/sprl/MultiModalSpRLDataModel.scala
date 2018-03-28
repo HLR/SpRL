@@ -93,6 +93,20 @@ object MultiModalSpRLDataModel extends DataModel {
   /*
   Properties
    */
+
+  /* The set of TRIPS ontology Features
+      */
+
+  //Phrase Features
+//  val tripsPhraseType = property (phrases) {
+//    x: Phrase =>
+//
+//  }
+
+  /*End of TRIPS ontology Features
+     */
+
+
   val trajectorRole = property(phrases) {
     x: Phrase =>
       if (x.containsProperty("TRAJECTOR_id") && x != dummyPhrase)
