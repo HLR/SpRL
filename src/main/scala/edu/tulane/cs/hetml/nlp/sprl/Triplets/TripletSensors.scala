@@ -8,9 +8,13 @@ import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors.matchingCandidates
 import edu.tulane.cs.hetml.vision.{ImageTriplet, Segment, WordSegment}
 
 object TripletSensors {
-  lazy val alignmentHelper = new WordClassifierHelper()
-  if (tripletConfigurator.alignmentMethod == "classifier" || tripletConfigurator.alignmentMethod == "topN")
-    alignmentHelper.loadAllTrainedClassifiers(true)
+  var alignmentHelper: WordClassifierHelper = _
+  if (tripletConfigurator.populateImages) {
+    if (tripletConfigurator.alignmentMethod == "classifier" || tripletConfigurator.alignmentMethod == "topN") {
+      alignmentHelper = new WordClassifierHelper()
+      alignmentHelper.loadAllTrainedClassifiers(true)
+    }
+  }
 
   def TripletToVisualTripletGenerating(r: Relation): List[ImageTriplet] = {
     val (first, second, third) = getTripletArguments(r)
