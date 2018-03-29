@@ -67,7 +67,13 @@ BM+C+I_classifier_align         71.394     66.554     68.889     885        825
 BM+C+I_classifier_align_perp    71.691     66.102     68.783     885        816
 ```
 
+### Setting models
+You can use the `Triplets/tripletConfigurator.scala` to set the configuration of the train and test models. 
 
+ [BM] is the baseline model and is set using `val model = FeatureSets.BaseLine` and disable using images and preposition classifiers
+ `val usePrepositions = false` and `var populateImages = false`
+
+\TODO: explain the parameters in the configuration file here or in the code itself.
 
 ## References
 [1] Taher Rahgooy, Umar Manzoor, and Parisa Kordjamshidi. "??". In preparation
