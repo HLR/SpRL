@@ -1,4 +1,4 @@
-package edu.tulane.cs.hetml.nlp.sprl.Triplets
+package edu.tulane.cs.hetml.nlp.sprl.Anaphora
 
 import java.io.PrintWriter
 
@@ -7,11 +7,11 @@ import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation, Sentence}
 import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors.getGoogleSimilarity
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalPopulateData._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.tripletConfigurator._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.MultiModalPopulateData._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.TripletSentenceLevelConstraintClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.tripletConfigurator._
 import edu.tulane.cs.hetml.relations.RelationInformationReader
 import me.tongfei.progressbar.ProgressBar
 
@@ -103,13 +103,23 @@ object CoReferenceTripletApp extends App with Logging {
       x => IndicatorRoleClassifier(x) == "true",
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
-    constraintRoleClassifiers.foreach {
-      x => x.test()
+    if(useModel=="M1") {
+      roleClassifiers.foreach {
+        x => x.test()
+      }
+      tripletClassifiers.foreach {
+        x =>
+          x.test()
+      }
     }
-
-    constraintTripletClassifiers.foreach {
-      x =>
-        x.test()
+    else if(useModel=="M2") {
+      constraintRoleClassifiers.foreach {
+        x => x.test()
+      }
+      constraintTripletClassifiers.foreach {
+        x =>
+          x.test()
+      }
     }
   }
 }

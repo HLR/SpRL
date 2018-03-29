@@ -1,14 +1,14 @@
-package edu.tulane.cs.hetml.nlp.sprl.Triplets
+package edu.tulane.cs.hetml.nlp.sprl.Anaphora
 
 import edu.illinois.cs.cogcomp.saul.datamodel.DataModel
 import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSensors._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.TripletSensors._
 import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
 import edu.tulane.cs.hetml.vision._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.tripletConfigurator._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.tripletConfigurator._
 /** Created by Taher on 2017-01-11.
   */
 object MultiModalSpRLDataModel extends DataModel {

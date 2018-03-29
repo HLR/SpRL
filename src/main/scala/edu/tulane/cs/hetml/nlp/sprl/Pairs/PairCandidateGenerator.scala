@@ -6,7 +6,7 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.{LexiconHelper, ReportHelper}
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLDataModel.{phrases, _}
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.MultiModalSpRLDataModel.{phrases, _}
 
 import scala.collection.JavaConversions._
 import scala.io.Source

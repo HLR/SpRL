@@ -1,19 +1,14 @@
-package edu.tulane.cs.hetml.nlp.sprl.Triplets
+package edu.tulane.cs.hetml.nlp.sprl.Anaphora
 
 import edu.illinois.cs.cogcomp.lbjava.infer.{FirstOrderConstant, FirstOrderConstraint}
 import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.tripletConfigurator._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
-import edu.tulane.cs.hetml.vision.{ImageTriplet, WordSegment}
-
-import scala.collection.JavaConversions._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.tripletConfigurator._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.MultiModalSpRLTripletClassifiers._
 
 object TripletSentenceLevelConstraints {
-  val imageSupportsSp2 = new ImageSupportsSpClassifier2()
-  val imageSupportsSp = new ImageSupportsSpClassifier()
   val wordAsClassifierHelper = TripletSensors.alignmentHelper
 
   val roleShouldHaveRel = ConstrainedClassifier.constraint[Sentence] {
@@ -193,48 +188,6 @@ object TripletSentenceLevelConstraints {
       a
   }
 
-  val approveRelationByImage2 = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      if(sentWordSegs.contains(s.getId)) {
-        val candidateAlignments = sentWordSegs(s.getId)
-        //wordSegments().filter(x => x.getPhrase.getSentence.getId == s.getId).toList
-        val candidatePhraseIds = candidateAlignments.map(_.getPhrase.getId)
-        val img = (sentences(s) ~> -documentToSentence ~> documentToImage).head
-        (sentences(s) ~> sentenceToTriplets)
-          .filter(x => candidatePhraseIds.contains(x.getArgumentId(0)) && candidatePhraseIds.contains(x.getArgumentId(2)))
-          .foreach {
-            r =>
-              val tr = headWordLemma((triplets(r) ~> tripletToTr).head)
-              val lm = headWordLemma((triplets(r) ~> tripletToLm).head)
-              val sp = (triplets(r) ~> tripletToSp).head.getText.toLowerCase.replace(" ", "_")
-              val trPairs = candidateAlignments.filter(y => y.getPhrase.getId == r.getArgumentId(0))
-              val lmPairs = candidateAlignments.filter(y => y.getPhrase.getId == r.getArgumentId(2))
-              trPairs.foreach {
-                x =>
-                  val trSeg = x.getSegment
-                  val t = new WordSegment(tr, trSeg, false)
-                  val trAlignment = wordAsClassifierHelper.trainedWordClassifier(x.getWord)
-                  lmPairs.foreach {
-                    y =>
-                      val lmAlignment = wordAsClassifierHelper.trainedWordClassifier(y.getWord)
-                      val lmSeg = y.getSegment
-                      val vt = new ImageTriplet(sp, tr, lm, trSeg.getBoxDimensions, lmSeg.getBoxDimensions,
-                        img.getWidth, img.getHeight)
-                      val l = new WordSegment(lm, lmSeg, false)
-                      a = a and
-                        (((imageSupportsSp2 on vt is "true")
-                          and (trAlignment on t is "true")
-                          and (lmAlignment on l is "true")) ==>
-                          (TripletRelationClassifier on r is "true"))
-                  }
-              }
-          }
-      }
-      a
-  }
-
   val approveRelationByCoReference = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
@@ -252,30 +205,6 @@ object TripletSentenceLevelConstraints {
               a = a and (Rc ==> Rr)
             })
           }
-      }
-      a
-  }
-
-  val approveRelationByImage = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and ((imageSupportsSp on x is "true") ==>
-            (TripletRelationClassifier on x is "true"))
-      }
-      a
-  }
-
-  val discardRelationByImage = ConstrainedClassifier.constraint[Sentence] {
-    var a: FirstOrderConstraint = null
-    s: Sentence =>
-      a = new FirstOrderConstant(true)
-      (sentences(s) ~> sentenceToTriplets).foreach {
-        x =>
-          a = a and ((imageSupportsSp on x is "false") ==>
-            (TripletRelationClassifier on x is "false"))
       }
       a
   }

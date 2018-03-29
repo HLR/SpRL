@@ -1,12 +1,12 @@
-package edu.tulane.cs.hetml.nlp.sprl.Triplets
+package edu.tulane.cs.hetml.nlp.sprl.Anaphora
 
 import edu.illinois.cs.cogcomp.infer.ilp.GurobiHook
 import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation, Sentence}
 import MultiModalSpRLDataModel.{sentenceToWordSegments, _}
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSensors.alignmentHelper
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraints._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.TripletSensors.alignmentHelper
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.TripletSentenceLevelConstraints._
 import edu.tulane.cs.hetml.vision.{ImageTriplet, WordSegment}
 
 object TripletSentenceLevelConstraintClassifiers {

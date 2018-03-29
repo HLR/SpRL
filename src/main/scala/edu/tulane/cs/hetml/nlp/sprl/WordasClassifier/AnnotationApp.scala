@@ -4,9 +4,9 @@ import java.io.PrintWriter
 
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.ReportHelper
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalPopulateData.populateRoleDataFromAnnotatedCorpus
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletCandidateGenerator
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.MultiModalPopulateData.populateRoleDataFromAnnotatedCorpus
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.TripletCandidateGenerator
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierConfigurator._
 import edu.tulane.cs.hetml.vision._
 

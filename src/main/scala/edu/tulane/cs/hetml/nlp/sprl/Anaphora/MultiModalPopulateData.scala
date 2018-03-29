@@ -1,4 +1,4 @@
-package edu.tulane.cs.hetml.nlp.sprl.Triplets
+package edu.tulane.cs.hetml.nlp.sprl.Anaphora
 
 import java.awt.geom.Rectangle2D
 import java.io.PrintWriter
@@ -8,8 +8,8 @@ import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.{documentToSentenceGenerating, getHeadword}
 import edu.tulane.cs.hetml.nlp.sprl.Helpers._
 import MultiModalSpRLDataModel.{segments, _}
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSensors.alignmentHelper
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.tripletConfigurator.{isTrain, _}
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.TripletSensors.alignmentHelper
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.tripletConfigurator.{isTrain, _}
 import edu.tulane.cs.hetml.relations.RelationInformationReader
 import edu.tulane.cs.hetml.vision.{ImageTripletReader, Segment, WordSegment}
 import me.tongfei.progressbar.ProgressBar
@@ -17,9 +17,9 @@ import me.tongfei.progressbar.ProgressBar
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors.getGoogleSimilarity
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.tripletConfigurator._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers.TripletRelationClassifier
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers.TripletRelationConstraintClassifier
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.tripletConfigurator._
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.MultiModalSpRLTripletClassifiers.TripletRelationClassifier
+import edu.tulane.cs.hetml.nlp.sprl.Anaphora.TripletSentenceLevelConstraintClassifiers.TripletRelationConstraintClassifier
 
 /** Created by Taher on 2017-02-12.
   */
@@ -53,6 +53,7 @@ object MultiModalPopulateData extends Logging {
       r.getArgument(2).toString.contains(v.getObject))
     instances.size
   }
+
   def populateRoleDataFromAnnotatedCorpus(populateNullPairs: Boolean = true): Unit = {
     logger.info("Role population started ...")
     if (isTrain && onTheFlyLexicon) {
@@ -145,7 +146,6 @@ object MultiModalPopulateData extends Logging {
         }
       })
       println("Processing for Co-Reference...")
-      val similarityMin = 1.00
       //**
       // Landmark Candidates
       val instances = if (isTrain) phrases.getTrainingInstances else phrases.getTestingInstances

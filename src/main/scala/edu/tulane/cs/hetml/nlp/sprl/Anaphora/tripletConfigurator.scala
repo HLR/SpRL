@@ -1,4 +1,4 @@
-package edu.tulane.cs.hetml.nlp.sprl.Triplets
+package edu.tulane.cs.hetml.nlp.sprl.Anaphora
 
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets
 import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierConfigurator
@@ -29,5 +29,6 @@ object tripletConfigurator {
   var populateImages = false //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val globalSpans = false // set true when dataset has global spans for roles
   val useCoReference = false
-  var useCoReferenceConstraints = false
+  val useCoReferenceConstraints = false
+  val useModel = "M1" // M1 - Anaphora, M2 - Anaphora+C
 }

@@ -1,4 +1,4 @@
-package edu.tulane.cs.hetml.nlp.sprl.Triplets
+package edu.tulane.cs.hetml.nlp.sprl.Anaphora
 
 import edu.tulane.cs.hetml.nlp.BaseTypes.{Relation, Sentence}
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors.getHeadword

@@ -1,4 +1,4 @@
-# Anaphora Resolution for Improving Spatial Relation extraction
+# Anaphora Resolution
 In this project we include the implementation codes of [1] paper.
 
 ## Dataset
