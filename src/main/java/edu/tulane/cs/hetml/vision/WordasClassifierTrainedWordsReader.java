@@ -11,42 +11,32 @@ import java.util.List;
 public class WordasClassifierTrainedWordsReader {
 
     public List<String> filteredWords;
-    public List<String> clefWords;
-    public List<String> missingWordsClefExamples;
+    public List<String> missingWords;
 
     public WordasClassifierTrainedWordsReader() {
 
     }
 
     public void loadTrainedWords(String directory) throws IOException {
-        String frequencyWords = directory + "newFrequencyWords.txt"; //"TrainedWords.txt";
-        String clefWordspath = directory + "clefWords.txt";
-        String clefMissedWordExamples = directory + "missedWordsClef.txt";
+        String frequencyWords = directory + "TrainedWords.txt";
+        String clefWords = directory + "missedWords.txt";
         filteredWords = new ArrayList<>();
-        clefWords = new ArrayList<>();
-        missingWordsClefExamples = new ArrayList<>();
-        //readWordsFromFile(frequencyWords, true, false);
-        readWordsFromFile(clefWordspath, false, false);
-        //readWordsFromFile(clefMissedWordExamples, false, true);
+        missingWords = new ArrayList<>();
+        readWordsFromFile(frequencyWords, true);
+        readWordsFromFile(clefWords, false);
     }
 
-    private void readWordsFromFile(String filepath, boolean isFrequencyWords, boolean useClef) throws IOException {
+    private void readWordsFromFile(String filepath, boolean isFrequencyWords) throws IOException {
         File d = new File(filepath);
         if (d.exists()) {
             String line;
             BufferedReader reader = new BufferedReader(new FileReader(d));
             while ((line = reader.readLine()) != null) {
-                if(isFrequencyWords) {
-                    String[] words = line.split("-");
-                    //if(Integer.parseInt(words[1])>=1)
-                        filteredWords.add(words[0]);
-                }
+                if(isFrequencyWords)
+                    filteredWords.add(line.trim());
                 else {
-//                    String[] word = line.split("_");
-//                    if(!useClef)
-                        clefWords.add(line);
-//                    else
-//                        missingWordsClefExamples.add(word[0]);
+                    String[] word = line.split("_");
+                    missingWords.add(word[0]);
                 }
             }
         }

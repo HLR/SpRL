@@ -5,7 +5,6 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers.PrepositionClassifier
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSensors._
 import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
 import edu.tulane.cs.hetml.vision._
@@ -90,6 +89,9 @@ object MultiModalSpRLDataModel extends DataModel {
 
   val sentenceToVisualTriplet = edge(sentences, visualTriplets)
   sentenceToVisualTriplet.addSensor(SentenceToVisualTripletMatching _)
+
+  val sentenceToWordSegments = edge(sentences, wordSegments)
+  sentenceToWordSegments.addSensor((s: Sentence, ws: WordSegment) => s.getId == ws.getPhrase.getSentence.getId)
 
   /*
   Properties
@@ -699,7 +701,7 @@ object MultiModalSpRLDataModel extends DataModel {
     r: Relation =>
       val aligned = triplets(r) ~> tripletToVisualTriplet
       if (aligned.nonEmpty) {
-        val x = VisualTripletClassifier.classifier.scores(aligned.head)//PrepositionClassifier.classifier.scores(aligned.head)
+        val x = VisualTripletClassifier.classifier.scores(aligned.head)
         if (x.toArray.exists(_.score.isNaN))
           "-"
         else

@@ -26,18 +26,21 @@ object TripletSensors {
       if (trSeg.nonEmpty && lmSeg.nonEmpty) {
 
         val imId = trSeg.get.getAssociatedImageID
-        val imageRel = imageSegmentsDic(imId).filter(x =>
+        val imageRel = imageSegmentsDic(imId).find(x =>
           x.getFirstSegId.toString == trSegId && x.getSecondSegId.toString == lmSegId)
 
-        imageRel.foreach {
-          x =>
-            x.setTrajector(getHeadword(first).getText.toLowerCase())
-            x.setLandmark(getHeadword(third).getText.toLowerCase())
-            if (tripletIsRelation(r) == "Relation")
-              x.setSp(second.getText.toLowerCase.trim) //.replaceAll(" ", "_"))
+        if (imageRel.nonEmpty) {
+          val x = imageRel.get
+          x.setTrajector(headWordFrom(first))
+          x.setLandmark(headWordFrom(third))
+          if (tripletIsRelation(r) == "Relation")
+            x.setSp(second.getText.toLowerCase.trim)
 
+          List(x)
         }
-        imageRel.toList
+        else {
+          List()
+        }
       }
       else
         List()

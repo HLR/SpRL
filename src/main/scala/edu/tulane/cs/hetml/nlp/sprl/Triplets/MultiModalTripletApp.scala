@@ -2,17 +2,20 @@ package edu.tulane.cs.hetml.nlp.sprl.Triplets
 
 import java.io.{File, FileOutputStream, PrintStream}
 
-import edu.illinois.cs.cogcomp.saul.classifier.{ConstrainedClassifier, JointTrainSparsePerceptron, Learnable}
+import edu.illinois.cs.cogcomp.saul.classifier.{ConstrainedClassifier, JointTrainSparsePerceptron, Learnable, Results}
 import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation, Sentence}
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.{FeatureSets, ReportHelper}
 import MultiModalPopulateData._
 import MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
 import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
 import tripletConfigurator._
 import org.apache.commons.io.FileUtils
+
+import scala.collection.mutable.ListBuffer
 
 object MultiModalTripletApp extends App with Logging {
 
@@ -61,9 +64,10 @@ object MultiModalTripletApp extends App with Logging {
   )
 
   // load all classifiers form all lists
+  val classifiersModel = if(featureSet == FeatureSets.BaseLine) featureSet.toString else featureSet + "_" + alignmentMethod
   val classifiers = roleClassifiers ++ tripletClassifiers
   classifiers.foreach(x => {
-    x.modelDir = s"models/mSpRL/triplet/$featureSet/"
+    x.modelDir = s"models/mSpRL/triplet/$classifiersModel/"
     x.modelSuffix = suffix
   })
   if (usePrepositions) {
@@ -115,10 +119,10 @@ object MultiModalTripletApp extends App with Logging {
 
     if (populateImages) {
       val gtRels = triplets().filter(x => tripletIsRelation(x) == "Relation"
-        && x.getArgument(0).containsProperty("goldAlignment") && x.getArgument(2).containsProperty("goldAlignment"))
+        && (triplets(x) ~> tripletToVisualTriplet).nonEmpty)
         .toList
       ImageTripletTypeClassifier.learn(iterations, gtRels)
-      ImageTripletTypeClassifier.modelDir = s"models/mSpRL/triplet/$featureSet/"
+      ImageTripletTypeClassifier.modelDir = s"models/mSpRL/triplet/$classifiersModel/"
       ImageTripletTypeClassifier.save()
 
       ReportHelper.saveImageTripletErrorTypes(gtRels,
@@ -187,10 +191,10 @@ object MultiModalTripletApp extends App with Logging {
 
     if (populateImages) {
       val gtRels = triplets().filter(x => tripletIsRelation(x) == "Relation"
-        && x.getArgument(0).containsProperty("goldAlignment") && x.getArgument(2).containsProperty("goldAlignment"))
+        && (triplets(x) ~> tripletToVisualTriplet).nonEmpty)
         .toList
 
-      ImageTripletTypeClassifier.modelDir = s"models/mSpRL/triplet/$featureSet/"
+      ImageTripletTypeClassifier.modelDir = s"models/mSpRL/triplet/$classifiersModel/"
       ImageTripletTypeClassifier.load()
       ImageTripletTypeClassifier.test(gtRels)
 
@@ -249,9 +253,38 @@ object MultiModalTripletApp extends App with Logging {
           ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
 
-      if (usePrepositions && visualTripletsFiltered.nonEmpty) {
-        val prepResult = VisualTripletClassifier.test(visualTripletsFiltered)
-        ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
+      if (usePrepositions) {
+        if (visualTripletsFiltered.nonEmpty) {
+          val prepResult = VisualTripletClassifier.test(visualTripletsFiltered)
+          ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
+        }
+
+        if (alignmentMethod == "topN") {
+          val overallPositive = ListBuffer[SpRLEvaluation]()
+          val overallNegative = ListBuffer[SpRLEvaluation]()
+          val constrainedOverallPositive = ListBuffer[SpRLEvaluation]()
+          val constrainedOverallNegative = ListBuffer[SpRLEvaluation]()
+          TripletSensors.alignmentHelper.trainedWordClassifier.keys.foreach {
+            w =>
+              val wClassifier = TripletSensors.alignmentHelper.trainedWordClassifier(w)
+              val constrainedWClassifier = new ConstrainedSingleWordAsClassifier(w)
+              val filtered = wordSegments().filter(_.getWord.equalsIgnoreCase(w))
+              if (filtered.nonEmpty) {
+                val res = wClassifier.test(filtered)
+                ReportHelper.saveEvalResults(outStream, s"Word as classifier '$w'", res)
+                val constrainedRes = constrainedWClassifier.test(filtered)
+                ReportHelper.saveEvalResults(outStream, s"Constrained Word as classifier '$w'", constrainedRes)
+                overallPositive += getPositiveResult(w, res)
+                overallNegative += getNegativeResult(w, res)
+                constrainedOverallPositive += getPositiveResult("C-" + w, constrainedRes)
+                constrainedOverallNegative += getNegativeResult("C-" + w, constrainedRes)
+              }
+          }
+          ReportHelper.saveEvalResults(outStream, "overall word as classifiers - true", overallPositive)
+          ReportHelper.saveEvalResults(outStream, "overall word as classifiers - false", overallNegative)
+          ReportHelper.saveEvalResults(outStream, "overall constrained word as classifiers - true", constrainedOverallPositive)
+          ReportHelper.saveEvalResults(outStream, "overall constrained word as classifiers - false", constrainedOverallNegative)
+        }
       }
 
       reportForErrorAnalysis(x => TripletRelationConstraintClassifier(x),
@@ -264,6 +297,26 @@ object MultiModalTripletApp extends App with Logging {
       )
     }
 
+  }
+
+  private def getPositiveResult(label: String, res: Results) = {
+    val evals = ReportHelper.convertToEval(res)
+    if (evals.exists(_.getLabel == "true")) {
+      val t = evals.find(_.getLabel == "true").get
+      new SpRLEvaluation(label + "-true", t.getPrecision, t.getRecall, t.getF1, t.getLabeledCount, t.getPredictedCount)
+    }
+    else
+      new SpRLEvaluation(label + "-true", 0.0, 0.0, 0.0, 0, evals.head.getLabeledCount - evals.head.getPredictedCount)
+  }
+
+  private def getNegativeResult(label: String, res: Results) = {
+    val evals = ReportHelper.convertToEval(res)
+    if (evals.exists(_.getLabel == "false")) {
+      val t = evals.find(_.getLabel == "false").get
+      new SpRLEvaluation(label + "-false", t.getPrecision, t.getRecall, t.getF1, t.getLabeledCount, t.getPredictedCount)
+    }
+    else
+      new SpRLEvaluation(label + "-false", 0.0, 0.0, 0.0, 0, evals.head.getLabeledCount - evals.head.getPredictedCount)
   }
 
   def reportForErrorAnalysis(rel: Relation => String, tr: Phrase => String, lm: Phrase => String, sp: Phrase => String,

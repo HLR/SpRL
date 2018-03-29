@@ -17,5 +17,5 @@ object WordasClassifierConfigurator {
   val iterations = 50
   val useReferClefTrained = false
   val useWord2VecClassifier = false
-  val classifierPath = "models/mSpRL/wordclassiferClefWordsTrain/"
+  val classifierPath = "models/mSpRL/wordclassifer/"
 }

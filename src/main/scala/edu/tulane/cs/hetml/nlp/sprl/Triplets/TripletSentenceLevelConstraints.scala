@@ -196,8 +196,8 @@ object TripletSentenceLevelConstraints {
   val approveRelationByImage2 = ConstrainedClassifier.constraint[Sentence] {
     var a: FirstOrderConstraint = null
     s: Sentence =>
+      a = new FirstOrderConstant(true)
       if(sentWordSegs.contains(s.getId)) {
-        a = new FirstOrderConstant(true)
         val candidateAlignments = sentWordSegs(s.getId)
         //wordSegments().filter(x => x.getPhrase.getSentence.getId == s.getId).toList
         val candidatePhraseIds = candidateAlignments.map(_.getPhrase.getId)
@@ -272,11 +272,16 @@ object TripletSentenceLevelConstraints {
           boostGeneralByRegionMulti(x)
 
       if (tripletConfigurator.usePrepositions) {
-        a = a and
-          discardRelationByImage(x) and
-          approveRelationByImage(x)
-//          //alignmentConsistency(x) and
-//          //approveRelationByImage2(x)
+        if(tripletConfigurator.alignmentMethod == "topN"){
+          a = a and
+            alignmentConsistency(x) and
+            approveRelationByImage2(x)
+        }
+        else{
+          a = a and
+            discardRelationByImage(x) //and
+            //approveRelationByImage(x)
+        }
       }
       a
   }

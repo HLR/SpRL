@@ -66,7 +66,6 @@ object MultiModalPopulateData extends Logging {
       alignmentReader.setAlignments(phraseInstances)
       images.populate(imageReader.getImageList, isTrain)
       val segs = getAdjustedSegments(imageReader.getSegmentList)
-      //val segs = imageReader.getSegmentList
       segments.populate(segs, isTrain)
       imageSegmentsDic = getImageSegmentsDic()
       if (alignmentMethod != "topN") {
@@ -163,53 +162,33 @@ object MultiModalPopulateData extends Logging {
   }
 
   def getAdjustedSegments(segments: List[Segment]): List[Segment] = {
+
     val alignedPhrases = phrases().filter(_.containsProperty("goldAlignment"))
     val update = alignedPhrases
       .filter(p => segments.exists(s => s.getAssociatedImageID == p.getPropertyFirstValue("imageId") &&
-        s.getSegmentId == p.getPropertyFirstValue("segId").toInt))
-    val addNew = alignedPhrases.filter(p => !update.contains(p))
-
-    imageTestReader.reader.allSegments.foreach{
-      old =>
-        val seg = segments.find(x =>
-          x.getAssociatedImageID == old.getAssociatedImageID &&
-            x.getSegmentId == old.getSegmentId
-        )
-        if(seg.nonEmpty){
-          seg.get.setBoxDimensions(old.getBoxDimensions)
-        }
-    }
+        p.getPropertyValues("segId").exists(_.toInt == s.getSegmentId)))
 
     update.foreach {
       p =>
-        val seg = segments.find(x =>
+        segments.filter(x =>
           x.getAssociatedImageID == p.getPropertyFirstValue("imageId") &&
-            x.getSegmentId == p.getPropertyFirstValue("segId").toInt
-        ).get
-        val im = images().find(_.getId == seg.getAssociatedImageID).get
-        val x = Math.min(im.getWidth, Math.max(0, p.getPropertyFirstValue("segX").toDouble))
-        val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
-        val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
-        val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
-        if (seg.getBoxDimensions == null)
-          seg.setBoxDimensions(new Rectangle2D.Double(x, y, w, h))
-        else {
-          seg.getBoxDimensions.setRect(x, y, w, h)
+            p.getPropertyValues("segId").exists(_.toInt == x.getSegmentId)
+        ).foreach {
+          seg =>
+            val im = images().find(_.getId == seg.getAssociatedImageID).get
+            val x = Math.min(im.getWidth, Math.max(0, p.getPropertyFirstValue("segX").toDouble))
+            val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
+            val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
+            val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
+            if (seg.getBoxDimensions == null)
+              seg.setBoxDimensions(new Rectangle2D.Double(x, y, w, h))
+            else {
+              seg.getBoxDimensions.setRect(x, y, w, h)
+            }
         }
     }
-    val newSegs = addNew.map {
-      p =>
-        val imId = p.getPropertyFirstValue("imageId")
-        val im = images().find(_.getId == imId).get
-        val x = Math.min(im.getWidth, Math.max(0, p.getPropertyFirstValue("segX").toDouble))
-        val y = Math.min(im.getHeight, Math.max(0, p.getPropertyFirstValue("segY").toDouble))
-        val w = Math.min(im.getWidth - x, p.getPropertyFirstValue("segWidth").toDouble)
-        val h = Math.min(im.getHeight - y, p.getPropertyFirstValue("segHeight").toDouble)
 
-        new Segment(imId, p.getPropertyFirstValue("segId").toInt, -1, "", headWordFrom(p), new Rectangle2D.Double(x, y, w, h))
-    }
-
-    segments ++ newSegs
+    segments
   }
 
   private def setBestAlignment() = {
