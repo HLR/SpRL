@@ -1,4 +1,4 @@
-# Anaphora Resolution
+# Anaphora Resolution for Improving Spatial Relation Extraction from Text
 In this project we include the implementation codes of [1] paper.
 
 ## Dataset
@@ -36,11 +36,9 @@ Here are the summarized results of relation classifier for different models
 ```
 label                           Precision  Recall     F1             
 ---------------------------------------------------------------         
-M0                              65.64      60.23      62.82
-M0+C                            70.04      66.55      68.25 
 A-Replacement                   78.47      56.84      65.92
 A-Inference                     70.23      68.25      69.23
 ```
 
 ## References
-[1] Umar Manzoor, and Parisa Kordjamshidi. "??". In preparation
+[1] Umar Manzoor, and Parisa Kordjamshidi. "Anaphora Resolution for Improving Spatial Relation Extraction from Text". In preparation

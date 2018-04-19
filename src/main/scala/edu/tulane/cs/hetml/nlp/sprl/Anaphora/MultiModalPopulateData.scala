@@ -117,7 +117,8 @@ object MultiModalPopulateData extends Logging {
   def populateTripletDataFromAnnotatedCorpus(
                                               trFilter: (Phrase) => Boolean,
                                               spFilter: (Phrase) => Boolean,
-                                              lmFilter: (Phrase) => Boolean
+                                              lmFilter: (Phrase) => Boolean,
+                                              changeLabels: Boolean
                                             ): Unit = {
 
     logger.info("Triplet population started ...")
@@ -129,135 +130,189 @@ object MultiModalPopulateData extends Logging {
     )
     xmlReader.setTripletRelationTypes(candidateRelations)
 
-    if(useCoReference) {
-      val implicitLMs = List("it","them", "him", "her")
-      candidateRelations.foreach(r => {
-        if(isTrain) {
-          if (implicitLMs.contains(r.getArgument(2).toString) && r.getProperty("Relation") == "true")
-            r.setProperty("ImplicitLandmark", "true")
-          else
-            r.setProperty("ImplicitLandmark", "false")
-        }
-        else {
-          if (implicitLMs.contains(r.getArgument(2).toString))
-            r.setProperty("ImplicitLandmark", "true")
-          else
-            r.setProperty("ImplicitLandmark", "false")
-        }
+    if(changeLabels && useModel=="M2" && isTrain) {
+        val newRels = candidateRelations ++ tripletAdditionalExamplesPronounLandmark(candidateRelations, lmFilter)
+    }
+    else {
+        tripletLabelsByCoRef(candidateRelations, lmFilter)
+    }
+    triplets.populate(candidateRelations, isTrain)
+    logger.info("Triplet population finished.")
+  }
+
+  def tripletAdditionalExamplesPronounLandmark(canRels: List[Relation], lmFilter: (Phrase) => Boolean): List[Relation] = {
+
+    val implicitLMs = List("it", "them", "him", "her")
+
+    println("Adding Additional Examples...")
+    //**
+    // Landmark Candidates
+    val instances = if (isTrain) phrases.getTrainingInstances else phrases.getTestingInstances
+    val landmarks = instances.filter(t => t.getId != dummyPhrase.getId && lmFilter(t)).toList
+      .sortBy(x => x.getSentence.getStart + x.getStart)
+
+    //**
+    // Headwords of triplets
+    relationReader.loadClefRelationHeadwords(imageDataPath, isTrain)
+    val clefHWRelation = relationReader.clefHeadwordRelations.toList
+    val p = new ProgressBar("Processing Relations", canRels.filter(r => implicitLMs.contains(r.getArgument(2).toString) && r.getProperty("Relation")=="true").size)
+    p.start()
+    val rels = canRels.filter(r => implicitLMs.contains(r.getArgument(2).toString) && r.getProperty("Relation")=="true")
+
+    rels.foreach(r => {
+      p.step()
+      val headWordsTriplet = clefHWRelation.filter(c => {
+        c.getId==r.getId
       })
-      println("Processing for Co-Reference...")
       //**
-      // Landmark Candidates
-      val instances = if (isTrain) phrases.getTrainingInstances else phrases.getTestingInstances
-      val landmarks = instances.filter(t => t.getId != dummyPhrase.getId && lmFilter(t)).toList
-        .sortBy(x => x.getSentence.getStart + x.getStart)
-
-      //**
-      // Headwords of triplets
-      relationReader.loadClefRelationHeadwords(imageDataPath, isTrain)
-      val clefHWRelation = relationReader.clefHeadwordRelations.toList
-
-      val p = new ProgressBar("Processing Relations", candidateRelations.filter(r => r.getProperty("ImplicitLandmark")=="true").size)
-      p.start()
-      candidateRelations.filter(r => r.getProperty("ImplicitLandmark")=="true").foreach(r => {
-        p.step()
-        val headWordsTriplet = clefHWRelation.filter(c => {
-          c.getId==r.getId
+      // get possible Landmarks from Visual Genome
+      val possibleLMs = visualgenomeRelationsList.filter(v => v.getPredicate==headWordsTriplet.head.getSp
+        && v.getSubject==headWordsTriplet.head.getTr)
+      if(possibleLMs.size>0) {
+        //Count Unique Instances
+        var uniqueRelsForLM = scala.collection.mutable.Map[String, Int]()
+        possibleLMs.foreach(t => {
+          val key = t.getSubject + "-" + t.getPredicate + "-" + t.getObject
+          if(!(uniqueRelsForLM.keySet.exists(_ == key)))
+            uniqueRelsForLM += (key -> 1)
+          else {
+            var count = uniqueRelsForLM.get(key).get
+            count = count + 1
+            uniqueRelsForLM.update(key, count)
+          }
         })
+
         //**
-        // get possible Landmarks from Visual Genome
-        val possibleLMs = visualgenomeRelationsList.filter(v => v.getPredicate==headWordsTriplet.head.getSp
-          && v.getSubject==headWordsTriplet.head.getTr)
-        if(possibleLMs.size>0) {
-          //Count Unique Instances
-          var uniqueRelsForLM = scala.collection.mutable.Map[String, Int]()
-          possibleLMs.foreach(t => {
-            val key = t.getSubject + "-" + t.getPredicate + "-" + t.getObject
-            if(!(uniqueRelsForLM.keySet.exists(_ == key)))
-              uniqueRelsForLM += (key -> 1)
+        // get all landmark candidates for the sentence
+        val rSId = r.getArgumentId(0).split("\\(")(0)
+        val sentenceLMs = landmarks.filter(l => {
+          l.getSentence.getId == rSId && l.getText!=r.getArgument(0).toString && l.getText!=r.getArgument(2).toString
+        })
+        if(sentenceLMs.size>0) {
+          val totalInstances = uniqueRelsForLM.map(x => x._2).toList.sum
+          //**
+          // Similarity scroes for each
+          val w2vVectorScores = uniqueRelsForLM.toList.map(t => {
+            val rSplited = t._1.split("-")
+            if(rSplited.length==3) {
+              getMaxW2VScore(rSplited(2), sentenceLMs, t._2, totalInstances)
+            }
             else {
-              var count = uniqueRelsForLM.get(key).get
-              count = count + 1
-              uniqueRelsForLM.update(key, count)
+              val dummyLM = new Phrase()
+              dummyLM.setText("None")
+              dummyLM.setId("dummy")
+              (dummyLM, -1, 0.0)
             }
           })
 
-          //**
-          // get all landmark candidates for the sentence
-          val rSId = r.getArgumentId(0).split("\\(")(0)
-          val sentenceLMs = landmarks.filter(l => {
-            l.getSentence.getId == rSId && l.getText!=r.getArgument(0).toString && l.getText!=r.getArgument(2).toString
-          })
-          if(sentenceLMs.size>0){
-            //**
-            // Similarity scroes for each
-            val totalInstances = uniqueRelsForLM.size
-            val w2vVectorScores = uniqueRelsForLM.toList.map(t => {
-              val rSplited = t._1.split("-")
-              if(rSplited.length==3) {
-                val v = getMaxW2VScore(rSplited(2), sentenceLMs, t._2, totalInstances)
-                v
-              }
-              else {
-                val dummyLM = new Phrase()
-                dummyLM.setText("None")
-                dummyLM.setId("dummy")
-                (dummyLM, -1, 0.0)
-              }
-            })
+          val probableLandmark = w2vVectorScores.sortBy(_._3).last
+          if(probableLandmark._3>1.0) {
+            val rNew = new Relation()
+            rNew.setId(r.getId+"~1")
+            rNew.setArgument(0, r.getArgument(0))
+            rNew.setArgument(1, r.getArgument(1))
+            rNew.setArgument(2, probableLandmark._1)
 
-            val ProbableLandmark = w2vVectorScores.sortBy(_._3).last
-            if (ProbableLandmark._3 > 0.60 && ProbableLandmark._1.getText != "None") {
-              val pLM = headWordFrom(ProbableLandmark._1)
+            rNew.setArgumentId(0, r.getArgumentId(0))
+            rNew.setArgumentId(1, r.getArgumentId(1))
+            rNew.setArgumentId(2, r.getArgumentId(1))
+
+            rNew.setParent(r.getParent)
+
+            rNew.setProperty("RCC8", r.getProperty("RCC8"))
+            rNew.setProperty("Relation", r.getProperty("Relation"))
+            rNew.setProperty("FoR", r.getProperty("FoR"))
+            rNew.setProperty("SpecificType", r.getProperty("SpecificType"))
+            rNew.setProperty("ActualId", r.getProperty("ActualId"))
+            rNew.setProperty("GeneralType", r.getProperty("GeneralType"))
+
+            coReferenceTriplets += rNew
+          }
+        }
+      }
+    })
+    p.stop()
+
+    coReferenceTriplets.toList
+  }
+
+  def tripletLabelsByCoRef(candidateRelations: List[Relation], lmFilter: (Phrase) => Boolean) = {
+    println("Processing for Co-Reference...")
+    //**
+    // Landmark Candidates
+    val instances = if (isTrain) phrases.getTrainingInstances else phrases.getTestingInstances
+    val landmarks = instances.filter(t => t.getId != dummyPhrase.getId && lmFilter(t)).toList
+      .sortBy(x => x.getSentence.getStart + x.getStart)
+
+    //**
+    // Headwords of triplets
+    relationReader.loadClefRelationHeadwords(imageDataPath, isTrain)
+    val clefHWRelation = relationReader.clefHeadwordRelations.toList
+
+    candidateRelations.filter(r => r.getProperty("ImplicitLandmark")=="true").foreach(r => {
+      val headWordsTriplet = clefHWRelation.filter(c => {
+        c.getId==r.getId
+      })
+      //**
+      // get possible Landmarks from Visual Genome
+      val possibleLMs = visualgenomeRelationsList.filter(v => v.getPredicate==headWordsTriplet.head.getSp
+        && v.getSubject==headWordsTriplet.head.getTr)
+      if(possibleLMs.size>0) {
+        //Count Unique Instances
+        var uniqueRelsForLM = scala.collection.mutable.Map[String, Int]()
+        possibleLMs.foreach(t => {
+          val key = t.getSubject + "-" + t.getPredicate + "-" + t.getObject
+          if(!(uniqueRelsForLM.keySet.exists(_ == key)))
+            uniqueRelsForLM += (key -> 1)
+          else {
+            var count = uniqueRelsForLM.get(key).get
+            count = count + 1
+            uniqueRelsForLM.update(key, count)
+          }
+        })
+
+        //**
+        // get all landmark candidates for the sentence
+        val rSId = r.getArgumentId(0).split("\\(")(0)
+        val sentenceLMs = landmarks.filter(l => {
+          l.getSentence.getId == rSId && l.getText!=r.getArgument(0).toString && l.getText!=r.getArgument(2).toString
+        })
+        if(sentenceLMs.size>0){
+          //**
+          // Similarity scroes for each
+          val totalInstances = uniqueRelsForLM.size
+          val w2vVectorScores = uniqueRelsForLM.toList.map(t => {
+            val rSplited = t._1.split("-")
+            if(rSplited.length==3) {
+              val v = getMaxW2VScore(rSplited(2), sentenceLMs, t._2, totalInstances)
+              v
+            }
+            else {
+              val dummyLM = new Phrase()
+              dummyLM.setText("None")
+              dummyLM.setId("dummy")
+              (dummyLM, -1, 0.0)
+            }
+          })
+
+          val ProbableLandmark = w2vVectorScores.sortBy(_._3)
+          if(useModel=="M1"){
+            if (ProbableLandmark.last._3 > 1.0 && ProbableLandmark.last._1.getText != "None") {
+              val pLM = headWordFrom(ProbableLandmark.last._1)
               r.setProperty("ProbableLandmark", pLM)
             }
             else {
               r.setProperty("ProbableLandmark", "None")
             }
-            if(!isTrain) {
-              val ProbableLandmark = w2vVectorScores.sortBy(_._3)
-              var count = 0
-              ProbableLandmark.takeRight(3).foreach(p => {
-                if(p._3>0.0) {
-                  val rNew = new Relation()
-                  rNew.setId(r.getId + "~" + count)
-                  rNew.setArgument(0, r.getArgument(0))
-                  rNew.setArgument(1, r.getArgument(1))
-                  rNew.setArgument(2, p._1)
-
-                  rNew.setArgumentId(0, r.getArgumentId(0))
-                  rNew.setArgumentId(1, r.getArgumentId(1))
-                  rNew.setArgumentId(2, p._1.getId)
-
-                  rNew.setParent(r.getParent)
-
-                  rNew.setProperty("RCC8", r.getProperty("RCC8"))
-                  rNew.setProperty("Relation", r.getProperty("Relation"))
-                  rNew.setProperty("FoR", r.getProperty("FoR"))
-                  rNew.setProperty("SpecificType", r.getProperty("SpecificType"))
-                  rNew.setProperty("ActualId", r.getProperty("ActualId"))
-                  rNew.setProperty("GeneralType", r.getProperty("GeneralType"))
-
-                  coReferenceTriplets += rNew
-                  count = count + 1
-                }
-              })
-            }
           }
         }
-        else {
-          r.setProperty("ProbableLandmark", "None")
-        }
-      })
-      p.stop()
-    }
-    triplets.populate(candidateRelations, isTrain)
-
-    if(!isTrain && useCoReference) {
+      }
+      else {
+        r.setProperty("ProbableLandmark", "None")
+      }
+    })
+    if(!isTrain && useModel=="M2")
       tripletsCoReference.populate(coReferenceTriplets, isTrain)
-    }
-
-    logger.info("Triplet population finished.")
   }
 
   def getMaxW2VScore(replacementLM: String, sentenceLMs: List[Phrase], tripletCount: Double, totalTriplets : Double): (Phrase, Int, Double) = {

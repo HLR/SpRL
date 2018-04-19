@@ -218,10 +218,8 @@ object TripletSentenceLevelConstraints {
           boostTrajector(x) and
           boostTripletByGeneralType(x) and
           boostGeneralByDirectionMulti(x) and
-          boostGeneralByRegionMulti(x)
-      if(useCoReference) {
-        a = a and approveRelationByCoReference(x)
-      }
+          boostGeneralByRegionMulti(x) and
+          approveRelationByCoReference(x)
       a
   }
 

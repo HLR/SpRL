@@ -28,7 +28,6 @@ object tripletConfigurator {
   val topAlignmentCount = 3
   var populateImages = false //model == FeatureSets.WordEmbeddingPlusImage || model == FeatureSets.BaseLineWithImage
   val globalSpans = false // set true when dataset has global spans for roles
-  val useCoReference = false
-  val useCoReferenceConstraints = false
-  val useModel = "M1" // M1 - Anaphora, M2 - Anaphora+C
+  val useCoReference = true
+  val useModel = "M2" // M1 - Anaphora, M2 - Anaphora+C
 }

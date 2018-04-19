@@ -68,7 +68,8 @@ object CoReferenceTripletApp extends App with Logging {
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTrain.exists(_.getId == x.getId),
       x => IndicatorRoleClassifier(x) == "true",
-      x => lmCandidatesTrain.exists(_.getId == x.getId)
+      x => lmCandidatesTrain.exists(_.getId == x.getId),
+      false
     )
 
     tripletClassifiers.foreach {
@@ -76,6 +77,17 @@ object CoReferenceTripletApp extends App with Logging {
         x.learn(iterations)
         x.test(triplets())
         x.save()
+    }
+    if(useModel=="M2") {
+        populateTripletDataFromAnnotatedCorpus(
+          x => trCandidatesTrain.exists(_.getId == x.getId),
+          x => IndicatorRoleClassifier(x) == "true",
+          x => lmCandidatesTrain.exists(_.getId == x.getId),
+          true
+        )
+
+        TripletCoReferenceRelationClassifier.learn(iterations)
+        TripletCoReferenceRelationClassifier.save()
     }
   }
 
@@ -101,7 +113,7 @@ object CoReferenceTripletApp extends App with Logging {
     populateTripletDataFromAnnotatedCorpus(
       x => trCandidatesTest.exists(_.getId == x.getId),
       x => IndicatorRoleClassifier(x) == "true",
-      x => lmCandidatesTest.exists(_.getId == x.getId))
+      x => lmCandidatesTest.exists(_.getId == x.getId), false)
 
     if(useModel=="M1") {
       roleClassifiers.foreach {
