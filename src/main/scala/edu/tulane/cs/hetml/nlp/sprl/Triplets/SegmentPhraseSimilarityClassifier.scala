@@ -5,7 +5,7 @@ import java.io.PrintStream
 import edu.illinois.cs.cogcomp.lbjava.classify.{FeatureVector, ScoreSet}
 import edu.illinois.cs.cogcomp.lbjava.learn.Learner
 import edu.tulane.cs.hetml.nlp.BaseTypes.Relation
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel._
+import MultiModalSpRLDataModel._
 
 class SegmentPhraseSimilarityClassifier extends Learner("sprl.SegmentPhraseSimilarity") {
 

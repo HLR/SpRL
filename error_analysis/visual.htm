@@ -1,0 +1,108 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="analysis.css">
+</head>
+
+<body>
+    <input type='file' id="file">
+    <hr/>
+    <div>
+        <div style="display:inline-block; vertical-align: top">
+            <table id="data" class="ko-grid" cellspacing="0" >
+                <thead>
+                    <tr>
+                        <th>image</th>
+                        <th>relId</th>
+                        <th>trSeg</th>
+                        <th>lmSeg</th>
+                        <th>tr</th>
+                        <th>sp</th>
+                        <th>lm</th>
+                        <th>actual</th>
+                        <th>predicted</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: data">
+                    <tr class="row" 
+                    data-bind="css: $parent.selected() === $index ? 'selected':'', click: $root.setSeleced($index), attr: {'data-imid': imId, 'data-trx': trX, 'data-try': trY,'data-trw': trW, 'data-trh': trH,'data-lmx': lmX, 'data-lmy': lmY,'data-lmw': lmW, 'data-lmh': lmH}">
+                        <td data-bind="text: imId"></td>
+                        <td data-bind="text: relId"></td>
+                        <td data-bind="text: trSegId"></td>
+                        <td data-bind="text: lmSegId"></td>
+                        <td data-bind="text: tr"></td>
+                        <td data-bind="text: sp"></td>
+                        <td data-bind="text: lm"></td>
+                        <td data-bind="text: actual"></td>
+                        <td data-bind="text: predicted"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button data-bind="click: prevPage">prev</button>
+            <button data-bind="click: nextPage">next</button>
+            <br/> page
+            <span data-bind="text: page() + 1"></span> from
+            <span data-bind="text: total"></span>
+            (
+            <span data-bind="text: totalRels"></span>)
+        </div>
+        <div style="display:inline-block">
+            <canvas id="canvas" width="500" height="500"></canvas>
+        </div>
+    </div>
+    <script type="text/javascript" src="jquery-3.2.1.min.js"></script>
+    <script type='text/javascript' src='knockout-3.4.2.js'></script>
+    <script type="text/javascript" src="visualTypes.js"></script>
+    <script type="text/javascript" src="visualApp.js"></script>
+    <script type="text/javascript">
+
+        $(function () {
+            var canvas = document.getElementById('canvas');
+            var ctx = canvas.getContext('2d');
+            $("#file").change(function (e) {
+                var reader = new FileReader();
+                var text = "";
+                var file = e.target.files[0];
+                reader.onload = function (e) {
+                    loadData(e.target.result);
+                };
+                reader.readAsText(file);
+            });
+            $("#data").on("click", ".row", function () {
+                var trX = parseFloat($(this).data("trx"));
+                var trY = parseFloat($(this).data("try"));
+                var trW = parseFloat($(this).data("trw"));
+                var trH = parseFloat($(this).data("trh"));
+                var lmX = parseFloat($(this).data("lmx"));
+                var lmY = parseFloat($(this).data("lmy"));
+                var lmW = parseFloat($(this).data("lmw"));
+                var lmH = parseFloat($(this).data("lmh"));
+                var imId = parseInt($(this).data("imid"));
+                var f = imId >= 1000 ? "01" : "00"
+                var src = '../data/mSpRL/saiapr_tc-12/' + f + '/images/' + imId + '.jpg';
+                imageObj = new Image();
+                imageObj.onload = function () { 
+                    ctx.clearRect(0, 0, 500, 500);
+                    ctx.drawImage(imageObj, 0, 0); 
+                    ctx.strokeStyle = 'rgba(255,0,0,1)';
+                    ctx.strokeRect(trX, trY, trW, trH);
+                    ctx.strokeRect(lmX, lmY, lmW, lmH);
+                };
+                imageObj.src = src;
+            });
+            function loadData(text, fileName) {
+                var lines = text.split("\n");
+                var data = []
+                for (var l = 0; l < lines.length; l++) {
+                    if (lines[l] === "")
+                        continue;
+                    data.push(new Instance(lines[l], l));
+                }
+                app.setData(data);
+            }
+        });
+
+    </script>
+</body>
+
+</html>

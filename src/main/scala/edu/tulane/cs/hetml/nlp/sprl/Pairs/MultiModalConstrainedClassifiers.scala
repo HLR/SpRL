@@ -3,7 +3,7 @@ package edu.tulane.cs.hetml.nlp.sprl.Pairs
 import edu.illinois.cs.cogcomp.infer.ilp.OJalgoHook
 import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation}
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel.{pairToFirstArg, pairToSecondArg}
+import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLDataModel.{pairToFirstArg, pairToSecondArg}
 import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLConstraints._
 import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLPairClassifiers._
 /** Created by parisakordjamshidi on 2/4/17.

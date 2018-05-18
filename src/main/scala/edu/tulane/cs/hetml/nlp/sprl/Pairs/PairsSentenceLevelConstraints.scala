@@ -4,7 +4,7 @@ import edu.illinois.cs.cogcomp.lbjava.infer.{FirstOrderConstant, FirstOrderConst
 import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.illinois.cs.cogcomp.saul.constraint.ConstraintTypeConversion._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
-import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLDataModel.{sentenceToPhrase, _}
+import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLDataModel.{sentenceToPhrase, _}
 import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLPairClassifiers._
 
 /** Created by parisakordjamshidi on 2/9/17.
