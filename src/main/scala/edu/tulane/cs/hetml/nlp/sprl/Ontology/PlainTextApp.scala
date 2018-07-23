@@ -1,13 +1,13 @@
-package edu.tulane.cs.hetml.nlp.sprl.Triplets
+package edu.tulane.cs.hetml.nlp.sprl.Ontology
 
 import edu.illinois.cs.cogcomp.saul.util.Logging
 import edu.tulane.cs.hetml.nlp.BaseTypes.Document
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.{FeatureSets, ReportHelper}
 import MultiModalPopulateData._
 import MultiModalSpRLDataModel.{phrases, triplets}
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalTripletApp.expName
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.Ontology.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.Ontology.MultiModalTripletApp.expName
+import edu.tulane.cs.hetml.nlp.sprl.Ontology.TripletSentenceLevelConstraintClassifiers._
 import tripletConfigurator.{resultsDir, populateImages}
 
 import scala.io.Source

@@ -1,12 +1,11 @@
-package edu.tulane.cs.hetml.nlp.sprl.Triplets
+package edu.tulane.cs.hetml.nlp.sprl.Ontology
 
 import edu.illinois.cs.cogcomp.infer.ilp.GurobiHook
 import edu.illinois.cs.cogcomp.saul.classifier.ConstrainedClassifier
 import edu.tulane.cs.hetml.nlp.BaseTypes.{Phrase, Relation, Sentence}
-import MultiModalSpRLDataModel.{sentenceToWordSegments, _}
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSensors.alignmentHelper
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraints._
+import MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Ontology.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.Ontology.TripletSentenceLevelConstraints._
 import edu.tulane.cs.hetml.vision.{ImageTriplet, WordSegment}
 
 object TripletSentenceLevelConstraintClassifiers {
@@ -62,18 +61,18 @@ object TripletSentenceLevelConstraintClassifiers {
     override val pathToHead = Some(-sentenceToTriplets)
   }
 
-  object PrepositionConstraintClassifier extends ConstrainedClassifier[ImageTriplet, Sentence](PrepositionClassifier) {
-    def subjectTo = tripletConstraints
-
-    override val solver = erSolver
-    override val pathToHead = Some(-sentenceToVisualTriplet)
-  }
-  class ConstrainedSingleWordAsClassifier(w: String)
-    extends ConstrainedClassifier[WordSegment, Sentence](alignmentHelper.trainedWordClassifier(w)){
-
-    def subjectTo = tripletConstraints
-
-    override val solver = erSolver
-    override val pathToHead = Some(-sentenceToWordSegments)
-  }
+//  object PrepositionConstraintClassifier extends ConstrainedClassifier[ImageTriplet, Sentence](PrepositionClassifier) {
+//    def subjectTo = tripletConstraints
+//
+//    override val solver = erSolver
+//    override val pathToHead = Some(-sentenceToVisualTriplet)
+//  }
+//  class ConstrainedSingleWordAsClassifier(w: String)
+//    extends ConstrainedClassifier[WordSegment, Sentence](alignmentHelper.trainedWordClassifier(w)){
+//
+//    def subjectTo = tripletConstraints
+//
+//    override val solver = erSolver
+//    override val pathToHead = Some(-sentenceToWordSegments)
+//  }
 }

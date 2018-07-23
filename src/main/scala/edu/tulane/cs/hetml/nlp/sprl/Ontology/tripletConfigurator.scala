@@ -1,8 +1,6 @@
-package edu.tulane.cs.hetml.nlp.sprl.Triplets
+package edu.tulane.cs.hetml.nlp.sprl.Ontology
 
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets
-import edu.tulane.cs.hetml.nlp.sprl.WordasClassifier.WordasClassifierConfigurator
-
 /** Created by parisakordjamshidi on 3/23/17.
   */
 object tripletConfigurator {
@@ -12,13 +10,13 @@ object tripletConfigurator {
   val alignmentAnnotationPath = imageDataPath + "/alignments/"
   val modelDir = "models/mSpRL/"
   val spatialIndicatorLex = "data/mSprl/spatialIndicator.lex"
-  val trainFile = "data/mSprl/saiapr_tc-12/newSprl2017_train.xml"//"data/TrainSet.xml"//
-  val testFile = "data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//"data/TestSet.xml"//
+  val trainFile = "data/mSpRL/trips_cleaned_parses/manuallyCollectedSpRL_train.xml"//"data/mSpRL/saiapr_tc-12/newSprl2017_train.xml"//"data/mSprl/saiapr_tc-12/newSprl2017_train.xml"//"data/TrainSet.xml"//
+  val testFile = "data/mSpRL/trips_cleaned_parses/manuallyCollectedSpRL_test.xml"//"data/mSprl/saiapr_tc-12/newSprl2017_gold.xml"//"data/TestSet.xml"//
   val suffix = ""
   val model = FeatureSets.BaseLine
-  var isTrain = true
-  WordasClassifierConfigurator.isTrain = isTrain
-  val trainTestTogether = true
+  var isTrain = false
+  //WordasClassifierConfigurator.isTrain = isTrain
+  val trainTestTogether = false
   val jointTrain = false
   val iterations = 50
   val useConstraints = true

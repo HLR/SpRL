@@ -197,7 +197,10 @@ public class NlpXmlReader {
         NodeList matchingNodes = null;
         List<Element> xmlElements = new ArrayList<>();
         List<SpanBasedElement> elementContainers = new ArrayList<>();
+        Integer a= 0;
         for (T e : list) {
+            a= a+1;
+            System.out.println(a);
             String parentId = getParentId(e);
             if (parentId == null) {
                 System.out.println(getParentName(e) + " id is null. This can affect the matching of the tags!");
@@ -218,6 +221,9 @@ public class NlpXmlReader {
             }
             for (int j = 0; j < elementContainers.size(); j++) {
                 Element container = xmlElements.get(j);
+                if (tagName.equals("PHRASE") && a==3 && j==4)
+                    System.out.println(a+ " and "+ j);
+
                 if (matching.matches(elementContainers.get(j), e))
                     for (int i = 0; i < container.getAttributes().getLength(); i++) {
                         e.addPropertyValue(tagName + "_" + container.getAttributes().item(i).getNodeName(),

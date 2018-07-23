@@ -9,7 +9,7 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRL2013._
 import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.SpRLAnnotation
 import edu.tulane.cs.hetml.nlp.sprl.Eval._
 import edu.tulane.cs.hetml.nlp.BaseTypes._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLDataModel._
+import edu.tulane.cs.hetml.nlp.sprl.Ontology.MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Pairs.MultiModalSpRLPairClassifiers
 import edu.tulane.cs.hetml.nlp.sprl.SpRL2017.{Scene, SpRL2017Document}
 import edu.tulane.cs.hetml.vision.ImageTriplet

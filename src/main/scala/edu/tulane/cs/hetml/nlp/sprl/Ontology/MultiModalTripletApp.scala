@@ -1,4 +1,4 @@
-package edu.tulane.cs.hetml.nlp.sprl.Triplets
+package edu.tulane.cs.hetml.nlp.sprl.Ontology
 
 import java.io.{File, FileOutputStream, PrintStream}
 
@@ -9,13 +9,10 @@ import edu.tulane.cs.hetml.nlp.sprl.Helpers.{FeatureSets, ReportHelper}
 import MultiModalPopulateData._
 import MultiModalSpRLDataModel._
 import edu.tulane.cs.hetml.nlp.sprl.Eval.SpRLEvaluation
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.MultiModalSpRLTripletClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.Triplets.TripletSentenceLevelConstraintClassifiers._
-import edu.tulane.cs.hetml.nlp.sprl.VisualTriplets.VisualTripletClassifiers.VisualTripletClassifier
+import edu.tulane.cs.hetml.nlp.sprl.Ontology.MultiModalSpRLTripletClassifiers._
+import edu.tulane.cs.hetml.nlp.sprl.Ontology.TripletSentenceLevelConstraintClassifiers._
 import tripletConfigurator._
 import org.apache.commons.io.FileUtils
-
-import scala.collection.mutable.ListBuffer
 
 object MultiModalTripletApp extends App with Logging {
 
@@ -60,7 +57,7 @@ object MultiModalTripletApp extends App with Logging {
     TripletRelationClassifier,
     TripletGeneralTypeClassifier,
     TripletRegionClassifier,
-    TripletDirectionClassifier
+   TripletDirectionClassifier
   )
 
   // load all classifiers form all lists
@@ -70,19 +67,8 @@ object MultiModalTripletApp extends App with Logging {
     x.modelDir = s"models/mSpRL/triplet/$classifiersModel/"
     x.modelSuffix = suffix
   })
-  if (usePrepositions) {
-    PrepositionClassifier.modelDir = s"models/mSpRL/triplet/$featureSet/"
-    PrepositionClassifier.modelSuffix = suffix
-  }
 
   FileUtils.forceMkdir(new File(resultsDir))
-
-  // train prepositions from external data
-  if (isTrain && trainPrepositionClassifier && usePrepositions) {
-    populateVisualTripletsFromExternalData()
-    PrepositionClassifier.learn(iterations)
-    visualTriplets.clear()
-  }
 
   populateRoleDataFromAnnotatedCorpus()
 
@@ -117,32 +103,6 @@ object MultiModalTripletApp extends App with Logging {
         x.save()
     }
 
-    if (populateImages) {
-      val gtRels = triplets().filter(x => tripletIsRelation(x) == "Relation"
-        && (triplets(x) ~> tripletToVisualTriplet).nonEmpty)
-        .toList
-      ImageTripletTypeClassifier.learn(iterations, gtRels)
-      ImageTripletTypeClassifier.modelDir = s"models/mSpRL/triplet/$classifiersModel/"
-      ImageTripletTypeClassifier.save()
-
-      ReportHelper.saveImageTripletErrorTypes(gtRels,
-        r => triplets(r) ~> tripletToVisualTriplet,
-        resultsDir,
-        isTrain,
-        r => tripletSpecificType(r),
-        r => ImageTripletTypeClassifier(r)
-      )
-    }
-
-    if (usePrepositions && trainPrepositionClassifier) {
-
-      val visualTripletsFiltered = visualTriplets().toList.filter(x => x.getSp != null)
-      logger.info("Aligned visual triplets in train:" + visualTripletsFiltered.size)
-
-      PrepositionClassifier.learn(10, visualTripletsFiltered)
-      PrepositionClassifier.test(visualTripletsFiltered)
-      PrepositionClassifier.save()
-    }
     if (jointTrain) {
       logger.info("====================================")
       logger.info("Joint Train started")
@@ -152,29 +112,21 @@ object MultiModalTripletApp extends App with Logging {
 
   }
 
-  if (trainTestTogether) {
-    documents.clear()
-    sentences.clear()
-    images.clear()
-    segments.clear()
-    phrases.clear()
-    tokens.clear()
-    triplets.clear()
-    visualTriplets.clear()
-    segmentPhrasePairs.clear()
-
-    isTrain = false
-    populateRoleDataFromAnnotatedCorpus()
-  }
+  //  if (trainTestTogether) {
+  //    documents.clear()
+  //    sentences.clear()
+  //    phrases.clear()
+  //    tokens.clear()
+  //    triplets.clear()
+  //    isTrain = false
+  //    populateRoleDataFromAnnotatedCorpus()
+  //  }
 
   if (!isTrain) {
 
     println("testing started ...")
 
     if (!trainTestTogether) {
-      if (usePrepositions)
-        //PrepositionClassifier.load()
-        VisualTripletClassifier.load()
       classifiers.foreach(x => x.load())
     }
 
@@ -189,26 +141,9 @@ object MultiModalTripletApp extends App with Logging {
       x => IndicatorRoleClassifier(x) == "true",
       x => lmCandidatesTest.exists(_.getId == x.getId))
 
-    if (populateImages) {
-      val gtRels = triplets().filter(x => tripletIsRelation(x) == "Relation"
-        && (triplets(x) ~> tripletToVisualTriplet).nonEmpty)
-        .toList
-
-      ImageTripletTypeClassifier.modelDir = s"models/mSpRL/triplet/$classifiersModel/"
-      ImageTripletTypeClassifier.load()
-      ImageTripletTypeClassifier.test(gtRels)
-
-      ReportHelper.saveImageTripletErrorTypes(gtRels,
-        r => triplets(r) ~> tripletToVisualTriplet,
-        resultsDir,
-        isTrain,
-        r => tripletSpecificType(r),
-        r => ImageTripletTypeClassifier(r)
-      )
-    }
 
     if (!useConstraints) {
-      val visualTripletsFiltered = visualTriplets.getTestingInstances.toList.filter(x => x.getSp != null)
+      // val visualTripletsFiltered = visualTriplets.getTestingInstances.toList.filter(x => x.getSp != null)
       val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
 
       roleClassifiers.foreach {
@@ -222,10 +157,10 @@ object MultiModalTripletApp extends App with Logging {
           val res = x.test()
           ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
-      if (usePrepositions && visualTripletsFiltered.nonEmpty) {
-        val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
-        ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
-      }
+      //      if (usePrepositions && visualTripletsFiltered.nonEmpty) {
+      //        val prepResult = PrepositionClassifier.test(visualTripletsFiltered)
+      //        ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
+      //      }
       reportForErrorAnalysis(x => TripletRelationClassifier(x),
         x => TrajectorRoleClassifier(x),
         x => LandmarkRoleClassifier(x),
@@ -237,7 +172,7 @@ object MultiModalTripletApp extends App with Logging {
     }
     else {
 
-      val visualTripletsFiltered = visualTriplets.getTestingInstances.toList.filter(x => x.getSp != null)
+      // val visualTripletsFiltered = visualTriplets.getTestingInstances.toList.filter(x => x.getSp != null)
 
       val outStream = new FileOutputStream(s"$resultsDir/$expName$suffix.txt", false)
 
@@ -253,41 +188,41 @@ object MultiModalTripletApp extends App with Logging {
           ReportHelper.saveEvalResults(outStream, s"${x.getClassSimpleNameForClassifier}(within data model)", res)
       }
 
-      if (usePrepositions) {
-        if (visualTripletsFiltered.nonEmpty) {
-          val prepResult = VisualTripletClassifier.test(visualTripletsFiltered)
-          ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
-        }
+      //      if (usePrepositions) {
+      //        if (visualTripletsFiltered.nonEmpty) {
+      //          val prepResult = VisualTripletClassifier.test(visualTripletsFiltered)
+      //          ReportHelper.saveEvalResults(outStream, s"Preposition(within data model)", prepResult)
+      //        }
+      //
+      //        if (alignmentMethod == "topN") {
+      //          val overallPositive = ListBuffer[SpRLEvaluation]()
+      //          val overallNegative = ListBuffer[SpRLEvaluation]()
+      //          val constrainedOverallPositive = ListBuffer[SpRLEvaluation]()
+      //          val constrainedOverallNegative = ListBuffer[SpRLEvaluation]()
+      //          TripletSensors.alignmentHelper.trainedWordClassifier.keys.foreach {
+      //            w =>
+      //              val wClassifier = TripletSensors.alignmentHelper.trainedWordClassifier(w)
+      //              val constrainedWClassifier = new ConstrainedSingleWordAsClassifier(w)
+      //              val filtered = wordSegments().filter(_.getWord.equalsIgnoreCase(w))
+      //              if (filtered.nonEmpty) {
+      //                val res = wClassifier.test(filtered)
+      //                ReportHelper.saveEvalResults(outStream, s"Word as classifier '$w'", res)
+      //                val constrainedRes = constrainedWClassifier.test(filtered)
+      //                ReportHelper.saveEvalResults(outStream, s"Constrained Word as classifier '$w'", constrainedRes)
+      //                overallPositive += getPositiveResult(w, res)
+      //                overallNegative += getNegativeResult(w, res)
+      //                constrainedOverallPositive += getPositiveResult("C-" + w, constrainedRes)
+      //                constrainedOverallNegative += getNegativeResult("C-" + w, constrainedRes)
+      //              }
+      //          }
+      //          ReportHelper.saveEvalResults(outStream, "overall word as classifiers - true", overallPositive)
+      //          ReportHelper.saveEvalResults(outStream, "overall word as classifiers - false", overallNegative)
+      //          ReportHelper.saveEvalResults(outStream, "overall constrained word as classifiers - true", constrainedOverallPositive)
+      //          ReportHelper.saveEvalResults(outStream, "overall constrained word as classifiers - false", constrainedOverallNegative)
+      //        }
+      //      }
 
-        if (alignmentMethod == "topN") {
-          val overallPositive = ListBuffer[SpRLEvaluation]()
-          val overallNegative = ListBuffer[SpRLEvaluation]()
-          val constrainedOverallPositive = ListBuffer[SpRLEvaluation]()
-          val constrainedOverallNegative = ListBuffer[SpRLEvaluation]()
-          TripletSensors.alignmentHelper.trainedWordClassifier.keys.foreach {
-            w =>
-              val wClassifier = TripletSensors.alignmentHelper.trainedWordClassifier(w)
-              val constrainedWClassifier = new ConstrainedSingleWordAsClassifier(w)
-              val filtered = wordSegments().filter(_.getWord.equalsIgnoreCase(w))
-              if (filtered.nonEmpty) {
-                val res = wClassifier.test(filtered)
-                ReportHelper.saveEvalResults(outStream, s"Word as classifier '$w'", res)
-                val constrainedRes = constrainedWClassifier.test(filtered)
-                ReportHelper.saveEvalResults(outStream, s"Constrained Word as classifier '$w'", constrainedRes)
-                overallPositive += getPositiveResult(w, res)
-                overallNegative += getNegativeResult(w, res)
-                constrainedOverallPositive += getPositiveResult("C-" + w, constrainedRes)
-                constrainedOverallNegative += getNegativeResult("C-" + w, constrainedRes)
-              }
-          }
-          ReportHelper.saveEvalResults(outStream, "overall word as classifiers - true", overallPositive)
-          ReportHelper.saveEvalResults(outStream, "overall word as classifiers - false", overallNegative)
-          ReportHelper.saveEvalResults(outStream, "overall constrained word as classifiers - true", constrainedOverallPositive)
-          ReportHelper.saveEvalResults(outStream, "overall constrained word as classifiers - false", constrainedOverallNegative)
-        }
-      }
-
-      reportForErrorAnalysis(x => TripletRelationConstraintClassifier(x),
+      reportForFeatureAnalysis(x => TripletRelationConstraintClassifier(x),
         x => TRConstraintClassifier(x),
         x => LMConstraintClassifier(x),
         x => IndicatorRoleClassifier(x),
@@ -298,6 +233,7 @@ object MultiModalTripletApp extends App with Logging {
     }
 
   }
+
 
   private def getPositiveResult(label: String, res: Results) = {
     val evals = ReportHelper.convertToEval(res)
@@ -342,8 +278,8 @@ object MultiModalTripletApp extends App with Logging {
       val lSeg = matchingSegment(l)
       val tSegSim = similarityToMatchingSegment(t)
       val lSegSim = similarityToMatchingSegment(l)
-      val matchingImageSp = if (usePrepositions) tripletMatchingSegmentRelationLabel(r) else "-"
-      val matchingImageSpScores = if (usePrepositions) tripletMatchingSegmentRelationLabelScores(r) else "-"
+      // val matchingImageSp = if (usePrepositions) tripletMatchingSegmentRelationLabel(r) else "-"
+      // val matchingImageSpScores = if (usePrepositions) tripletMatchingSegmentRelationLabelScores(r) else "-"
 
       val tCorrect = "trajector".equalsIgnoreCase(tr(t))
       val sCorrect = "indicator".equalsIgnoreCase(sp(s))
@@ -351,15 +287,15 @@ object MultiModalTripletApp extends App with Logging {
 
       val sent = triplets(r) ~> -sentenceToTriplets head
 
-      val segments = (sentences(sent) ~> -documentToSentence ~> documentToImage ~> imageToSegment)
-        .toList.sortBy(_.getSegmentId)
-        .map(x => x.getSegmentId + ":" + x.getSegmentCode + ":" + x.getSegmentConcept).mkString(",")
+      //      val segments = (sentences(sent) ~> -documentToSentence ~> documentToImage ~> imageToSegment)
+      //        .toList.sortBy(_.getSegmentId)
+      //        .map(x => x.getSegmentId + ":" + x.getSegmentCode + ":" + x.getSegmentConcept).mkString(",")
 
-      val matchings = (sentences(sent) ~> sentenceToPhrase).toList.sortBy(_.getStart)
-        .map(p => p.getText + "-> " + matchingSegment(p) + ": " + similarityToMatchingSegment(p))
-        .mkString(",")
+      //      val matchings = (sentences(sent) ~> sentenceToPhrase).toList.sortBy(_.getStart)
+      //        .map(p => p.getText + "-> " + matchingSegment(p) + ": " + similarityToMatchingSegment(p))
+      //        .mkString(",")
 
-      val imageRels = ""
+      //val imageRels = ""
 
       val docId = (triplets(r) ~> -sentenceToTriplets ~> -documentToSentence).head.getId
 
@@ -367,11 +303,81 @@ object MultiModalTripletApp extends App with Logging {
       //tr correct, sp correct, lm correct, segments[id, code, text], ...
       val line = s"$docId\t\t${sent.getId}\t\t${sent.getText}\t\t${actual}" +
         s"\t\t${predicted}\t\t${t.getText}\t\t${s.getText}\t\t${l.getText}\t\t${tCorrect}" +
-        s"\t\t${sCorrect}\t\t${lCorrect}\t\t${segments}\t\t$tDis\t\t$lDis\t\t$tSeg\t\t$tSegSim\t\t$lSeg\t\t$lSegSim" +
-        s"\t\t$matchings\t\t$imageRels\t\t$matchingImageSp\t\t$matchingImageSpScores\t\t$gen\t\t$reg\t\t$dir" +
+        s"\t\t${sCorrect}\t\t${lCorrect}\t\t$tDis\t\t$lDis\t\t$tSeg\t\t$tSegSim\t\t$lSeg\t\t$lSegSim" +
+        s"\t\t$gen\t\t$reg\t\t$dir" +
         s"\t\t$predictedGen\t\t$predictedReg\t\t$predictedDir"
       writer.println(line)
     }
   }
+
+
+  def reportForFeatureAnalysis(rel: Relation => String, tr: Phrase => String, lm: Phrase => String, sp: Phrase => String,
+                             general: Relation => String, direction: Relation => String, region: Relation => String) = {
+//    val writer = new PrintStream(s"$resultsDir/error_report_$expName$suffix.txt")
+
+    val writer = new PrintStream(s"$resultsDir/feature_report_$expName$suffix.txt")
+
+    triplets().toList.sortBy(x => x.getId).foreach { r =>
+      val predicted = rel(r)
+      val actual = tripletIsRelation(r)
+//      val gen = tripletGeneralType(r)
+//      val reg = tripletRegion(r)
+//      val dir = tripletDirection(r)
+//      val predictedGen = general(r)
+//      val predictedReg = region(r)
+//      val predictedDir = direction(r)
+      val t = triplets(r) ~> tripletToTr head
+      val s = triplets(r) ~> tripletToSp head
+      val l = triplets(r) ~> tripletToLm head
+
+      val trp = triplets(r) ~> tripletToTr
+      val spp = triplets(r) ~> tripletToSp
+      val lmp = triplets(r) ~> tripletToLm
+
+
+      //      val tDis = tripletDistanceTrSp(r)
+//      val lDis = tripletDistanceLmSp(r)
+
+//      val tSeg = matchingSegment(t)
+//      val lSeg = matchingSegment(l)
+//      val tSegSim = similarityToMatchingSegment(t)
+//      val lSegSim = similarityToMatchingSegment(l)
+      // val matchingImageSp = if (usePrepositions) tripletMatchingSegmentRelationLabel(r) else "-"
+      // val matchingImageSpScores = if (usePrepositions) tripletMatchingSegmentRelationLabelScores(r) else "-"
+
+      val tCorrect = "trajector".equalsIgnoreCase(tr(t))
+      val sCorrect = "indicator".equalsIgnoreCase(sp(s))
+      val lCorrect = if (l == dummyPhrase) false else "landmark".equalsIgnoreCase(lm(l))
+
+      val sent = triplets(r) ~> -sentenceToTriplets head
+
+      //      val segments = (sentences(sent) ~> -documentToSentence ~> documentToImage ~> imageToSegment)
+      //        .toList.sortBy(_.getSegmentId)
+      //        .map(x => x.getSegmentId + ":" + x.getSegmentCode + ":" + x.getSegmentConcept).mkString(",")
+
+      //      val matchings = (sentences(sent) ~> sentenceToPhrase).toList.sortBy(_.getStart)
+      //        .map(p => p.getText + "-> " + matchingSegment(p) + ": " + similarityToMatchingSegment(p))
+      //        .mkString(",")
+
+      //val imageRels = ""
+
+      val docId = (triplets(r) ~> -sentenceToTriplets ~> -documentToSentence).head.getId
+
+      //docId, sentId, sent, actual rel, predicted rel, tr text, sp text, lm text
+      //tr correct, sp correct, lm correct, segments[id, code, text], ...
+      var line = s"$docId\t\t${sent.getId}\t\t${sent.getText}\t\t${actual}" +
+        s"\t\t${predicted}\t\t${t.getText}\t\t${s.getText}\t\t${l.getText}\t\t${tCorrect}" +
+        s"\t\t${sCorrect}\t\t${lCorrect}\t\ntrajector="
+      trp.foreach(x=> line= line + s"\t\t${tripsPhraseType(x)}")
+      line = line + "\nlandmark: "
+      lmp.foreach(x=> line =line + s"\t\t${tripsPhraseType(x)}")
+      line = line + "\nindicator: "
+      spp.foreach(x=> line =line + s"\t\t${tripsPhraseType(x)}")
+
+      line = line + s"\n\ttriplet:  ${tripsTripletLabel(r)}"
+      writer.println(line)
+    }
+  }
+
 
 }
