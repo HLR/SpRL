@@ -67,6 +67,8 @@ object MultiModalTripletApp extends App with Logging {
     x.modelDir = s"models/mSpRL/triplet/$classifiersModel/"
     x.modelSuffix = suffix
   })
+  print("-------")
+
 
   FileUtils.forceMkdir(new File(resultsDir))
 

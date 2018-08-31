@@ -396,6 +396,7 @@ object LanguageBaseTypeSensors extends Logging {
       case _: Document | _: Sentence => 0
       case _ => e.getRelativeStart
     }
+
     ta.getTokenIdFromCharacterOffset(start)
   }
 
