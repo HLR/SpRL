@@ -5,10 +5,10 @@ import edu.illinois.cs.cogcomp.saulexamples.nlp.SpatialRoleLabeling.Dictionaries
 import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.LanguageBaseTypeSensors._
 import edu.tulane.cs.hetml.nlp.sprl.MultiModalSpRLSensors._
+import edu.tulane.cs.hetml.nlp.sprl.Ontology.MultiModalSpRLDataModel.property
 import edu.tulane.cs.hetml.vision._
+
 import scala.collection.JavaConversions._
-
-
 import scala.collection.JavaConversions._
 
 object BioDataModel extends DataModel {
@@ -33,6 +33,15 @@ object BioDataModel extends DataModel {
 
 
   //get feature from TAC files
+
+  val mentionType2 = property(mentions) {
+    x: Phrase =>
+      if (x.containsProperty("Mention_type"))
+         x.getPropertyFirstValue("Mention_type")
+      else
+        "None"
+  }
+
   val mentiontype = property(mentions) {
     x: Phrase => x.getPropertyValues("type").toList
   }
