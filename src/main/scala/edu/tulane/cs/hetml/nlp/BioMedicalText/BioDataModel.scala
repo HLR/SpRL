@@ -16,17 +16,17 @@ object BioDataModel extends DataModel {
   //get postag from
 
 
-  val documents = node[Document]((d: Document) => d.getId)
+ // val documents = node[Document]((d: Document) => d.getId)
   val sentences = node[Sentence]((s: Sentence) => s.getId)
   val mentions = node[Phrase]((p: Phrase) => p.getId)
   val tokens = node[Token]((t: Token) => t.getId)
 
 
-  val docTosen = edge(documents, sentences)
-  docTosen.addSensor(documentToSentenceMatching _)
+  //val docTosen = edge(documents, sentences)
+  //docTosen.addSensor(documentToSentenceMatching _)
 
  val sentenceToPhrase = edge(sentences, mentions)
-  sentenceToPhrase.addSensor(refinedSentenceToPhraseGenerating _)
+  sentenceToPhrase.addSensor(sentenceToPhraseGenerating _)
 
   val phraseToToken = edge(mentions, tokens)
   phraseToToken.addSensor(phraseToTokenGenerating _)
