@@ -114,6 +114,31 @@ object LanguageBaseTypeSensors extends Logging {
     }
   }
 
+
+  def getmodifiedHeadword(p: Phrase): Token = {
+    var ta = getTextAnnotation(p)
+    val (startId: Int, endId: Int) = getTextAnnotationSpan(p)
+    val phrase = new Constituent("temp", "", ta, startId, endId + 1)
+    val headId: Int = getHeadwordId(ta, phrase)
+    if (headId < startId || headId > endId) {
+      //when out of phrase, create a text annotation using just the phrase text
+      ta = TextAnnotationFactory.createTextAnnotation(as, "", "", p.getText)
+      val newPhrase = new Constituent("temp", "", ta, 0, ta.getTokens.length)
+      val newHeadId = getHeadwordId(ta, newPhrase)
+      val head = ta.getView(ViewNames.TOKENS).asInstanceOf[TokenLabelView].getConstituentAtToken(newHeadId)
+      new Token(p, p.getId + head.getSpan,
+        head.getStartCharOffset + p.getRelativeStart, head.getEndCharOffset + p.getRelativeStart, head.toString)
+    }
+    else {
+      val head = ta.getView(ViewNames.TOKENS).asInstanceOf[TokenLabelView].getConstituentAtToken(headId)
+      new Token(p, p.getId + head.getSpan, head.getStartCharOffset, head.getEndCharOffset, head.toString)
+    }
+  }
+
+
+
+
+
   def getTokens(text: String): List[Token] = {
     val ta = TextAnnotationFactory.createTextAnnotation(as, "", "", text)
     ta.getView(ViewNames.TOKENS).getConstituents.asScala.map(x =>

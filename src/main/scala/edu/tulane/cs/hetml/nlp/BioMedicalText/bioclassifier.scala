@@ -9,24 +9,78 @@ import edu.illinois.cs.cogcomp.saul.datamodel.property.Property
 
 object bioclassifier {
   def phraseFeatures(): List[Property[Phrase]] =
-    List(textlength,lemma,wordForm,pos,headWordPos,phrasePos)
+    List(headVector,pos,wordForm,isTrigger,isInDrugList,headWordFrom,headWordPos,phrasePos,headWordLemma,lemma,dependencyRelation,headDependencyRelation,subCategorization,headSubCategorization)
+     //List(phrasePos,lemma,wordForm,dependencyRelation)
 
-  object biomentionclassifier extends Learnable(mentions){
-    def label=mentiontype
-    override lazy val classifier = new SparseNetworkLearner {
-      val p = new SparseAveragedPerceptron.Parameters()
-      p.learningRate = .1
-      p.thickness = 2
-      baseLTU = new SparseAveragedPerceptron(p)
+  object biotriggerclassifier extends Learnable(mentions){// trigger classifier
+    def label=mentionType2
+
+    override lazy val classifier = new SupportVectorMachine()
+     {
+      val p=new SupportVectorMachine.Parameters()
+      p.C=2
+
+
     }
-
-    override def feature = phraseFeatures()
-
-
-
-
-
+//    override lazy val classifier = new SparseNetworkLearner {
+//      val p = new SparseAveragedPerceptron.Parameters()
+//      p.learningRate = .1
+//      p.thickness = 1
+//      baseLTU = new SparseAveragedPerceptron(p)
+//    }
+    override def feature = phraseFeatures
   }
+
+
+  object bioprecipitantclassifier extends Learnable(mentions){//precipitant classifier
+    def label=mentionType2
+
+    override lazy val classifier = new SupportVectorMachine()
+    {
+      val p=new SupportVectorMachine.Parameters()
+      p.C=2
+
+
+    }
+    //    override lazy val classifier = new SparseNetworkLearner {
+    //      val p = new SparseAveragedPerceptron.Parameters()
+    //      p.learningRate = .1
+    //      p.thickness = 1
+    //      baseLTU = new SparseAveragedPerceptron(p)
+    //    }
+    override def feature = phraseFeatures
+  }
+
+
+  object biospecificclassifier extends Learnable(mentions){//specific classifier
+  def label=mentionType2
+
+    override lazy val classifier = new SupportVectorMachine()
+    {
+      val p=new SupportVectorMachine.Parameters()
+      p.C=2
+
+
+    }
+    //    override lazy val classifier = new SparseNetworkLearner {
+    //      val p = new SparseAveragedPerceptron.Parameters()
+    //      p.learningRate = .1
+    //      p.thickness = 1
+    //      baseLTU = new SparseAveragedPerceptron(p)
+    //    }
+    override def feature = phraseFeatures
+  }
+
+
+
+
+
+
+
+
+
+
+
 
 
 }
