@@ -26,7 +26,7 @@ object BioDataModel extends DataModel {
   //docTosen.addSensor(documentToSentenceMatching _)
 
   val sentenceToPhrase = edge(sentences, mentions)
-  sentenceToPhrase.addSensor(sentenceToPhraseGenerating _)
+  sentenceToPhrase.addSensor(sentenceToPhraseMatching _)
 
   val phraseToToken = edge(mentions, tokens)
   phraseToToken.addSensor(phraseToTokenGenerating _)
