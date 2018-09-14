@@ -25,7 +25,7 @@ object  bioApp extends App {
 
 
     val initialPhrases = trainSentences.map(x => sentenceToPhraseGenerating(x))
-   // val NewPhrases= initialPhrases().filter(x => pos(x)=="VB")
+    val NewPhrases= initialPhrases().filter(x => pos(x)=="VB")
 
     sentences.populate(trainSentences)
     sentences.populate(testSentences,false)
@@ -34,6 +34,8 @@ object  bioApp extends App {
     //val newphrase=mentions.getTrainingInstances.filter(x=>phrasePos(x)=="VB")
     trainDataReader.addPropertiesFromTag("Mention",mentions.getTrainingInstances.toList, XmlMatchings.elementContainsXmlHeadwordMatching) //You do not need to populate the mention() node then since it is populated with chuncker automatically. However, please check how much the mention() covers phraseTrainReader.
     testDataReader.addPropertiesFromTag("Mention",mentions.getTestingInstances.toList,XmlMatchings.elementContainsXmlHeadwordMatching)
+
+
     //mentions() prop mentionType2
 //    val allprecipitant = mentions().filter(x => mentionType2(x).equals("Trigger"))
 //    print(allprecipitant)

@@ -8,7 +8,7 @@ import edu.tulane.cs.hetml.nlp.BaseTypes._
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets
 import edu.tulane.cs.hetml.nlp.sprl.Helpers.FeatureSets.FeatureSets
 import MultiModalSpRLDataModel._
-import edu.tulane.cs.hetml.vision.WordSegment
+
 
 object MultiModalSpRLTripletClassifiers {
   var featureSet = FeatureSets.WordEmbeddingPlusImage
