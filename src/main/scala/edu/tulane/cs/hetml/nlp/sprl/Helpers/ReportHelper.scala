@@ -75,6 +75,60 @@ object ReportHelper {
     stream.close()
   }
 
+  def saveAsXmlbio(relations: List[Relation],
+                trajectors: List[Phrase],
+                indicators: List[Phrase],
+                landmarks: List[Phrase],
+                generalTypeClassifier: Relation => String,
+                specificTypeClassifier: Relation => String,
+                RCC8ValueClassifier: Relation => String,
+                DirectionClassifier: Relation => String,
+                filePath: String): SpRL2017Document = {
+    val doc = new SpRL2017Document()
+    val trPerSentence = trajectors.filter(_ != dummyPhrase).groupBy(_.getSentence)
+    val lmPerSentence = landmarks.filter(_ != dummyPhrase).groupBy(_.getSentence)
+    val spPerSentence = indicators.filter(_ != dummyPhrase).groupBy(_.getSentence)
+    val relationPerSentence = relations.groupBy(_.getParent.asInstanceOf[Sentence])
+    val sentences = trPerSentence.keys.toSet.union(lmPerSentence.keys.toSet).union(spPerSentence.keys.toSet)
+      .union(relationPerSentence.keys.toSet).toList.sortBy(_.getId)
+    val sceneIds = sentences.map(_.getDocument.getId)
+    sentences.groupBy(_.getDocument.getId).foreach { case (sId, sentenceList) =>
+      val scene = new Scene()
+      scene.setDocNo(sId)
+      sentenceList.foreach(s => {
+        val sent = new edu.tulane.cs.hetml.nlp.sprl.SpRL2017.Sentence()
+        sent.setStart(s.getStart)
+        sent.setEnd(s.getEnd)
+        sent.setText(s.getText)
+        sent.setId(s.getId)
+
+        val rel = if (relationPerSentence.containsKey(s)) relationPerSentence(s) else List()
+
+        val tr = (if (trPerSentence.containsKey(s)) trPerSentence(s) else List()).toSet
+          .union(rel.map(_.getArgument(0).asInstanceOf[Phrase]).toSet)
+          .map(x => setXmlRoleValues(s, x, new TRAJECTOR)).toList.sortBy(_.getStart)
+
+        val sp = (if (spPerSentence.containsKey(s)) spPerSentence(s) else List()).toSet
+          .union(rel.map(_.getArgument(1).asInstanceOf[Phrase]).toSet)
+          .map(x => setXmlRoleValues(s, x, new SPATIALINDICATOR)).toList.sortBy(_.getStart)
+
+        val lm = (if (lmPerSentence.containsKey(s)) lmPerSentence(s) else List()).toSet
+          .union(rel.map(_.getArgument(2).asInstanceOf[Phrase]).toSet)
+          .map(x => setXmlRoleValues(s, x, new LANDMARK)).toList
+          .sortBy(_.getStart)
+
+        sent.setTrajectors(tr)
+        sent.setLandmarks(lm)
+        sent.setSpatialindicators(sp)
+        sent.setRelations(
+          getXmlRelations(rel, generalTypeClassifier, specificTypeClassifier, RCC8ValueClassifier, DirectionClassifier))
+        scene.getSentences.add(sent)
+      })
+      doc.getScenes.add(scene)
+    }
+    XmlModel.write(doc, filePath)
+    doc
+  }
   def saveAsXml(relations: List[Relation],
                 trajectors: List[Phrase],
                 indicators: List[Phrase],

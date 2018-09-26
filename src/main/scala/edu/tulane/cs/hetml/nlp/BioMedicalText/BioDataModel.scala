@@ -26,7 +26,7 @@ object BioDataModel extends DataModel {
   //docTosen.addSensor(documentToSentenceMatching _)
 
   val sentenceToPhrase = edge(sentences, mentions)
-  sentenceToPhrase.addSensor(sentenceToPhraseMatching _)
+  sentenceToPhrase.addSensor(sentenceToPhraseGenerating _)
 
   val phraseToToken = edge(mentions, tokens)
   phraseToToken.addSensor(phraseToTokenGenerating _)
@@ -46,9 +46,7 @@ object BioDataModel extends DataModel {
     x: Phrase => isDrug(x)
 
   }
-  val isTrigger=property(mentions){
-    x:Phrase=>isTriggerList(x)
-  }
+
 
 
 
@@ -65,12 +63,17 @@ object BioDataModel extends DataModel {
         .map(t => t.getText.toLowerCase).mkString("|")
   }
 
-
   val pos = property(mentions) {
     x: Phrase =>
       (mentions(x) ~> phraseToToken).toList.sortBy(_.getStart)
         .map(t => getPos(t).mkString).mkString("|")
   }
+  val posmodify = property(mentions) {
+    x: Phrase =>
+      getTokens(x).toList.sortBy(_.getStart)
+        .map(t => getPos(t).mkString).mkString("|")
+  }
+
 
   val lemma = property(mentions) {
     x: Phrase =>
@@ -101,15 +104,10 @@ object BioDataModel extends DataModel {
   }
 
 
-//  val headWordFrom = property(mentions) {
-//    x: Phrase => getHeadword(x).getText.toLowerCase
-//  }
-
-
   val headWordPos = property(mentions) {
 
     x: Phrase =>
-      if (pos(x).toString.contains("VB") && pos(x).toString.contains("VB")) {
+      if (pos(x).toString.contains("VBN") && pos(x).toString.contains("VB")) {
       getPos(modifiedHeadWord(x)).mkString
     }
     else {
@@ -121,6 +119,7 @@ object BioDataModel extends DataModel {
   val phrasePos = property(mentions) {
     x: Phrase => getPhrasePos(x)
   }
+
 
 
   val dependencyRelation = property(mentions) {
@@ -180,7 +179,7 @@ object BioDataModel extends DataModel {
     //    else
     //      false
     for (m <- dictionarylist.toList) {
-      if (phrase.toString.toLowerCase.contains(m))
+      if (phrase.toString.toLowerCase.contains(m)|| phrase.toString.contains(m))
         return true
     }
     false
@@ -206,21 +205,9 @@ object BioDataModel extends DataModel {
   }
 
 
-  def isTriggerList(phrase: Phrase):Boolean={
-    val dictionarylist = ListBuffer[String]()
 
-    val source = Source.fromFile(triggerdictionary, "UTF-8")
-    for (i <- source.getLines()) {
-      dictionarylist.add(i)
-    }
-    source.close()
-    for (m <- dictionarylist.toList) {
-      if (phrase.toString.toLowerCase.contains(m) && pos(phrase).contains("VB"))
-        return true
-    }
-    false
 
-  }
+
 
 
 
