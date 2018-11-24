@@ -109,6 +109,19 @@ val tripsPhraseType = property (phrases) {
       else "noTrips"
 
   }
+  //TRIPS RULES of EXTRACTION
+  //  1. If type in PHRASE is POSITION|BE-AT|BE-AT-LOC|COULD-BE-AT|SHOULD-BE-AT|SPAN|ORIENT,
+  // then if the head in RELATION is the same as id in that PHRASE, and label in RELATION is AFFECTED,
+  // add TRAJECTOR in the PHRASE that has the same id as the res in RELATION.
+
+//  val r1 = property (phrases) {
+//    x: Phrase =>
+//      if ((x.containsProperty("POSITION") || x.containsProperty("BE_AT") || x.containsProperty("BE-AT-LOC")||
+//        x.containsProperty("COULD-BE-AT")|| x.containsProperty("SHOULD-BE-AT")|| x.containsProperty("SPAN")||
+//        x.containsProperty("ORIENT")) && (phrases(x) ~> -pairToSecondArg).instances.toList.head.containsProperty("AFFECTED"){
+//
+//      }
+//  }
   /*End of TRIPS ontology Features
      */
 

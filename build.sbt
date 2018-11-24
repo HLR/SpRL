@@ -4,7 +4,7 @@ version := "1.0"
 
 scalaVersion in ThisBuild := "2.11.7"
 
-resolvers += "CogcompSoftware" at "http://cogcomp.cs.illinois.edu/m2repo/"
+resolvers += "CogcompSoftware" at "http://cogcomp.org/m2repo/"
 
 libraryDependencies ++= Seq(
   "edu.illinois.cs.cogcomp" % "saul_2.11" % "0.5.8-SNAPSHOT",
